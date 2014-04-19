@@ -1,3 +1,30 @@
+/*****************************************************************************
+**
+** Blueberry Pi
+** https://github.com/Melllvar/Blueberry-Pi
+**
+** An MSX Emulator for Raspberry Pi based on blueMSX
+** 
+** Copyright (C) 2003-2006 Daniel Vik
+** Copyright (C) 2014 Akop Karapetyan
+** 
+** This program is free software; you can redistribute it and/or modify
+** it under the terms of the GNU General Public License as published by
+** the Free Software Foundation; either version 2 of the License, or
+** (at your option) any later version.
+** 
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License
+** along with this program; if not, write to the Free Software
+** Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+**
+******************************************************************************
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <SDL.h>
@@ -29,28 +56,28 @@
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
 
-#define assert(x)
-
 typedef	struct ShaderInfo {
-		GLuint program;
-		GLint a_position;
-		GLint a_texcoord;
-		GLint u_vp_matrix;
-		GLint u_texture;
-		GLint u_palette;
+	GLuint program;
+	GLint a_position;
+	GLint a_texcoord;
+	GLint u_vp_matrix;
+	GLint u_texture;
+	GLint u_palette;
 } ShaderInfo;
 
-#define BIT_DEPTH   16
-#define	TEX_WIDTH	512
-#define	TEX_HEIGHT	256
+#define	TEX_WIDTH  512
+#define	TEX_HEIGHT 256
 
-#define	WIDTH		320
-#define	HEIGHT		240
+#define BIT_DEPTH       16
+#define BYTES_PER_PIXEL (BIT_DEPTH >> 3)
+#define ZOOM            1
+#define	WIDTH           320
+#define	HEIGHT          240
 
-#define	minU		0.0f
-#define	maxU		((float)WIDTH / TEX_WIDTH - minU)
-#define	minV		0.0f
-#define	maxV		((float)HEIGHT/TEX_HEIGHT)
+#define	minU 0.0f
+#define	maxU ((float)WIDTH / TEX_WIDTH - minU)
+#define	minV 0.0f
+#define	maxV ((float)HEIGHT / TEX_HEIGHT)
 
 #define EVENT_UPDATE_DISPLAY 2
 
@@ -508,7 +535,7 @@ static void updateScreen(int width, int height)
 
 	float sx = 1.0f;
 	float sy = 1.0f;
-	float zoom = 1.0f;
+	float zoom = (float)ZOOM;
 
 	// Screen aspect ratio adjustment
 	float a = (float)width / height;
@@ -550,58 +577,29 @@ static void updateScreen(int width, int height)
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	// glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT, GL_LUMINANCE, GL_UNSIGNED_BYTE, Screen_atari);
-
-	// FIXME: shit happens here
-////
 
 	FrameBuffer* frameBuffer;
 	frameBuffer = frameBufferFlipViewFrame(properties->emulation.syncMethod == P_EMU_SYNCTOVBLANKASYNC);
 	if (frameBuffer == NULL) {
 		frameBuffer = frameBufferGetWhiteNoiseFrame();
 	}
-	int borderWidth = (320 - frameBuffer->maxWidth) * zoom / 2;
-	int bytesPerPixel = BIT_DEPTH >> 3;
-	int y;
-	
-		videoRender(video, frameBuffer, BIT_DEPTH, 1,
-					msxScreen + borderWidth * bytesPerPixel, 0, msxScreenPitch, -1);
+	int borderWidth = ((320 - frameBuffer->maxWidth) * ZOOM) >> 1;
 
-		// if (borderWidth > 0) {
-		// 	int h = height;
-		// 	while (h--) {
-		// 		memset(dpyData, 0, borderWidth * bytesPerPixel);
-		// 		memset(dpyData + (width - borderWidth) * bytesPerPixel, 0, borderWidth * bytesPerPixel);
-		// 		dpyData += msxScreenPitch;
-		// 	}
-		// }
+	videoRender(video, frameBuffer, BIT_DEPTH, 1,
+				msxScreen + borderWidth * BYTES_PER_PIXEL, 0, msxScreenPitch, -1);
 
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT,
-						GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
+	// if (borderWidth > 0) {
+	// 	int h = height;
+	// 	while (h--) {
+	// 		memset(dpyData, 0, borderWidth * BYTES_PER_PIXEL);
+	// 		memset(dpyData + (width - borderWidth) * BYTES_PER_PIXEL, 0, borderWidth * BYTES_PER_PIXEL);
+	// 		dpyData += msxScreenPitch;
+	// 	}
+	// }
 
-		// updateAll |= properties->video.driver == P_VIDEO_DRVDIRECTX;
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT,
+					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
 
-		// for (y = 0; y < height; y += linesPerBlock) {
-		// 	if (updateAll || isLineDirty(y, linesPerBlock)) {
-		// 		if (!isDirty) {
-		// 			glEnable(GL_TEXTURE_2D);
-		// 			glEnable(GL_ASYNC_TEX_IMAGE_SGIX);
-		// 			glBindTexture(GL_TEXTURE_2D, textureId);
-
-		// 			glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-		// 			isDirty = 1;
-		// 		}
-
-		// 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, width, linesPerBlock,
-		// 						GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen + y * displayPitch);
-		// 	}
-		// }
-
-
-////
-
-	// glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT,
-	// 	GL_LUMINANCE, GL_UNSIGNED_BYTE, screen);
 	drawQuad(sh, textures);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -633,8 +631,6 @@ static void handleEvent(SDL_Event* event)
 	case SDL_KEYUP:
 		shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
 		break;
-	default:
-	fprintf(stderr, "guh? %x\n", event->type);
 	}
 }
 
@@ -692,12 +688,11 @@ int main(int argc, char **argv)
 	msxScreenPitch = WIDTH * BIT_DEPTH / 8;
 
 	SDL_Init(SDL_INIT_EVERYTHING);
-
 	SDL_ShowCursor(SDL_DISABLE);
 
 	// We're doing our own video rendering - this is just so SDL-based keyboard
 	// can work
-	SDL_Surface *screen = SDL_SetVideoMode(0, 0, 32, SDL_SWSURFACE);
+	SDL_Surface *sdlScreen = SDL_SetVideoMode(0, 0, 32, SDL_SWSURFACE);
 
 	SDL_Event event;
 	char szLine[8192] = "";
@@ -865,9 +860,11 @@ int main(int argc, char **argv)
 		} while(SDL_PollEvent(&event));
 	}
 
-	if (screen) {
-		SDL_FreeSurface(screen);
-		screen = NULL;
+	if (sdlScreen) {
+		SDL_FreeSurface(sdlScreen);
+	}
+	if (msxScreen) {
+		free(msxScreen);
 	}
 
 	SDL_Quit();
@@ -878,10 +875,6 @@ int main(int argc, char **argv)
 	mixerDestroy(mixer);
 
 	destroyEgl();
-
-	if (display) {
-		free(display);
-	}
 
 	return 0;
 }
