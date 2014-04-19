@@ -523,7 +523,7 @@ static void updateScreen(int width, int height)
 	glClear(GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, width, height);
 
-	ShaderInfo *sh = &shaderFiltering;
+	ShaderInfo *sh = &shader;
 
 	float proj[4][4];
 	glDisable(GL_BLEND);
@@ -613,10 +613,8 @@ static void updateScreen(int width, int height)
 static void handleEvent(SDL_Event* event) 
 {
 	switch (event->type) {
-	// case 0xa: // FIXME
 	case SDL_USEREVENT:
 		switch (event->user.code) {
-		// default:
 		case EVENT_UPDATE_DISPLAY:
 			updateScreen(screenWidth, screenHeight);
 			archEventSet(dpyUpdateAckEvent);
@@ -696,6 +694,9 @@ int main(int argc, char **argv)
 	SDL_Init(SDL_INIT_EVERYTHING);
 
 	SDL_ShowCursor(SDL_DISABLE);
+
+	// We're doing our own video rendering - this is just so SDL-based keyboard
+	// can work
 	SDL_Surface *screen = SDL_SetVideoMode(0, 0, 32, SDL_SWSURFACE);
 
 	SDL_Event event;
@@ -724,6 +725,11 @@ int main(int argc, char **argv)
 	properties = propCreate(resetProperties, 0, P_KBD_EUROPEAN, 0, "");
 	properties->video.windowSize = P_VIDEO_SIZEX1;
 	properties->emulation.syncMethod = P_EMU_SYNCFRAMES;
+    properties->emulation.reverseEnable = 0;
+    properties->sound.chip.enableYM2413 = 0;
+    properties->sound.chip.enableY8950 = 0;
+    properties->sound.chip.enableMoonsound = 0;
+    properties->video.frameSkip = 1;
 
 	if (resetProperties == 2) {
 		propDestroy(properties);
@@ -864,8 +870,6 @@ int main(int argc, char **argv)
 		screen = NULL;
 	}
 
-	// For stop threads before destroy.
-	// Clean up.
 	SDL_Quit();
 
 	videoDestroy(video);
