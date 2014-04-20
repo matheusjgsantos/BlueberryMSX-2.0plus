@@ -31,8 +31,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <SDL.h>
 
+/*
 #include "CommandLine.h"
 #include "Properties.h"
 #include "ArchFile.h"
@@ -54,6 +54,7 @@
 #include "ArchNotifications.h"
 #include "JoystickPort.h"
 #include "SdlShortcuts.h"
+*/
 
 #include <bcm_host.h>
 #include <interface/vchiq_arm/vchiq_if.h>
@@ -82,30 +83,12 @@ typedef	struct ShaderInfo {
 #define	minV 0.0f
 #define	maxV ((float)HEIGHT / TEX_HEIGHT)
 
-#define EVENT_UPDATE_DISPLAY 2
-
-static void setDefaultPaths(const char* rootDir);
-static void handleEvent(SDL_Event* event);
-static int  initEgl();
-static void destroyEgl();
 static void drawQuad(const ShaderInfo *sh);
-static void updateScreen();
-
 static GLuint createShader(GLenum type, const char *shaderSrc);
 static GLuint createProgram(const char *vertexShaderSrc, const char *fragmentShaderSrc);
 static void setOrtho(float m[4][4],
 	float left, float right, float bottom, float top,
 	float near, float far, float scaleX, float scaleY);
-
-static Properties *properties;
-static Video *video;
-static Mixer *mixer;
-
-static Shortcuts* shortcuts;
-static int doQuit = 0;
-
-static int pendingDisplayEvents = 0;
-static void *dpyUpdateAckEvent = NULL;
 
 static EGL_DISPMANX_WINDOW_T nativeWindow;
 static EGLDisplay display = NULL;
@@ -163,50 +146,7 @@ static const GLfloat vertices[] = {
 	-0.5f, +0.5f, 0.0f,
 };
 
-int archUpdateEmuDisplay(int syncMode) 
-{
-	SDL_Event event;
-	if (pendingDisplayEvents > 1) {
-		return 1;
-	}
-
-	pendingDisplayEvents++;
-
-	event.type = SDL_USEREVENT;
-	event.user.code = EVENT_UPDATE_DISPLAY;
-	event.user.data1 = NULL;
-	event.user.data2 = NULL;
-
-	SDL_PushEvent(&event);
-
-	if (properties->emulation.syncMethod == P_EMU_SYNCFRAMES) {
-		archEventWait(dpyUpdateAckEvent, 500);
-	}
-
-	return 1;
-}
-
-void archUpdateWindow()
-{
-}
-
-void archEmulationStartNotification()
-{
-}
-
-void archEmulationStopNotification()
-{
-}
-
-void archEmulationStartFailure()
-{
-}
-
-void archTrap(UInt8 value)
-{
-}
-
-static int initEgl()
+int piInitVideo()
 {
 	bcm_host_init();
 
@@ -349,11 +289,28 @@ static int initEgl()
 	setOrtho(projection, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f,
 		sx * zoom, sy * zoom);
 
+	msxScreenPitch = WIDTH * BIT_DEPTH / 8;
+	msxScreen = (char*)calloc(1, BIT_DEPTH / 8 * TEX_WIDTH * TEX_HEIGHT);
+	if (!msxScreen) {
+		return 0;
+	}
+
+	// We're doing our own video rendering - this is just so SDL-based keyboard
+	// can work
+	SDL_Surface *sdlScreen = SDL_SetVideoMode(0, 0, 32, SDL_SWSURFACE);
+
 	return 1;
 }
 
-static void destroyEgl() 
+void piDestroyVideo() 
 {
+	if (sdlScreen) {
+		SDL_FreeSurface(sdlScreen);
+	}
+	if (msxScreen) {
+		free(msxScreen);
+	}
+
 	// Destroy shader resources
 	if (shader.program) {
 		glDeleteProgram(shader.program);
@@ -368,6 +325,55 @@ static void destroyEgl()
 	eglTerminate(display);
 
 	bcm_host_deinit();
+}
+
+void piUpdateEmuDisplay()
+{
+	if (!shader.program) {
+		fprintf(stderr, "Shader not initialized\n");
+		return;
+	}
+
+	glClear(GL_COLOR_BUFFER_BIT);
+	glViewport(0, 0, screenWidth, screenHeight);
+
+	ShaderInfo *sh = &shader;
+
+	glDisable(GL_BLEND);
+	glUseProgram(sh->program);
+	glUniformMatrix4fv(sh->u_vp_matrix, 1, GL_FALSE, &projection[0][0]);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+
+	FrameBuffer* frameBuffer;
+	frameBuffer = frameBufferFlipViewFrame(properties->emulation.syncMethod == P_EMU_SYNCTOVBLANKASYNC);
+	if (frameBuffer == NULL) {
+		frameBuffer = frameBufferGetWhiteNoiseFrame();
+	}
+	int borderWidth = ((320 - frameBuffer->maxWidth) * ZOOM) >> 1;
+
+	videoRender(video, frameBuffer, BIT_DEPTH, 1,
+				msxScreen + borderWidth * BYTES_PER_PIXEL, 0, msxScreenPitch, -1);
+
+	// if (borderWidth > 0) {
+	// 	int h = height;
+	// 	while (h--) {
+	// 		memset(dpyData, 0, borderWidth * BYTES_PER_PIXEL);
+	// 		memset(dpyData + (width - borderWidth) * BYTES_PER_PIXEL, 0, borderWidth * BYTES_PER_PIXEL);
+	// 		dpyData += msxScreenPitch;
+	// 	}
+	// }
+
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT,
+					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
+
+	drawQuad(sh);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	eglSwapBuffers(display, surface);
 }
 
 static GLuint createShader(GLenum type, const char *shaderSrc)
@@ -486,326 +492,4 @@ static void drawQuad(const ShaderInfo *sh)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[2]);
 
 	glDrawElements(GL_TRIANGLES, kIndexCount, GL_UNSIGNED_SHORT, 0);
-}
-
-static void updateScreen()
-{
-	if (!shader.program) {
-		fprintf(stderr, "Shader not initialized\n");
-		return;
-	}
-
-	glClear(GL_COLOR_BUFFER_BIT);
-	glViewport(0, 0, screenWidth, screenHeight);
-
-	ShaderInfo *sh = &shader;
-
-	glDisable(GL_BLEND);
-	glUseProgram(sh->program);
-	glUniformMatrix4fv(sh->u_vp_matrix, 1, GL_FALSE, &projection[0][0]);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textures[0]);
-
-	FrameBuffer* frameBuffer;
-	frameBuffer = frameBufferFlipViewFrame(properties->emulation.syncMethod == P_EMU_SYNCTOVBLANKASYNC);
-	if (frameBuffer == NULL) {
-		frameBuffer = frameBufferGetWhiteNoiseFrame();
-	}
-	int borderWidth = ((320 - frameBuffer->maxWidth) * ZOOM) >> 1;
-
-	videoRender(video, frameBuffer, BIT_DEPTH, 1,
-				msxScreen + borderWidth * BYTES_PER_PIXEL, 0, msxScreenPitch, -1);
-
-	// if (borderWidth > 0) {
-	// 	int h = height;
-	// 	while (h--) {
-	// 		memset(dpyData, 0, borderWidth * BYTES_PER_PIXEL);
-	// 		memset(dpyData + (width - borderWidth) * BYTES_PER_PIXEL, 0, borderWidth * BYTES_PER_PIXEL);
-	// 		dpyData += msxScreenPitch;
-	// 	}
-	// }
-
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT,
-					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
-
-	drawQuad(sh);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	eglSwapBuffers(display, surface);
-}
-
-static void handleEvent(SDL_Event* event) 
-{
-	switch (event->type) {
-	case SDL_USEREVENT:
-		switch (event->user.code) {
-		case EVENT_UPDATE_DISPLAY:
-			updateScreen();
-			archEventSet(dpyUpdateAckEvent);
-			pendingDisplayEvents--;
-			break;
-		}
-		break;
-	case SDL_ACTIVEEVENT:
-		if (event->active.state & SDL_APPINPUTFOCUS) {
-			keyboardSetFocus(1, event->active.gain);
-		}
-		break;
-	case SDL_KEYDOWN:
-		shortcutCheckDown(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
-		break;
-	case SDL_KEYUP:
-		shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
-		break;
-	}
-}
-
-static void setDefaultPaths(const char* rootDir)
-{
-	char buffer[512]; // FIXME
-
-	propertiesSetDirectory(rootDir, rootDir);
-
-	sprintf(buffer, "%s/Audio Capture", rootDir);
-	archCreateDirectory(buffer);
-	actionSetAudioCaptureSetDirectory(buffer, "");
-
-	sprintf(buffer, "%s/Video Capture", rootDir);
-	archCreateDirectory(buffer);
-	actionSetAudioCaptureSetDirectory(buffer, "");
-
-	sprintf(buffer, "%s/QuickSave", rootDir);
-	archCreateDirectory(buffer);
-	actionSetQuickSaveSetDirectory(buffer, "");
-
-	sprintf(buffer, "%s/SRAM", rootDir);
-	archCreateDirectory(buffer);
-	boardSetDirectory(buffer);
-
-	sprintf(buffer, "%s/Casinfo", rootDir);
-	archCreateDirectory(buffer);
-	tapeSetDirectory(buffer, "");
-
-	sprintf(buffer, "%s/Databases", rootDir);
-	archCreateDirectory(buffer);
-	mediaDbLoad(buffer);
-
-	sprintf(buffer, "%s/Keyboard Config", rootDir);
-	archCreateDirectory(buffer);
-	keyboardSetDirectory(buffer);
-
-	sprintf(buffer, "%s/Shortcut Profiles", rootDir);
-	archCreateDirectory(buffer);
-	shortcutsSetDirectory(buffer);
-
-	sprintf(buffer, "%s/Machines", rootDir);
-	archCreateDirectory(buffer);
-	machineSetDirectory(buffer);
-}
-
-int main(int argc, char **argv)
-{
-	if (!initEgl()) {
-		fprintf(stderr, "initEgl() failed");
-		return 1;
-	}
-
-	msxScreen = (char*)calloc(1, BIT_DEPTH / 8 * TEX_WIDTH * TEX_HEIGHT);
-	msxScreenPitch = WIDTH * BIT_DEPTH / 8;
-
-	SDL_Init(SDL_INIT_EVERYTHING);
-	SDL_ShowCursor(SDL_DISABLE);
-
-	// We're doing our own video rendering - this is just so SDL-based keyboard
-	// can work
-	SDL_Surface *sdlScreen = SDL_SetVideoMode(0, 0, 32, SDL_SWSURFACE);
-
-	SDL_Event event;
-	char szLine[8192] = "";
-	int resetProperties;
-	char path[512] = "";
-	int i;
-
-	for (i = 1; i < argc; i++) {
-		if (strchr(argv[i], ' ') != NULL && argv[i][0] != '\"') {
-			strcat(szLine, "\"");
-			strcat(szLine, argv[i]);
-			strcat(szLine, "\"");
-		} else {
-			strcat(szLine, argv[i]);
-		}
-		strcat(szLine, " ");
-	}
-
-	setDefaultPaths(archGetCurrentDirectory());
-
-	resetProperties = emuCheckResetArgument(szLine);
-	strcat(path, archGetCurrentDirectory());
-	strcat(path, DIR_SEPARATOR "bluemsx.ini");
-
-	properties = propCreate(resetProperties, 0, P_KBD_EUROPEAN, 0, "");
-	properties->video.windowSize = P_VIDEO_SIZEX1;
-    properties->video.frameSkip = 1;
-	properties->emulation.syncMethod = P_EMU_SYNCFRAMES;
-    properties->emulation.reverseEnable = 0;
-    properties->sound.chip.enableYM2413 = 0;
-    properties->sound.chip.enableY8950 = 0;
-    properties->sound.chip.enableMoonsound = 0;
-    properties->sound.stereo = 0;
-    properties->sound.masterVolume = 100;
-
-	if (resetProperties == 2) {
-		propDestroy(properties);
-		return 0;
-	}
-
-	video = videoCreate();
-	videoSetColors(video, properties->video.saturation,
-		properties->video.brightness,
-		properties->video.contrast, properties->video.gamma);
-	videoSetScanLines(video, properties->video.scanlinesEnable,
-		properties->video.scanlinesPct);
-	videoSetColorSaturation(video, properties->video.colorSaturationEnable,
-		properties->video.colorSaturationWidth);
-
-	properties->video.driver = P_VIDEO_DRVDIRECTX_VIDEO;
-
-	dpyUpdateAckEvent = archEventCreate(0);
-
-	keyboardInit();
-
-	mixer = mixerCreate();
-	for (i = 0; i < MIXER_CHANNEL_TYPE_COUNT; i++) {
-		mixerSetChannelTypeVolume(mixer, i,
-			properties->sound.mixerChannel[i].volume);
-		mixerSetChannelTypePan(mixer, i,
-			properties->sound.mixerChannel[i].pan);
-		mixerEnableChannelType(mixer, i,
-			properties->sound.mixerChannel[i].enable);
-	}
-	mixerSetMasterVolume(mixer, properties->sound.masterVolume);
-	mixerEnableMaster(mixer, properties->sound.masterEnable);
-
-	emulatorInit(properties, mixer);
-	actionInit(video, properties, mixer);
-	tapeSetReadOnly(properties->cassette.readOnly);
-
-	langInit();
-	langSetLanguage(properties->language);
-
-	joystickPortSetType(0, properties->joy1.typeId);
-	joystickPortSetType(1, properties->joy2.typeId);
-
-	printerIoSetType(properties->ports.Lpt.type,
-		properties->ports.Lpt.fileName);
-	printerIoSetType(properties->ports.Lpt.type,
-		properties->ports.Lpt.fileName);
-	uartIoSetType(properties->ports.Com.type,
-		properties->ports.Com.fileName);
-	midiIoSetMidiOutType(properties->sound.MidiOut.type,
-		properties->sound.MidiOut.fileName);
-	midiIoSetMidiInType(properties->sound.MidiIn.type,
-		properties->sound.MidiIn.fileName);
-	ykIoSetMidiInType(properties->sound.YkIn.type,
-		properties->sound.YkIn.fileName);
-
-	emulatorRestartSound();
-
-	videoUpdateAll(video, properties);
-
-	shortcuts = shortcutsCreate();
-
-	mediaDbSetDefaultRomType(properties->cartridge.defaultType);
-
-	for (i = 0; i < PROP_MAX_CARTS; i++) {
-		if (properties->media.carts[i].fileName[0]) {
-			insertCartridge(properties, i,
-				properties->media.carts[i].fileName,
-				properties->media.carts[i].fileNameInZip,
-				properties->media.carts[i].type, -1);
-		}
-		updateExtendedRomName(i,
-			properties->media.carts[i].fileName,
-			properties->media.carts[i].fileNameInZip);
-	}
-
-	for (i = 0; i < PROP_MAX_DISKS; i++) {
-		if (properties->media.disks[i].fileName[0]) {
-			insertDiskette(properties, i,
-				properties->media.disks[i].fileName,
-				properties->media.disks[i].fileNameInZip, -1);
-		}
-		updateExtendedDiskName(i,
-			properties->media.disks[i].fileName,
-			properties->media.disks[i].fileNameInZip);
-	}
-
-	for (i = 0; i < PROP_MAX_TAPES; i++) {
-		if (properties->media.tapes[i].fileName[0]) {
-			insertCassette(properties, i,
-				properties->media.tapes[i].fileName,
-				properties->media.tapes[i].fileNameInZip, 0);
-		}
-		updateExtendedCasName(i,
-			properties->media.tapes[i].fileName,
-			properties->media.tapes[i].fileNameInZip);
-	}
-
-	{
-		Machine* machine = machineCreate(properties->emulation.machineName);
-		if (machine != NULL) {
-			boardSetMachine(machine);
-			machineDestroy(machine);
-		}
-	}
-
-	boardSetFdcTimingEnable(properties->emulation.enableFdcTiming);
-	boardSetY8950Enable(properties->sound.chip.enableY8950);
-	boardSetYm2413Enable(properties->sound.chip.enableYM2413);
-	boardSetMoonsoundEnable(properties->sound.chip.enableMoonsound);
-	boardSetVideoAutodetect(properties->video.detectActiveMonitor);
-
-	i = emuTryStartWithArguments(properties, szLine, NULL);
-	if (i < 0) {
-		printf("Failed to parse command line\n");
-		return 0;
-	}
-
-	if (i == 0) {
-		emulatorStart(NULL);
-	}
-
-	fprintf(stderr, "Entering main loop\n");
-
-	while (!doQuit) {
-		SDL_WaitEvent(&event);
-		do {
-			if (event.type == SDL_QUIT ) {
-				doQuit = 1;
-			} else {
-				handleEvent(&event);
-			}
-		} while(SDL_PollEvent(&event));
-	}
-
-	if (sdlScreen) {
-		SDL_FreeSurface(sdlScreen);
-	}
-	if (msxScreen) {
-		free(msxScreen);
-	}
-
-	SDL_Quit();
-
-	videoDestroy(video);
-	propDestroy(properties);
-	archSoundDestroy();
-	mixerDestroy(mixer);
-
-	destroyEgl();
-
-	return 0;
 }
