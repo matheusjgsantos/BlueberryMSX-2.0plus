@@ -81,6 +81,7 @@ INCLUDE += -I$(ROOT_DIR)/Src/Utils
 INCLUDE += -I$(ROOT_DIR)/Src/VideoChips
 INCLUDE += -I$(ROOT_DIR)/Src/VideoRender
 INCLUDE += -I$(ROOT_DIR)/Src/Sdl
+INCLUDE += -I$(ROOT_DIR)/Src/Pi
 INCLUDE += -I$(ROOT_DIR)/Src/Z80
 
 vpath % $(ROOT_DIR)/Src/Arch
@@ -101,6 +102,7 @@ vpath % $(ROOT_DIR)/Src/Utils
 vpath % $(ROOT_DIR)/Src/VideoChips
 vpath % $(ROOT_DIR)/Src/VideoRender
 vpath % $(ROOT_DIR)/Src/Sdl
+vpath % $(ROOT_DIR)/Src/Pi
 vpath % $(ROOT_DIR)/Src/Z80
 
 #
@@ -108,7 +110,8 @@ vpath % $(ROOT_DIR)/Src/Z80
 #
 SOURCE_FILES  =
 
-SOURCE_FILES += bluemsxpi.c
+SOURCE_FILES += PiMain.c
+SOURCE_FILES += PiVideo.c
 SOURCE_FILES += SdlPrinter.c
 SOURCE_FILES += SdlUart.c
 SOURCE_FILES += SdlDialog.c

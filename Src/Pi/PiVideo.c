@@ -32,30 +32,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-/*
-#include "CommandLine.h"
 #include "Properties.h"
-#include "ArchFile.h"
 #include "VideoRender.h"
-#include "AudioMixer.h"
-#include "Casette.h"
-#include "PrinterIO.h"
-#include "UartIO.h"
-#include "MidiIO.h"
-#include "Machine.h"
-#include "Board.h"
-#include "Emulator.h"
-#include "FileHistory.h"
-#include "Actions.h"
-#include "Language.h"
-#include "LaunchFile.h"
-#include "ArchEvent.h"
-#include "ArchSound.h"
-#include "ArchNotifications.h"
-#include "JoystickPort.h"
-#include "SdlShortcuts.h"
-*/
 
+#include <SDL.h>
 #include <bcm_host.h>
 #include <interface/vchiq_arm/vchiq_if.h>
 #include <EGL/egl.h>
@@ -83,6 +63,9 @@ typedef	struct ShaderInfo {
 #define	minV 0.0f
 #define	maxV ((float)HEIGHT / TEX_HEIGHT)
 
+extern Video *video;
+extern Properties *properties;
+
 static void drawQuad(const ShaderInfo *sh);
 static GLuint createShader(GLenum type, const char *shaderSrc);
 static GLuint createProgram(const char *vertexShaderSrc, const char *fragmentShaderSrc);
@@ -101,6 +84,8 @@ static uint32_t screenHeight = 0;
 static ShaderInfo shader;
 static GLuint buffers[3];
 static GLuint textures[2];
+
+static SDL_Surface *sdlScreen;
 
 static char *msxScreen = NULL;
 static int msxScreenPitch;
@@ -297,7 +282,7 @@ int piInitVideo()
 
 	// We're doing our own video rendering - this is just so SDL-based keyboard
 	// can work
-	SDL_Surface *sdlScreen = SDL_SetVideoMode(0, 0, 32, SDL_SWSURFACE);
+	sdlScreen = SDL_SetVideoMode(0, 0, 32, SDL_SWSURFACE);
 
 	return 1;
 }
