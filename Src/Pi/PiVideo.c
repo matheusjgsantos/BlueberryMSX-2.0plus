@@ -4,10 +4,10 @@
 ** https://github.com/Melllvar/Blueberry-Pi
 **
 ** An MSX Emulator for Raspberry Pi based on blueMSX
-** 
+**
 ** Copyright (C) 2003-2006 Daniel Vik
 ** Copyright (C) 2014 Akop Karapetyan
-** 
+**
 ** GLES code is based on
 ** https://sourceforge.net/projects/atari800/ and
 ** https://code.google.com/p/pisnes/
@@ -16,7 +16,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -35,11 +35,11 @@
 #include "Properties.h"
 #include "VideoRender.h"
 
-#include <SDL.h>
 #include <bcm_host.h>
 #include <interface/vchiq_arm/vchiq_if.h>
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
+#include <SDL.h>
 
 typedef	struct ShaderInfo {
 	GLuint program;
@@ -239,9 +239,9 @@ int piInitVideo()
 	shader.u_vp_matrix	= glGetUniformLocation(shader.program,	"u_vp_matrix");
 	shader.u_texture	= glGetUniformLocation(shader.program,	"u_texture");
 
-    glGenTextures(1, textures);
-    glBindTexture(GL_TEXTURE_2D, textures[0]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TEX_WIDTH, TEX_HEIGHT, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, NULL);
+	glGenTextures(1, textures);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TEX_WIDTH, TEX_HEIGHT, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, NULL);
 
 	glGenBuffers(3, buffers);
 	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
@@ -287,7 +287,7 @@ int piInitVideo()
 	return 1;
 }
 
-void piDestroyVideo() 
+void piDestroyVideo()
 {
 	if (sdlScreen) {
 		SDL_FreeSurface(sdlScreen);
@@ -426,10 +426,10 @@ static GLuint createProgram(const char *vertexShaderSrc, const char *fragmentSha
 	if (!linked) {
 		GLint infoLen = 0;
 		glGetProgramiv(programObject, GL_INFO_LOG_LENGTH, &infoLen);
-		if(infoLen > 1) {
+		if (infoLen > 1) {
 			char* infoLog = (char *)malloc(infoLen);
 			glGetProgramInfoLog(programObject, infoLen, NULL, infoLog);
-			fprintf(stderr, "Error linking program:\n%s\n", infoLog);
+			fprintf(stderr, "Error linking program: %s\n", infoLog);
 			free(infoLog);
 		}
 
@@ -465,7 +465,7 @@ static void drawQuad(const ShaderInfo *sh)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-	glVertexAttribPointer(sh->a_position, 3, GL_FLOAT, 
+	glVertexAttribPointer(sh->a_position, 3, GL_FLOAT,
 		GL_FALSE, 3 * sizeof(GLfloat), NULL);
 	glEnableVertexAttribArray(sh->a_position);
 

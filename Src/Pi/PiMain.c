@@ -4,19 +4,15 @@
 ** https://github.com/Melllvar/Blueberry-Pi
 **
 ** An MSX Emulator for Raspberry Pi based on blueMSX
-** 
+**
 ** Copyright (C) 2003-2006 Daniel Vik
 ** Copyright (C) 2014 Akop Karapetyan
-** 
-** GLES code is based on
-** https://sourceforge.net/projects/atari800/ and
-** https://code.google.com/p/pisnes/
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -218,14 +214,14 @@ int main(int argc, char **argv)
 
 	properties = propCreate(resetProperties, 0, P_KBD_EUROPEAN, 0, "");
 	properties->video.windowSize = P_VIDEO_SIZEX1;
-    properties->video.frameSkip = 1;
+	properties->video.frameSkip = 1;
 	properties->emulation.syncMethod = P_EMU_SYNCFRAMES;
-    properties->emulation.reverseEnable = 0;
-    properties->sound.chip.enableYM2413 = 0;
-    properties->sound.chip.enableY8950 = 0;
-    properties->sound.chip.enableMoonsound = 0;
-    properties->sound.stereo = 0;
-    properties->sound.masterVolume = 100;
+	properties->emulation.reverseEnable = 0;
+	properties->sound.chip.enableYM2413 = 0;
+	properties->sound.chip.enableY8950 = 0;
+	properties->sound.chip.enableMoonsound = 0;
+	properties->sound.stereo = 0;
+	properties->sound.masterVolume = 100;
 
 	if (resetProperties == 2) {
 		propDestroy(properties);
@@ -241,7 +237,7 @@ int main(int argc, char **argv)
 	videoSetColorSaturation(video, properties->video.colorSaturationEnable,
 		properties->video.colorSaturationWidth);
 
-	properties->video.driver = P_VIDEO_DRVDIRECTX_VIDEO;
+//	properties->video.driver = P_VIDEO_DRVDIRECTX_VIDEO;
 
 	dpyUpdateAckEvent = archEventCreate(0);
 
@@ -329,6 +325,9 @@ int main(int argc, char **argv)
 		if (machine != NULL) {
 			boardSetMachine(machine);
 			machineDestroy(machine);
+		} else {
+			fprintf(stderr, "Error creating machine\n");
+			return 1;
 		}
 	}
 
@@ -340,8 +339,8 @@ int main(int argc, char **argv)
 
 	i = emuTryStartWithArguments(properties, szLine, NULL);
 	if (i < 0) {
-		printf("Failed to parse command line\n");
-		return 0;
+		fprintf(stderr, "Failed to parse command line\n");
+		return 1;
 	}
 
 	if (i == 0) {
@@ -358,8 +357,10 @@ int main(int argc, char **argv)
 			} else {
 				handleEvent(&event);
 			}
-		} while(SDL_PollEvent(&event));
+		} while (SDL_PollEvent(&event));
 	}
+
+	fprintf(stderr, "Exited main loop\n");
 
 	SDL_Quit();
 
