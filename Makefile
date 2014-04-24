@@ -36,12 +36,12 @@ ECHO  = @echo
 #
 # Flags
 #
-COMMONFLAGS = -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -DRASPI
+COMMON_FLAGS = -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -DRASPI
 CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer $(COMMON_FLAGS)
 CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  = 
 LIBS     =  -lSDL -lz -lbcm_host -lEGL -lGLESv2
-TARGET   = bluemsxpi
+TARGET   = bluemsx-pi
 
 SRCS        = $(SOURCE_FILES)
 OBJS        = $(patsubst %.rc,%.res,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cc,%.o,$(patsubst %.c,%.o,$(filter %.c %.cc %.cpp %.cxx %.rc,$(SRCS)))))))
@@ -111,6 +111,8 @@ SOURCE_FILES  =
 
 SOURCE_FILES += PiMain.c
 SOURCE_FILES += PiVideo.c
+SOURCE_FILES += PiNotifications.c
+SOURCE_FILES += PiShortcuts.c
 SOURCE_FILES += SdlPrinter.c
 SOURCE_FILES += SdlUart.c
 SOURCE_FILES += SdlDialog.c
@@ -124,9 +126,7 @@ SOURCE_FILES += SdlEvent.c
 SOURCE_FILES += SdlTimer.c
 SOURCE_FILES += SdlSound.c
 SOURCE_FILES += SdlThread.c
-SOURCE_FILES += SdlNotifications.c
 SOURCE_FILES += SdlVideoIn.c
-SOURCE_FILES += SdlShortcuts.c
 SOURCE_FILES += SdlMouse.c
 SOURCE_FILES += SdlCdrom.c
 

@@ -110,6 +110,11 @@ void archTrap(UInt8 value)
 {
 }
 
+void archQuit()
+{
+	doQuit = 1;
+}
+
 static void handleEvent(SDL_Event* event) 
 {
 	switch (event->type) {
@@ -213,15 +218,6 @@ int main(int argc, char **argv)
 	strcat(path, DIR_SEPARATOR "bluemsx.ini");
 
 	properties = propCreate(resetProperties, 0, P_KBD_EUROPEAN, 0, "");
-	properties->video.windowSize = P_VIDEO_SIZEX1;
-	properties->video.frameSkip = 1;
-	properties->emulation.syncMethod = P_EMU_SYNCFRAMES;
-	properties->emulation.reverseEnable = 0;
-	properties->sound.chip.enableYM2413 = 0;
-	properties->sound.chip.enableY8950 = 0;
-	properties->sound.chip.enableMoonsound = 0;
-	properties->sound.stereo = 0;
-	properties->sound.masterVolume = 100;
 
 	if (resetProperties == 2) {
 		propDestroy(properties);
@@ -229,6 +225,7 @@ int main(int argc, char **argv)
 	}
 
 	video = videoCreate();
+	videoSetPalMode(video, VIDEO_PAL_FAST);
 	videoSetColors(video, properties->video.saturation,
 		properties->video.brightness,
 		properties->video.contrast, properties->video.gamma);
@@ -236,8 +233,6 @@ int main(int argc, char **argv)
 		properties->video.scanlinesPct);
 	videoSetColorSaturation(video, properties->video.colorSaturationEnable,
 		properties->video.colorSaturationWidth);
-
-//	properties->video.driver = P_VIDEO_DRVDIRECTX_VIDEO;
 
 	dpyUpdateAckEvent = archEventCreate(0);
 

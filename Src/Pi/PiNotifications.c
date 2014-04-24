@@ -1,19 +1,18 @@
 /*****************************************************************************
-** $Source: /cygdrive/d/Private/_SVNROOT/bluemsx/blueMSX/Src/Sdl/SdlShortcuts.h,v $
 **
-** $Revision: 1.4 $
+** Blueberry Pi
+** https://github.com/Melllvar/Blueberry-Pi
 **
-** $Date: 2008-03-30 18:38:45 $
-**
-** More info: http://www.bluemsx.com
+** An MSX Emulator for Raspberry Pi based on blueMSX
 **
 ** Copyright (C) 2003-2006 Daniel Vik
+** Copyright (C) 2014 Akop Karapetyan
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -25,22 +24,27 @@
 **
 ******************************************************************************
 */
-#ifndef SDL_SHORTCUTS_H
-#define SDL_SHORTCUTS_H
 
+#include "ArchNotifications.h"
+#include <stdlib.h>
 
-#define HOTKEY_TYPE_NONE     0
-#define HOTKEY_TYPE_KEYBOARD 1
-#define HOTKEY_TYPE_JOYSTICK 2
+void* archScreenCapture(ScreenCaptureType type, int* bitmapSize, int onlyBmp) { return NULL; }
 
+void archUpdateEmuDisplayConfig() {}
 
-typedef struct Shortcuts Shortcuts;
+void archDiskQuickChangeNotify() {}
 
-void shortcutsSetDirectory(char* directory);
+void archThemeSetNext() {}
+void archThemeUpdate(struct Theme* theme) {}
 
-Shortcuts* shortcutsCreate();
-void shortcutsDestroy(Shortcuts* shortcuts);
-void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym);
-void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym);
+void archVideoOutputChange() {}
+void archMinimizeMainWindow() {}
 
-#endif
+int archGetFramesPerSecond() { return 60; }
+
+void* archWindowCreate(struct Theme* theme, int childWindow) { return NULL; }
+void archWindowStartMove() {}
+void archWindowMove() {}
+void archWindowEndMove() {}
+
+void archVideoCaptureSave() {}

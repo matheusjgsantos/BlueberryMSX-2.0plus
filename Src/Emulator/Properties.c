@@ -478,6 +478,22 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->filehistory.videocap[0]  = 0;
     properties->filehistory.count        = 10;
 #endif
+
+#ifdef RASPI
+    // Set Raspberry Pi-specific defaults
+    properties->video.windowSize = P_VIDEO_SIZEX1;
+    properties->video.frameSkip = 1;
+    properties->video.driver = P_VIDEO_DRVDIRECTX_VIDEO;
+    properties->video.monitorType = P_VIDEO_PALNONE;
+    properties->video.horizontalStretch = 0;
+    properties->emulation.syncMethod = P_EMU_SYNCFRAMES;
+    properties->emulation.reverseEnable = 0;
+    properties->sound.chip.enableYM2413 = 0;
+    properties->sound.chip.enableY8950 = 0;
+    properties->sound.chip.enableMoonsound = 0;
+    properties->sound.stereo = 0;
+    properties->sound.masterVolume = 100;
+#endif
 }
 
 #define ROOT_ELEMENT "config"

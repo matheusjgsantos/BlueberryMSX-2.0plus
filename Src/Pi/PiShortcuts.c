@@ -1,19 +1,18 @@
 /*****************************************************************************
-** $Source: /cygdrive/d/Private/_SVNROOT/bluemsx/blueMSX/Src/Sdl/SdlShortcuts.c,v $
 **
-** $Revision: 1.7 $
+** Blueberry Pi
+** https://github.com/Melllvar/Blueberry-Pi
 **
-** $Date: 2008-03-30 18:38:45 $
-**
-** More info: http://www.bluemsx.com
+** An MSX Emulator for Raspberry Pi based on blueMSX
 **
 ** Copyright (C) 2003-2006 Daniel Vik
+** Copyright (C) 2014 Akop Karapetyan
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -25,7 +24,8 @@
 **
 ******************************************************************************
 */
-#include "SdlShortcuts.h"
+
+#include "PiShortcuts.h"
 #include <SDL.h>
 #include "IniFileParser.h"
 #include "StrcmpNoCase.h"
@@ -37,50 +37,54 @@ typedef struct {
     unsigned type : 4;
     unsigned mods : 12;
     unsigned key  : 16;
-} ShotcutHotkey;
+} ShortcutHotkey;
+
+static const ShortcutHotkey quitHotKey = {
+    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F12,
+};
 
 struct Shortcuts {
-    ShotcutHotkey quit;
-    ShotcutHotkey fdcTiming;
-    ShotcutHotkey spritesEnable;
-    ShotcutHotkey switchMsxAudio;
-    ShotcutHotkey switchFront;
-    ShotcutHotkey switchPause;
-    ShotcutHotkey captureAudio;
-    ShotcutHotkey captureScreenshot;
-    ShotcutHotkey cpuStateQuickLoad;
-    ShotcutHotkey cpuStateQuickSave;
+    ShortcutHotkey quit;
+    ShortcutHotkey fdcTiming;
+    ShortcutHotkey spritesEnable;
+    ShortcutHotkey switchMsxAudio;
+    ShortcutHotkey switchFront;
+    ShortcutHotkey switchPause;
+    ShortcutHotkey captureAudio;
+    ShortcutHotkey captureScreenshot;
+    ShortcutHotkey cpuStateQuickLoad;
+    ShortcutHotkey cpuStateQuickSave;
 
-    ShotcutHotkey cartRemove[2];
-    ShotcutHotkey cartAutoReset;
+    ShortcutHotkey cartRemove[2];
+    ShortcutHotkey cartAutoReset;
 
-    ShotcutHotkey diskQuickChange;
-    ShotcutHotkey diskRemove[2];
-    ShotcutHotkey diskAutoReset;
+    ShortcutHotkey diskQuickChange;
+    ShortcutHotkey diskRemove[2];
+    ShortcutHotkey diskAutoReset;
 
-    ShotcutHotkey casRewind;
-    ShotcutHotkey casRemove;
-    ShotcutHotkey casToggleReadonly;
-    ShotcutHotkey casAutoRewind;
-    ShotcutHotkey casSave;
+    ShortcutHotkey casRewind;
+    ShortcutHotkey casRemove;
+    ShortcutHotkey casToggleReadonly;
+    ShortcutHotkey casAutoRewind;
+    ShortcutHotkey casSave;
 
-    ShotcutHotkey emulationRunPause;
-    ShotcutHotkey emulationStop;
-    ShotcutHotkey emuSpeedFull;
-    ShotcutHotkey emuSpeedNormal;
-    ShotcutHotkey emuSpeedInc;
-    ShotcutHotkey emuSpeedDec;
-    ShotcutHotkey emuSpeedToggle;
-    ShotcutHotkey resetSoft;
-    ShotcutHotkey resetHard;
-    ShotcutHotkey resetClean;
-    ShotcutHotkey volumeIncrease;
-    ShotcutHotkey volumeDecrease;
-    ShotcutHotkey volumeMute;
-    ShotcutHotkey volumeStereo;
-    ShotcutHotkey windowSizeNormal;
-    ShotcutHotkey windowSizeFullscreen;
-    ShotcutHotkey windowSizeFullscreenToggle;
+    ShortcutHotkey emulationRunPause;
+    ShortcutHotkey emulationStop;
+    ShortcutHotkey emuSpeedFull;
+    ShortcutHotkey emuSpeedNormal;
+    ShortcutHotkey emuSpeedInc;
+    ShortcutHotkey emuSpeedDec;
+    ShortcutHotkey emuSpeedToggle;
+    ShortcutHotkey resetSoft;
+    ShortcutHotkey resetHard;
+    ShortcutHotkey resetClean;
+    ShortcutHotkey volumeIncrease;
+    ShortcutHotkey volumeDecrease;
+    ShortcutHotkey volumeMute;
+    ShortcutHotkey volumeStereo;
+    ShortcutHotkey windowSizeNormal;
+    ShortcutHotkey windowSizeFullscreen;
+    ShortcutHotkey windowSizeFullscreenToggle;
 
     struct {
         int maxSpeedIsSet;
@@ -120,7 +124,7 @@ static int stringToMod(const char* name)
     return 0;
 }
 
-static void loadShortcut(IniFile *iniFile, char* name, ShotcutHotkey* hotkey)
+static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 {
     char buffer[512];
     char* token;
@@ -219,7 +223,7 @@ void shortcutsDestroy(Shortcuts* shortcuts)
 
 void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym)
 {
-    ShotcutHotkey key = { type, mods, keySym };
+    ShortcutHotkey key = { type, mods, keySym };
 
     if (HOTKEY_EQ(key, s->emuSpeedFull)) {
         if (s->state.maxSpeedIsSet == 0) {
@@ -231,12 +235,14 @@ void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym)
 
 void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
 {
-    ShotcutHotkey key = { type, mods, keySym };
+    ShortcutHotkey key = { type, mods, keySym };
 
     if (s->state.maxSpeedIsSet) {
         actionMaxSpeedRelease();
         s->state.maxSpeedIsSet = 0;
     }
+
+    if (HOTKEY_EQ(key, quitHotKey)) actionQuit();
 
     if (HOTKEY_EQ(key, s->quit))                         actionQuit();
     if (HOTKEY_EQ(key, s->fdcTiming))                    actionToggleFdcTiming();
