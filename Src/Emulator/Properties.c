@@ -481,6 +481,7 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
 
 #ifdef RASPI
     // Set Raspberry Pi-specific defaults
+    strcpy(properties->emulation.machineName, "MSX2 - C-BIOS");
     properties->video.windowSize = P_VIDEO_SIZEX1;
     properties->video.frameSkip = 1;
     properties->video.driver = P_VIDEO_DRVDIRECTX_VIDEO;

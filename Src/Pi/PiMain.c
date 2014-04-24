@@ -49,7 +49,7 @@
 #include "ArchSound.h"
 #include "ArchNotifications.h"
 #include "JoystickPort.h"
-#include "SdlShortcuts.h"
+#include "PiShortcuts.h"
 #include "PiVideo.h"
 
 #define EVENT_UPDATE_DISPLAY 2
