@@ -33,6 +33,8 @@
 
 static char shortcutsDir[512];
 
+extern Properties *properties;
+
 typedef struct {
     unsigned type : 4;
     unsigned mods : 12;
@@ -41,6 +43,18 @@ typedef struct {
 
 static const ShortcutHotkey quitHotKey = {
     HOTKEY_TYPE_KEYBOARD, 0, SDLK_F12,
+};
+static const ShortcutHotkey disableFrameskipHotKey = {
+    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F11,
+};
+static const ShortcutHotkey lowFrameskipHotKey = {
+    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F10,
+};
+static const ShortcutHotkey mediumFrameskipHotKey = {
+    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F9,
+};
+static const ShortcutHotkey highFrameskipHotKey = {
+    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F8,
 };
 
 struct Shortcuts {
@@ -243,6 +257,19 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
     }
 
     if (HOTKEY_EQ(key, quitHotKey)) actionQuit();
+
+    if (HOTKEY_EQ(key, disableFrameskipHotKey)) {
+        properties->video.frameSkip = 0;
+    }
+    if (HOTKEY_EQ(key, lowFrameskipHotKey)) {
+        properties->video.frameSkip = 1;
+    }
+    if (HOTKEY_EQ(key, mediumFrameskipHotKey)) {
+        properties->video.frameSkip = 2;
+    }
+    if (HOTKEY_EQ(key, highFrameskipHotKey)) {
+        properties->video.frameSkip = 3;
+    }
 
     if (HOTKEY_EQ(key, s->quit))                         actionQuit();
     if (HOTKEY_EQ(key, s->fdcTiming))                    actionToggleFdcTiming();

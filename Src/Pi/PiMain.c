@@ -42,6 +42,7 @@
 #include "Board.h"
 #include "Emulator.h"
 #include "FileHistory.h"
+#include "InputEvent.h"
 #include "Actions.h"
 #include "Language.h"
 #include "LaunchFile.h"
@@ -66,6 +67,9 @@ static int doQuit = 0;
 
 static int pendingDisplayEvents = 0;
 static void *dpyUpdateAckEvent = NULL;
+
+#define JOYSTICK_COUNT 2
+static SDL_Joystick *joysticks[JOYSTICK_COUNT];
 
 int archUpdateEmuDisplay(int syncMode) 
 {
@@ -125,6 +129,91 @@ static void handleEvent(SDL_Event* event)
 			archEventSet(dpyUpdateAckEvent);
 			pendingDisplayEvents--;
 			break;
+		}
+		break;
+	case SDL_JOYBUTTONDOWN:
+		if (event->jbutton.which == 0) {
+			if (event->jbutton.button == 0) {
+				inputEventSet(EC_JOY1_BUTTON1);
+			} else if (event->jbutton.button == 1) {
+				inputEventSet(EC_JOY1_BUTTON2);
+			}
+		} else if (event->jbutton.which == 1) {
+			if (event->jbutton.button == 0) {
+				inputEventSet(EC_JOY2_BUTTON1);
+			} else if (event->jbutton.button == 1) {
+				inputEventSet(EC_JOY2_BUTTON2);
+			}
+		}
+		break;
+	case SDL_JOYBUTTONUP:
+		if (event->jbutton.which == 0) {
+			if (event->jbutton.button == 0) {
+				inputEventUnset(EC_JOY1_BUTTON1);
+			} else if (event->jbutton.button == 1) {
+				inputEventUnset(EC_JOY1_BUTTON2);
+			}
+		} else if (event->jbutton.which == 1) {
+			if (event->jbutton.button == 0) {
+				inputEventUnset(EC_JOY2_BUTTON1);
+			} else if (event->jbutton.button == 1) {
+				inputEventUnset(EC_JOY2_BUTTON2);
+			}
+		}
+		break;
+	case SDL_JOYAXISMOTION:
+		if (event->jaxis.which == 0) {
+			if (event->jaxis.axis == 0) {
+				// Left/right
+				if (event->jaxis.value < -3200) {
+					inputEventSet(EC_JOY1_LEFT);
+					inputEventUnset(EC_JOY1_RIGHT);
+				} else if (event->jaxis.value > 3200) {
+					inputEventUnset(EC_JOY1_LEFT);
+					inputEventSet(EC_JOY1_RIGHT);
+				} else {
+					inputEventUnset(EC_JOY1_RIGHT);
+					inputEventUnset(EC_JOY1_LEFT);
+				}
+			} else if (event->jaxis.axis == 1) {
+				// Up/down
+				if (event->jaxis.value < -3200) {
+					inputEventSet(EC_JOY1_UP);
+					inputEventUnset(EC_JOY1_DOWN);
+				} else if (event->jaxis.value > 3200) {
+					inputEventUnset(EC_JOY1_UP);
+					inputEventSet(EC_JOY1_DOWN);
+				} else {
+					inputEventUnset(EC_JOY1_UP);
+					inputEventUnset(EC_JOY1_DOWN);
+				}
+			}
+		} else if (event->jaxis.which == 1) {
+			if (event->jaxis.axis == 0) {
+				// Left/right
+				if (event->jaxis.value < -3200) {
+					inputEventSet(EC_JOY2_LEFT);
+					inputEventUnset(EC_JOY2_RIGHT);
+				} else if (event->jaxis.value > 3200) {
+					inputEventUnset(EC_JOY2_LEFT);
+					inputEventSet(EC_JOY2_RIGHT);
+				} else {
+					inputEventUnset(EC_JOY2_RIGHT);
+					inputEventUnset(EC_JOY2_LEFT);
+				}
+			} else if (event->jaxis.axis == 1) {
+				// Up/down
+				if (event->jaxis.value < -3200) {
+					inputEventSet(EC_JOY2_UP);
+					inputEventUnset(EC_JOY2_DOWN);
+				} else if (event->jaxis.value > 3200) {
+					inputEventUnset(EC_JOY2_UP);
+					inputEventSet(EC_JOY2_DOWN);
+				} else {
+					inputEventUnset(EC_JOY2_UP);
+					inputEventUnset(EC_JOY2_DOWN);
+				}
+			}
 		}
 		break;
 	case SDL_ACTIVEEVENT:
@@ -193,6 +282,7 @@ int main(int argc, char **argv)
 
 	SDL_Init(SDL_INIT_EVERYTHING);
 	SDL_ShowCursor(SDL_DISABLE);
+	SDL_JoystickEventState(SDL_ENABLE);
 
 	SDL_Event event;
 	char szLine[8192] = "";
@@ -209,6 +299,10 @@ int main(int argc, char **argv)
 			strcat(szLine, argv[i]);
 		}
 		strcat(szLine, " ");
+	}
+
+	for (i = 0; i < JOYSTICK_COUNT; i++) {
+		joysticks[i] = SDL_JoystickOpen(i);
 	}
 
 	setDefaultPaths(archGetCurrentDirectory());

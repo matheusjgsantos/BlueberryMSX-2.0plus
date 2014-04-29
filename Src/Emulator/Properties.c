@@ -494,6 +494,14 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->sound.chip.enableMoonsound = 0;
     properties->sound.stereo = 0;
     properties->sound.masterVolume = 100;
+
+    strcpy(properties->joy1.type, "joystick");
+    properties->joy1.typeId   = JOYSTICK_PORT_JOYSTICK;
+    properties->joy1.autofire = 0;
+    
+    strcpy(properties->joy2.type, "joystick");
+    properties->joy2.typeId   = JOYSTICK_PORT_JOYSTICK;
+    properties->joy2.autofire = 0;
 #endif
 }
 
