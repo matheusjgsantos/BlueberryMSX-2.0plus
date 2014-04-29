@@ -1,7 +1,7 @@
 /*****************************************************************************
 **
-** Blueberry Pi
-** https://github.com/Melllvar/Blueberry-Pi
+** blueberryMSX
+** https://github.com/Melllvar/blueberryMSX
 **
 ** An MSX Emulator for Raspberry Pi based on blueMSX
 **
@@ -271,6 +271,9 @@ static void setDefaultPaths(const char* rootDir)
 	sprintf(buffer, "%s/Machines", rootDir);
 	archCreateDirectory(buffer);
 	machineSetDirectory(buffer);
+
+	sprintf(buffer, "%s/Media", rootDir);
+	archCreateDirectory(buffer);
 }
 
 int main(int argc, char **argv)

@@ -1,7 +1,7 @@
 /*****************************************************************************
 **
-** Blueberry Pi
-** https://github.com/Melllvar/Blueberry-Pi
+** blueberryMSX
+** https://github.com/Melllvar/blueberryMSX
 **
 ** An MSX Emulator for Raspberry Pi based on blueMSX
 ** 
