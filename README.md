@@ -3,7 +3,7 @@ blueberryMSX
 
 **blueberryMSX** is a port of [blueMSX][1] to Raspberry Pi.
 
-Emulator runs from the command line, with [same arguments as the Windows/SDL versions][2] and supports joysticks/joypads.
+Emulator runs from the command line, with [same arguments as the Windows/SDL versions][2] and supports joysticks/joypads. Because it draws directly to framebuffer, it does not need a windowing environment and can be run without X.
 
 Shortcuts:
 
