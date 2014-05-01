@@ -111,6 +111,7 @@ SOURCE_FILES  =
 
 SOURCE_FILES += PiMain.c
 SOURCE_FILES += PiVideo.c
+SOURCE_FILES += PiVideoRender.c
 SOURCE_FILES += PiNotifications.c
 SOURCE_FILES += PiShortcuts.c
 SOURCE_FILES += SdlPrinter.c
@@ -284,7 +285,6 @@ SOURCE_FILES += VideoManager.c
 SOURCE_FILES += hq2x.c 
 SOURCE_FILES += hq3x.c 
 SOURCE_FILES += Scalebit.c 
-SOURCE_FILES += VideoRender.c
 
 SOURCE_FILES += R800.c 
 SOURCE_FILES += R800Debug.c
