@@ -88,7 +88,7 @@ int archUpdateEmuDisplay(int syncMode)
 	SDL_PushEvent(&event);
 
 	if (properties->emulation.syncMethod == P_EMU_SYNCFRAMES) {
-		archEventWait(dpyUpdateAckEvent, 500);
+//		archEventWait(dpyUpdateAckEvent, 500);
 	}
 
 	return 1;
@@ -126,7 +126,7 @@ static void handleEvent(SDL_Event* event)
 		switch (event->user.code) {
 		case EVENT_UPDATE_DISPLAY:
 			piUpdateEmuDisplay();
-			archEventSet(dpyUpdateAckEvent);
+			//archEventSet(dpyUpdateAckEvent);
 			pendingDisplayEvents--;
 			break;
 		}
