@@ -41,6 +41,10 @@ CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer $(COMMON
 CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  = 
 LIBS     =  -lSDL -lz -lbcm_host -lEGL -lGLESv2
+# Comment out next 2 lines to disable GPIO
+LIBS     += -lwiringPi
+CFLAGS   += -DRASPI_GPIO
+
 TARGET   = bluemsx-pi
 
 SRCS        = $(SOURCE_FILES)
@@ -110,10 +114,12 @@ vpath % $(ROOT_DIR)/Src/Z80
 SOURCE_FILES  =
 
 SOURCE_FILES += PiMain.c
+SOURCE_FILES += PiGpio.c
 SOURCE_FILES += PiVideo.c
 SOURCE_FILES += PiVideoRender.c
 SOURCE_FILES += PiNotifications.c
 SOURCE_FILES += PiShortcuts.c
+SOURCE_FILES += PiEvent.c
 SOURCE_FILES += SdlPrinter.c
 SOURCE_FILES += SdlUart.c
 SOURCE_FILES += SdlDialog.c
@@ -123,7 +129,6 @@ SOURCE_FILES += SdlInput.c
 SOURCE_FILES += SdlEth.c
 SOURCE_FILES += SdlFile.c
 SOURCE_FILES += SdlGlob.c
-SOURCE_FILES += SdlEvent.c
 SOURCE_FILES += SdlTimer.c
 SOURCE_FILES += SdlSound.c
 SOURCE_FILES += SdlThread.c

@@ -29,12 +29,17 @@
 #include <stdio.h>
 #include <SDL.h>
 
+#ifdef RASPI_GPIO
+#include "PiGpio.h"
+#endif
+
 #include "CommandLine.h"
 #include "Properties.h"
 #include "ArchFile.h"
 #include "VideoRender.h"
 #include "AudioMixer.h"
 #include "Casette.h"
+#include "Led.h"
 #include "PrinterIO.h"
 #include "UartIO.h"
 #include "MidiIO.h"
@@ -71,7 +76,7 @@ static void *dpyUpdateAckEvent = NULL;
 #define JOYSTICK_COUNT 2
 static SDL_Joystick *joysticks[JOYSTICK_COUNT];
 
-int archUpdateEmuDisplay(int syncMode) 
+int archUpdateEmuDisplay(int syncMode)
 {
 	SDL_Event event;
 	if (pendingDisplayEvents > 1) {
@@ -119,13 +124,33 @@ void archQuit()
 	doQuit = 1;
 }
 
-static void handleEvent(SDL_Event* event) 
+static int floppy1LedOn = 0;
+static int floppy2LedOn = 0;
+
+static void updateLeds()
+{
+#ifdef RASPI_GPIO
+	int floppy1LedNow = ledGetFdd1();
+	if (floppy1LedNow != floppy1LedOn) {
+		floppy1LedOn = floppy1LedNow;
+		gpioToggleFloppyLed(0, floppy1LedOn);
+	}
+	int floppy2LedNow = ledGetFdd2();
+	if (floppy2LedNow != floppy2LedOn) {
+		floppy2LedOn = floppy2LedNow;
+		gpioToggleFloppyLed(1, floppy2LedOn);
+	}
+#endif
+}
+
+static void handleEvent(SDL_Event* event)
 {
 	switch (event->type) {
 	case SDL_USEREVENT:
 		switch (event->user.code) {
 		case EVENT_UPDATE_DISPLAY:
 			piUpdateEmuDisplay();
+			updateLeds();
 			//archEventSet(dpyUpdateAckEvent);
 			pendingDisplayEvents--;
 			break;
@@ -278,6 +303,10 @@ static void setDefaultPaths(const char* rootDir)
 
 int main(int argc, char **argv)
 {
+#ifdef RASPI_GPIO
+	gpioInit();
+#endif
+
 	if (!piInitVideo()) {
 		fprintf(stderr, "piInitVideo() failed");
 		return 1;
@@ -317,6 +346,7 @@ int main(int argc, char **argv)
 	properties = propCreate(resetProperties, 0, P_KBD_EUROPEAN, 0, "");
 
 	if (resetProperties == 2) {
+		piDestroyVideo();
 		propDestroy(properties);
 		return 0;
 	}
@@ -419,6 +449,7 @@ int main(int argc, char **argv)
 			machineDestroy(machine);
 		} else {
 			fprintf(stderr, "Error creating machine\n");
+			piDestroyVideo();
 			return 1;
 		}
 	}
@@ -432,6 +463,14 @@ int main(int argc, char **argv)
 	i = emuTryStartWithArguments(properties, szLine, NULL);
 	if (i < 0) {
 		fprintf(stderr, "Failed to parse command line\n");
+		videoDestroy(video);
+		propDestroy(properties);
+		archSoundDestroy();
+		mixerDestroy(mixer);
+
+		piDestroyVideo();
+		SDL_Quit();
+
 		return 1;
 	}
 
@@ -439,7 +478,11 @@ int main(int argc, char **argv)
 		emulatorStart(NULL);
 	}
 
-	fprintf(stderr, "Entering main loop\n");
+	fprintf(stderr, "Powering on\n");
+
+#ifdef RASPI_GPIO
+	gpioTogglePowerLed(1);
+#endif
 
 	while (!doQuit) {
 		SDL_WaitEvent(&event);
@@ -452,16 +495,19 @@ int main(int argc, char **argv)
 		} while (SDL_PollEvent(&event));
 	}
 
-	fprintf(stderr, "Exited main loop\n");
-
-	SDL_Quit();
-
 	videoDestroy(video);
 	propDestroy(properties);
 	archSoundDestroy();
 	mixerDestroy(mixer);
 
+#ifdef RASPI_GPIO
+	gpioTogglePowerLed(0);
+#endif
+
+	fprintf(stderr, "Powered off\n");
+
 	piDestroyVideo();
+	SDL_Quit();
 
 	return 0;
 }

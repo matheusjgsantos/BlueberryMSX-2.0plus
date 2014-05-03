@@ -1,43 +1,35 @@
 /*****************************************************************************
-** $Source: /cygdrive/d/Private/_SVNROOT/bluemsx/blueMSX/Src/Sdl/SdlEvent.c,v $
+** $Source: /cygdrive/d/Private/_SVNROOT/bluemsx/blueMSX/Src/Linux/blueMSXlite/LinuxEvent.c,v $
 **
 ** $Revision: 1.6 $
 **
-** $Date: 2008-03-30 18:38:45 $
+** $Date: 2008-03-31 19:42:21 $
 **
 ** More info: http://www.bluemsx.com
 **
-** Copyright (C) 2003-2006 Daniel Vik
+** Copyright (C) 2003-2004 Daniel Vikl, Tomas Karlsson
 **
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
-** 
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU General Public License for more details.
+**  This software is provided 'as-is', without any express or implied
+**  warranty.  In no event will the authors be held liable for any damages
+**  arising from the use of this software.
 **
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+**  Permission is granted to anyone to use this software for any purpose,
+**  including commercial applications, and to alter it and redistribute it
+**  freely, subject to the following restrictions:
+**
+**  1. The origin of this software must not be misrepresented; you must not
+**     claim that you wrote the original software. If you use this software
+**     in a product, an acknowledgment in the product documentation would be
+**     appreciated but is not required.
+**  2. Altered source versions must be plainly marked as such, and must not be
+**     misrepresented as being the original software.
+**  3. This notice may not be removed or altered from any source distribution.
 **
 ******************************************************************************
 */
 #include "ArchEvent.h"
-#include <SDL.h>
+#include <semaphore.h>
 #include <stdlib.h>
-
-#ifdef SINGLE_THREADED
-
-// No semaphores needed in single threaded version
-void* archEventCreate(int initState) { return NULL; }
-void archEventDestroy(void* event) {}
-void archEventSet(void* event) {}
-void archEventWait(void* event, int timeout) {}
-
-#else
 
 typedef struct {
     void* eventSem;
@@ -78,18 +70,15 @@ void archEventWait(void* event, int timeout)
     e->state = 0;
 }
 
-#endif
-
-
 typedef struct {
-    SDL_sem* semaphore;
+    sem_t semaphore;
 } Semaphore;
 
 void* archSemaphoreCreate(int initCount) 
 { 
     Semaphore* s = (Semaphore*)malloc(sizeof(Semaphore));
 
-    s->semaphore = SDL_CreateSemaphore(initCount);
+    sem_init(&s->semaphore, 0, initCount);
 
     return s;
 }
@@ -98,7 +87,7 @@ void archSemaphoreDestroy(void* semaphore)
 {
     Semaphore* s = (Semaphore*)semaphore;
 
-    SDL_DestroySemaphore(s->semaphore);
+    sem_destroy(&s->semaphore);
     free(s);
 }
 
@@ -106,12 +95,12 @@ void archSemaphoreSignal(void* semaphore)
 {
     Semaphore* s = (Semaphore*)semaphore;
 
-    SDL_SemPost(s->semaphore);
+    sem_post(&s->semaphore);
 }
 
 void archSemaphoreWait(void* semaphore, int timeout) 
 {
     Semaphore* s = (Semaphore*)semaphore;
 
-    while (-1 == SDL_SemWait(s->semaphore));
+    while (-1 == sem_wait(&s->semaphore));
 }
