@@ -190,6 +190,8 @@ int piInitVideo()
 		return 0;
 	}
 
+	fprintf(stderr, "Width/height: %d/%d\n", screenWidth, screenHeight);
+
 	VC_RECT_T dstRect;
 	dstRect.x = 0;
 	dstRect.y = 0;
@@ -213,11 +215,15 @@ int piInitVideo()
 	nativeWindow.height = screenHeight;
 	vc_dispmanx_update_submit_sync(dispmanUpdate);
 
+	fprintf(stderr, "Initializing window surface...\n");
+
 	surface = eglCreateWindowSurface(display, config, &nativeWindow, NULL);
 	if (surface == EGL_NO_SURFACE) {
 		fprintf(stderr, "eglCreateWindowSurface() failed: EGL_NO_SURFACE\n");
 		return 0;
 	}
+
+	fprintf(stderr, "Connecting context to surface...\n");
 
 	// connect the context to the surface
 	result = eglMakeCurrent(display, surface, surface, context);
@@ -226,6 +232,8 @@ int piInitVideo()
 		return 0;
 	}
 
+	fprintf(stderr, "Initializing shaders...\n");
+
 	// Init shader resources
 	memset(&shader, 0, sizeof(ShaderInfo));
 	shader.program = createProgram(vertexShaderSrc, fragmentShaderSrc);
@@ -233,6 +241,8 @@ int piInitVideo()
 		fprintf(stderr, "createProgram() failed\n");
 		return 0;
 	}
+
+	fprintf(stderr, "Initializing textures/buffers...\n");
 
 	shader.a_position	= glGetAttribLocation(shader.program,	"a_position");
 	shader.a_texcoord	= glGetAttribLocation(shader.program,	"a_texcoord");
@@ -274,15 +284,20 @@ int piInitVideo()
 	setOrtho(projection, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f,
 		sx * zoom, sy * zoom);
 
+	fprintf(stderr, "Setting up screen...\n");
+
 	msxScreenPitch = WIDTH * BIT_DEPTH / 8;
 	msxScreen = (char*)calloc(1, BIT_DEPTH / 8 * TEX_WIDTH * TEX_HEIGHT);
 	if (!msxScreen) {
+		fprintf(stderr, "Error allocating screen texture\n");
 		return 0;
 	}
 
+	fprintf(stderr, "Initializing SDL video...\n");
+
 	// We're doing our own video rendering - this is just so SDL-based keyboard
 	// can work
-	sdlScreen = SDL_SetVideoMode(0, 0, 32, SDL_SWSURFACE);
+	sdlScreen = SDL_SetVideoMode(0, 0, 0, 0);
 
 	return 1;
 }
@@ -304,10 +319,12 @@ void piDestroyVideo()
 	}
 
 	// Release OpenGL resources
-	eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-	eglDestroySurface(display, surface);
-	eglDestroyContext(display, context);
-	eglTerminate(display);
+	if (display) {
+		eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+		eglDestroySurface(display, surface);
+		eglDestroyContext(display, context);
+		eglTerminate(display);
+	}
 
 	bcm_host_deinit();
 }

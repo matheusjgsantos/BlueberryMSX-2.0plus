@@ -30,8 +30,8 @@
 #ifdef RASPI_GPIO
 
 void gpioInit();
-void gpioTogglePowerLed(int on);
-void gpioToggleFloppyLed(int floppy, int on);
+void gpioUpdateLeds();
+void gpioShutdown();
 
 #endif // RASPI_GPIO
 

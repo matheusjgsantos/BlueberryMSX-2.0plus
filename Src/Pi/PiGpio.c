@@ -28,33 +28,68 @@
 #include <stdio.h>
 
 #include <wiringPi.h>
+#include <wiringShift.h>
 
 #include "Led.h"
 
 #ifdef RASPI_GPIO
 
-#define POWER_LED   0 // #17
-#define FLOPPY1_LED 2 // 1:21-2:27
-#define FLOPPY2_LED 3 // #22
+#define CLOCK 0
+#define LATCH 2
+#define DATA  3
+
+#define POWER 0x80
+#define FDD0  0x40
+#define FDD1  0x20
+
+static int ledBitMap = 0;
+
+static void gpioShiftLeds();
 
 void gpioInit()
 {
 	wiringPiSetup();
-	pinMode(POWER_LED, OUTPUT) ;
 
-	digitalWrite(POWER_LED,   LOW);
-	digitalWrite(FLOPPY1_LED, LOW);
-	digitalWrite(FLOPPY2_LED, LOW);
+	pinMode(CLOCK, OUTPUT) ;
+	pinMode(LATCH, OUTPUT) ;
+	pinMode(DATA,  OUTPUT) ;
+
+	ledBitMap = POWER;
+	gpioShiftLeds();
 }
 
-void gpioTogglePowerLed(int on)
+void gpioShutdown()
 {
-	digitalWrite(POWER_LED, on ? HIGH : LOW);
+	ledBitMap = 0;
+	gpioShiftLeds();
 }
 
-void gpioToggleFloppyLed(int floppy, int on)
+void gpioUpdateLeds()
 {
-	digitalWrite(floppy == 0 ? FLOPPY1_LED : FLOPPY2_LED, on ? HIGH : LOW);
+	int oldBitMap = ledBitMap;
+
+	if (ledGetFdd1()) {
+		ledBitMap |= FDD0;
+	} else {
+		ledBitMap &= ~FDD0;
+	}
+
+	if (ledGetFdd2()) {
+		ledBitMap |= FDD1;
+	} else {
+		ledBitMap &= ~FDD1;
+	}
+
+	if (oldBitMap != ledBitMap) {
+		gpioShiftLeds();
+	}
+}
+
+static void gpioShiftLeds()
+{
+	digitalWrite(LATCH, LOW);
+	shiftOut(DATA, CLOCK, LSBFIRST, ledBitMap);
+	digitalWrite(LATCH, HIGH);
 }
 
 #endif

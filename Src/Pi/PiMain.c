@@ -70,6 +70,7 @@ static Mixer *mixer;
 static Shortcuts* shortcuts;
 static int doQuit = 0;
 
+static long displayUpdates = 0;
 static int pendingDisplayEvents = 0;
 static void *dpyUpdateAckEvent = NULL;
 
@@ -149,6 +150,11 @@ static void handleEvent(SDL_Event* event)
 	case SDL_USEREVENT:
 		switch (event->user.code) {
 		case EVENT_UPDATE_DISPLAY:
+			if (displayUpdates++ == 0) {
+				// Prevent joystick sticking
+				inputEventReset();
+			}
+
 			piUpdateEmuDisplay();
 			updateLeds();
 			//archEventSet(dpyUpdateAckEvent);
@@ -157,100 +163,22 @@ static void handleEvent(SDL_Event* event)
 		}
 		break;
 	case SDL_JOYBUTTONDOWN:
-		if (event->jbutton.which == 0) {
-			if (event->jbutton.button == 0) {
-				inputEventSet(EC_JOY1_BUTTON1);
-			} else if (event->jbutton.button == 1) {
-				inputEventSet(EC_JOY1_BUTTON2);
-			}
-		} else if (event->jbutton.which == 1) {
-			if (event->jbutton.button == 0) {
-				inputEventSet(EC_JOY2_BUTTON1);
-			} else if (event->jbutton.button == 1) {
-				inputEventSet(EC_JOY2_BUTTON2);
-			}
-		}
-		break;
 	case SDL_JOYBUTTONUP:
-		if (event->jbutton.which == 0) {
-			if (event->jbutton.button == 0) {
-				inputEventUnset(EC_JOY1_BUTTON1);
-			} else if (event->jbutton.button == 1) {
-				inputEventUnset(EC_JOY1_BUTTON2);
-			}
-		} else if (event->jbutton.which == 1) {
-			if (event->jbutton.button == 0) {
-				inputEventUnset(EC_JOY2_BUTTON1);
-			} else if (event->jbutton.button == 1) {
-				inputEventUnset(EC_JOY2_BUTTON2);
-			}
-		}
+		joystickButtonUpdate(event);
 		break;
 	case SDL_JOYAXISMOTION:
-		if (event->jaxis.which == 0) {
-			if (event->jaxis.axis == 0) {
-				// Left/right
-				if (event->jaxis.value < -3200) {
-					inputEventSet(EC_JOY1_LEFT);
-					inputEventUnset(EC_JOY1_RIGHT);
-				} else if (event->jaxis.value > 3200) {
-					inputEventUnset(EC_JOY1_LEFT);
-					inputEventSet(EC_JOY1_RIGHT);
-				} else {
-					inputEventUnset(EC_JOY1_RIGHT);
-					inputEventUnset(EC_JOY1_LEFT);
-				}
-			} else if (event->jaxis.axis == 1) {
-				// Up/down
-				if (event->jaxis.value < -3200) {
-					inputEventSet(EC_JOY1_UP);
-					inputEventUnset(EC_JOY1_DOWN);
-				} else if (event->jaxis.value > 3200) {
-					inputEventUnset(EC_JOY1_UP);
-					inputEventSet(EC_JOY1_DOWN);
-				} else {
-					inputEventUnset(EC_JOY1_UP);
-					inputEventUnset(EC_JOY1_DOWN);
-				}
-			}
-		} else if (event->jaxis.which == 1) {
-			if (event->jaxis.axis == 0) {
-				// Left/right
-				if (event->jaxis.value < -3200) {
-					inputEventSet(EC_JOY2_LEFT);
-					inputEventUnset(EC_JOY2_RIGHT);
-				} else if (event->jaxis.value > 3200) {
-					inputEventUnset(EC_JOY2_LEFT);
-					inputEventSet(EC_JOY2_RIGHT);
-				} else {
-					inputEventUnset(EC_JOY2_RIGHT);
-					inputEventUnset(EC_JOY2_LEFT);
-				}
-			} else if (event->jaxis.axis == 1) {
-				// Up/down
-				if (event->jaxis.value < -3200) {
-					inputEventSet(EC_JOY2_UP);
-					inputEventUnset(EC_JOY2_DOWN);
-				} else if (event->jaxis.value > 3200) {
-					inputEventUnset(EC_JOY2_UP);
-					inputEventSet(EC_JOY2_DOWN);
-				} else {
-					inputEventUnset(EC_JOY2_UP);
-					inputEventUnset(EC_JOY2_DOWN);
-				}
-			}
-		}
-		break;
-	case SDL_ACTIVEEVENT:
-		if (event->active.state & SDL_APPINPUTFOCUS) {
-			keyboardSetFocus(1, event->active.gain);
-		}
+		joystickAxisUpdate(event);
 		break;
 	case SDL_KEYDOWN:
-		shortcutCheckDown(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
+		keyboardUpdate(event);
+		shortcutCheckDown(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
 		break;
 	case SDL_KEYUP:
-		shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
+		keyboardUpdate(event);
+		shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
+		break;
+	case SDL_ACTIVEEVENT:
+		inputEventReset();
 		break;
 	}
 }
@@ -284,10 +212,6 @@ static void setDefaultPaths(const char* rootDir)
 	sprintf(buffer, "%s/Databases", rootDir);
 	archCreateDirectory(buffer);
 	mediaDbLoad(buffer);
-
-	sprintf(buffer, "%s/Keyboard Config", rootDir);
-	archCreateDirectory(buffer);
-	keyboardSetDirectory(buffer);
 
 	sprintf(buffer, "%s/Shortcut Profiles", rootDir);
 	archCreateDirectory(buffer);
