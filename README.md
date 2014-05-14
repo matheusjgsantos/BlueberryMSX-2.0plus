@@ -14,9 +14,22 @@ Shortcuts:
 Current Status
 --------------
 
-Emulator performs best at 900MHz (Medium overclock setting in `raspi-config`). Default configuration uses `frameskip=1`, though most MSX1/PSG games are more or less fluid with `frameskip=0`.
+Emulator performs best at 900MHz (Medium overclock setting in `raspi-config`). At this speed, most games run smoothly at full framerate; however certain SCC games (including Metal Gear 2) stutter unless run at `frameskip=1`.
 
-By default, MoonSound, MSX Audio, and MSX Music are disabled, and there are no plans to get these working. SCC-based games stutter, though mostly fine with a frameskip setting of 1 or 2.
+By default, MoonSound, MSX Audio, and MSX Music are disabled, and there are no plans to get these working.
+
+GPIO
+----
+
+blueberryMSX can be compiled to take advantage of Raspberry Pi's GPIO pins. For now this is limited to dedicated LED's for MSX Power, and FDD0/FDD1 activity. See the schematic in [Doc/GPIO_schema.png] (/Doc/GPIO_schema.png).
+
+To compile with GPIO support:
+
+1. Download and install the [wiringPi library] (http://wiringpi.com/download-and-install/)
+2. Include the `wiringPi` library when linking: `LIBS += -lwiringPi` (line 45 in the [Makefile] (/Makefile))
+3. Add the `RASPI_GPIO` macro to the list of flags: `CFLAGS += -DRASPI_GPIO` (line 46)
+
+Note that the executables compiled with `RASPI_GPIO` **require superuser privileges to run** (e.g. `sudo bluemsx-pi`).
 
 Current Goals
 ------------

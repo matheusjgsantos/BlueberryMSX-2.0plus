@@ -41,8 +41,8 @@ CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer $(COMMON
 CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  = 
 LIBS     =  -lSDL -lz -lbcm_host -lEGL -lGLESv2
-# Comment out next 2 lines to disable GPIO
-LIBS     += -lwiringPi
+# Uncomment next 2 lines to enable GPIO (requires wiring-pi library)
+#LIBS     += -lwiringPi
 #CFLAGS   += -DRASPI_GPIO
 
 TARGET   = bluemsx-pi
