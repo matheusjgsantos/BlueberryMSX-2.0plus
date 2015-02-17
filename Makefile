@@ -40,7 +40,7 @@ COMMON_FLAGS = -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMB
 CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer $(COMMON_FLAGS)
 CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  = 
-LIBS     =  -lSDL -lz -lbcm_host -lEGL -lGLESv2
+LIBS     =  -lSDL -lz -lbcm_host -lEGL -lGLESv2 -lpthread
 # Uncomment next 2 lines to enable GPIO (requires wiring-pi library)
 #LIBS     += -lwiringPi
 #CFLAGS   += -DRASPI_GPIO
