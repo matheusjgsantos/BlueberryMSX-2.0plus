@@ -40,10 +40,13 @@ COMMON_FLAGS = -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMB
 CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer $(COMMON_FLAGS)
 CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  = 
-LIBS     =  -lSDL -lz -lbcm_host -lEGL -lGLESv2
-# Uncomment next 2 lines to enable GPIO (requires wiring-pi library)
-#LIBS     += -lwiringPi
+LIBS     =  -lSDL -lz -lbcm_host -lEGL -lGLESv2 -lpthread
+# Uncomment the following line to enable GPIO (requires wiring-pi)
 #CFLAGS   += -DRASPI_GPIO
+
+ifdef RASPI_GPIO
+LIBS     += -lwiringPi
+endif
 
 TARGET   = bluemsx-pi
 
@@ -114,7 +117,9 @@ vpath % $(ROOT_DIR)/Src/Z80
 SOURCE_FILES  =
 
 SOURCE_FILES += PiMain.c
+ifdef RASPI_GPIO
 SOURCE_FILES += PiGpio.c
+endif
 SOURCE_FILES += PiVideo.c
 SOURCE_FILES += PiVideoRender.c
 SOURCE_FILES += PiNotifications.c

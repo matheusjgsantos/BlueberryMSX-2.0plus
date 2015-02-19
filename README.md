@@ -18,16 +18,18 @@ Emulator performs best at 900MHz (Medium overclock setting in `raspi-config`). A
 
 By default, MoonSound, MSX Audio, and MSX Music are disabled, and there are no plans to get these working.
 
-GPIO
-----
+Building
+--------
+To build blueberryMSX, install libSDL:
 
-blueberryMSX can be compiled to take advantage of Raspberry Pi's GPIO pins. For now this is limited to dedicated LED's for MSX Power, and FDD0/FDD1 activity. See the schematic in [Doc/GPIO_schema.png] (/Doc/GPIO_schema.png).
+`sudo apt-get install libsdl-dev`
 
 To compile with GPIO support:
 
 1. Download and install the [wiringPi library] (http://wiringpi.com/download-and-install/)
-2. Include the `wiringPi` library when linking: `LIBS += -lwiringPi` (line 45 in the [Makefile] (/Makefile))
-3. Add the `RASPI_GPIO` macro to the list of flags: `CFLAGS += -DRASPI_GPIO` (line 46)
+2. Add the `RASPI_GPIO` macro to the list of flags: `CFLAGS += -DRASPI_GPIO` by uncommenting line 45
+
+For now, GPIO is limited to dedicated LED's for MSX Power, and FDD0/FDD1 activity. See the schematic in [Doc/GPIO_schema.png] (/Doc/GPIO_schema.png).
 
 Note that the executables compiled with `RASPI_GPIO` **require superuser privileges to run** (e.g. `sudo bluemsx-pi`).
 
