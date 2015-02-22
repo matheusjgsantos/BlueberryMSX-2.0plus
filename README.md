@@ -17,7 +17,12 @@ Current Status
 On the original Raspberry Pi, the emulator performs best at 900MHz (Medium overclock setting in `raspi-config`). On Raspberry Pi 2, it runs full speed on the factory setting.
 By default, MoonSound, MSX Audio, and MSX Music are disabled.
 
-Building
+Download
+--------
+
+[Version 0.5](https://github.com/pokebyte/blueberryMSX/releases/tag/v0.5) is the latest.
+
+Build
 --------
 To build blueberryMSX, install libSDL:
 
