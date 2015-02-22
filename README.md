@@ -14,9 +14,8 @@ Shortcuts:
 Current Status
 --------------
 
-Emulator performs best at 900MHz (Medium overclock setting in `raspi-config`). At this speed, most games run smoothly at full framerate; however certain SCC games (including Metal Gear 2) stutter unless run at `frameskip=1`.
-
-By default, MoonSound, MSX Audio, and MSX Music are disabled, and there are no plans to get these working.
+On the original Raspberry Pi, the emulator performs best at 900MHz (Medium overclock setting in `raspi-config`). On Raspberry Pi 2, it runs full speed on the factory setting.
+By default, MoonSound, MSX Audio, and MSX Music are disabled.
 
 Building
 --------
@@ -37,7 +36,6 @@ Current Goals
 ------------
 
 * Add a simple game selection screen
-* Get games running at full framerate, including those utilizing SCC
 
 [1]: http://bluemsx.com/
 [2]: http://www.msxblue.com/manual/commandlineargs_c.htm
