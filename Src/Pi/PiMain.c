@@ -287,7 +287,10 @@ int main(int argc, char **argv)
 
 	dpyUpdateAckEvent = archEventCreate(0);
 
-	keyboardInit();
+	keyboardInit(properties);
+
+	// Larger buffers cause sound delay
+	properties->sound.bufSize = 40;
 
 	mixer = mixerCreate();
 	for (i = 0; i < MIXER_CHANNEL_TYPE_COUNT; i++) {
