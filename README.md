@@ -20,7 +20,7 @@ By default, MoonSound, MSX Audio, and MSX Music are disabled.
 Download
 --------
 
-[Version 0.5](https://github.com/pokebyte/blueberryMSX/releases/tag/v0.5) is the latest.
+[Version 0.6](https://github.com/pokebyte/blueberryMSX/releases/tag/v0.6) is the latest.
 
 Build
 --------
