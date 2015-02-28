@@ -1,5 +1,6 @@
 blueberryMSX
 ============
+![blueberryMSX](http://i.imgur.com/Tnq9vSY.png "blueberry")
 
 **blueberryMSX** is a port of [blueMSX][1] to Raspberry Pi.
 
