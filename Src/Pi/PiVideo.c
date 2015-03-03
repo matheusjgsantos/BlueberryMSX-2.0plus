@@ -78,8 +78,8 @@ static EGLDisplay display = NULL;
 static EGLSurface surface = NULL;
 static EGLContext context = NULL;
 
-static uint32_t screenWidth = 0;
-static uint32_t screenHeight = 0;
+uint32_t screenWidth = 0;
+uint32_t screenHeight = 0;
 
 static ShaderInfo shader;
 static GLuint buffers[3];

@@ -144,6 +144,9 @@ static void updateLeds()
 #endif
 }
 
+extern uint32_t screenWidth;
+extern uint32_t screenHeight;
+
 static void handleEvent(SDL_Event* event)
 {
 	switch (event->type) {
@@ -151,6 +154,9 @@ static void handleEvent(SDL_Event* event)
 		switch (event->user.code) {
 		case EVENT_UPDATE_DISPLAY:
 			if (displayUpdates++ == 0) {
+				piMouseInit();
+				piMouseSetCaptureRect(0, 0, screenWidth, screenHeight);
+				
 				// Prevent joystick sticking
 				inputEventReset();
 			}
@@ -179,6 +185,13 @@ static void handleEvent(SDL_Event* event)
 		break;
 	case SDL_ACTIVEEVENT:
 		inputEventReset();
+		break;
+	case SDL_MOUSEBUTTONDOWN:
+	case SDL_MOUSEBUTTONUP:
+		piMouseButton(event->button.button, event->button.state);
+		break;
+	case SDL_MOUSEMOTION:
+		piMouseMove(event->motion.x, event->motion.y);
 		break;
 	}
 }

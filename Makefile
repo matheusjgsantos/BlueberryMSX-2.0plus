@@ -126,6 +126,7 @@ SOURCE_FILES += PiNotifications.c
 SOURCE_FILES += PiShortcuts.c
 SOURCE_FILES += PiEvent.c
 SOURCE_FILES += PiInput.c
+SOURCE_FILES += PiMouse.c
 SOURCE_FILES += SdlPrinter.c
 SOURCE_FILES += SdlUart.c
 SOURCE_FILES += SdlDialog.c
@@ -138,7 +139,6 @@ SOURCE_FILES += SdlTimer.c
 SOURCE_FILES += SdlSound.c
 SOURCE_FILES += SdlThread.c
 SOURCE_FILES += SdlVideoIn.c
-SOURCE_FILES += SdlMouse.c
 SOURCE_FILES += SdlCdrom.c
 
 SOURCE_FILES += Patch.c 
