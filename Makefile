@@ -40,7 +40,7 @@ COMMON_FLAGS = -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMB
 CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer $(COMMON_FLAGS)
 CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  = 
-LIBS     =  -lSDL -lz -lbcm_host -lEGL -lGLESv2 -lpthread
+LIBS     =  -lSDL -lz -lbcm_host -lEGL -lGLESv2 -lpthread -ludev
 # Uncomment the following line to enable GPIO (requires wiring-pi)
 #CFLAGS   += -DRASPI_GPIO
 
@@ -127,6 +127,7 @@ SOURCE_FILES += PiShortcuts.c
 SOURCE_FILES += PiEvent.c
 SOURCE_FILES += PiInput.c
 SOURCE_FILES += PiMouse.c
+SOURCE_FILES += PiUdev.c
 SOURCE_FILES += SdlPrinter.c
 SOURCE_FILES += SdlUart.c
 SOURCE_FILES += SdlDialog.c

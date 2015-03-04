@@ -57,6 +57,7 @@
 #include "JoystickPort.h"
 #include "PiShortcuts.h"
 #include "PiVideo.h"
+#include "PiUdev.h"
 
 #define EVENT_UPDATE_DISPLAY 2
 
@@ -249,6 +250,12 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	if (!piInitUdev()) {
+		fprintf(stderr, "piInitUdev() failed");
+		piDestroyVideo();
+		return 1;
+	}
+	
 	SDL_Init(SDL_INIT_EVERYTHING);
 	SDL_ShowCursor(SDL_DISABLE);
 	SDL_JoystickEventState(SDL_ENABLE);
@@ -284,6 +291,7 @@ int main(int argc, char **argv)
 
 	if (resetProperties == 2) {
 		piDestroyVideo();
+		piDestroyUdev();
 		propDestroy(properties);
 		return 0;
 	}
@@ -390,6 +398,7 @@ int main(int argc, char **argv)
 		} else {
 			fprintf(stderr, "Error creating machine\n");
 			piDestroyVideo();
+			piDestroyUdev();
 			return 1;
 		}
 	}
@@ -409,6 +418,7 @@ int main(int argc, char **argv)
 		mixerDestroy(mixer);
 
 		piDestroyVideo();
+		piDestroyUdev();
 		SDL_Quit();
 
 		return 1;
@@ -444,10 +454,11 @@ int main(int argc, char **argv)
 	gpioTogglePowerLed(0);
 #endif
 
-	fprintf(stderr, "Powered off\n");
-
 	piDestroyVideo();
+	piDestroyUdev();
 	SDL_Quit();
+
+	fprintf(stderr, "Powered off\n");
 
 	return 0;
 }

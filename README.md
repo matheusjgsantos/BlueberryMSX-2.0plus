@@ -29,6 +29,10 @@ To build blueberryMSX, install libSDL:
 
 `sudo apt-get install libsdl-dev`
 
+and libudev:
+
+`sudo apt-get install libudev-dev`
+ 
 To compile with GPIO support:
 
 1. Download and install the [wiringPi library] (http://wiringpi.com/download-and-install/)

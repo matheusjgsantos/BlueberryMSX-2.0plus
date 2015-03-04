@@ -4,15 +4,15 @@
 ** https://github.com/pokebyte/blueberryMSX
 **
 ** An MSX Emulator for Raspberry Pi based on blueMSX
-** 
+**
 ** Copyright (C) 2003-2006 Daniel Vik
 ** Copyright (C) 2014 Akop Karapetyan
-** 
+**
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -25,12 +25,12 @@
 ******************************************************************************
 */
 
-#ifndef PI_VIDEO_H
-#define PI_VIDEO_H
 
-int  piInitVideo();
-void piDestroyVideo();
-void piUpdateEmuDisplay();
+#ifndef PI_UDEV_H
+#define PI_UDEV_H
+
+int piInitUdev();
+int piDestroyUdev();
 
 #endif
 
