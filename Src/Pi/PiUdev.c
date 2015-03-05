@@ -29,9 +29,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "PiInput.h"
+
+static pthread_t monthread;
+static int stopMonitor = 0;
 static struct udev *udev = NULL;
 static struct udev_monitor *mon;
-static int monfd;
+
+static void udevMon(void *arg);
 
 int piInitUdev()
 {
@@ -42,60 +47,71 @@ int piInitUdev()
 	mon = udev_monitor_new_from_netlink(udev, "udev");
 	udev_monitor_filter_add_match_subsystem_devtype(mon, "input", NULL);
 	udev_monitor_enable_receiving(mon);
-	monfd = udev_monitor_get_fd(mon);
+
+	if (pthread_create(&monthread, NULL, udevMon, NULL) != 0) {
+		udev_unref(udev);
+		return 0;
+	}
 
 	fprintf(stderr, "udev initialized\n");
-	
-	struct udev_device *dev;
-	while (1) {
-		/* Set up the call to select(). In this case, select() will
-		   only operate on a single file descriptor, the one
-		   associated with our udev_monitor. Note that the timeval
-		   object is set to 0, which will cause select() to not
-		   block. */
-		fd_set fds;
-		struct timeval tv;
-		int ret;
-		
-		FD_ZERO(&fds);
-		FD_SET(monfd, &fds);
-		tv.tv_sec = 0;
-		tv.tv_usec = 0;
-		
-		ret = select(monfd+1, &fds, NULL, NULL, &tv);
-		
-		/* Check if our file descriptor has received data. */
-		if (ret > 0 && FD_ISSET(monfd, &fds)) {
-			printf("\nselect() says there should be data\n");
-			
-			/* Make the call to receive the device.
-			   select() ensured that this will not block. */
-			dev = udev_monitor_receive_device(mon);
-			if (dev) {
-				printf("Got Device\n");
-				printf("   Node: %s\n", udev_device_get_devnode(dev));
-				printf("   Subsystem: %s\n", udev_device_get_subsystem(dev));
-				printf("   Devtype: %s\n", udev_device_get_devtype(dev));
-
-				printf("   Action: %s\n",udev_device_get_action(dev));
-				udev_device_unref(dev);
-			}
-			else {
-				printf("No Device from receive_device(). An error occured.\n");
-			}					
-		}
-		usleep(250*1000);
-		printf(".");
-		fflush(stdout);
-	}
 	
 	return 1;
 }
 
 int piDestroyUdev()
 {
+	stopMonitor = 1;
+	pthread_join(monthread, NULL);
+	
 	fprintf(stderr, "udev shut down\n");
 	
 	udev_unref(udev);
+}
+
+static void udevMon(void *arg)
+{
+	fprintf(stderr, "udev monitor starting\n");
+	
+	int monfd = udev_monitor_get_fd(mon);
+	struct udev_device *dev;
+	fd_set fds;
+	struct timeval tv;
+	int ret;
+	
+	while (!stopMonitor) {
+		FD_ZERO(&fds);
+		FD_SET(monfd, &fds);
+		tv.tv_sec = 0;
+		tv.tv_usec = 0;
+		
+		ret = select(monfd + 1, &fds, NULL, NULL, &tv);
+		if (ret > 0 && FD_ISSET(monfd, &fds)) {
+			// Make the call to receive the device.
+			//   select() ensured that this will not block.
+			dev = udev_monitor_receive_device(mon);
+			if (dev) {
+				if (strncmp(udev_device_get_sysname(dev), "js", 2) == 0) {
+					fprintf(stderr, "FIXME: resetting joysticks\n");
+					piInputResetJoysticks();
+					
+					/*
+					printf("   Subsystem: %s\n", udev_device_get_subsystem(dev));
+					printf("   Devnode: %s\n", udev_device_get_devnode(dev));
+					printf("   Devtype: %s\n", udev_device_get_devtype(dev));
+					printf("   Devpath: %s\n", udev_device_get_devpath(dev));
+					printf("   Syspath: %s\n", udev_device_get_syspath(dev));
+					printf("   Sysname: %s\n", udev_device_get_sysname(dev));
+					printf("   Sysnum: %s\n", udev_device_get_sysnum(dev));
+					printf("   Action: %s\n",udev_device_get_action(dev));
+					*/
+				}
+				udev_device_unref(dev);
+			}					
+		}
+		
+		usleep(250*1000);
+	}
+	
+	fprintf(stderr, "udev monitor exiting\n");
 }
 

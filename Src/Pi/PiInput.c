@@ -175,6 +175,14 @@ static void initKbdTable()
 	kbdTable[2][SDLK_KP_DIVIDE      ] = EC_COLECO2_HASH;
 }
 
+void piInputResetJoysticks()
+{
+	SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
+	SDL_InitSubSystem(SDL_INIT_JOYSTICK);
+	SDL_JoystickEventState(SDL_ENABLE);
+	SDL_JoystickOpen(0);
+}
+
 void keyboardInit(Properties *properties)
 {
 	if (strncmp(properties->emulation.machineName, "COL", 3) == 0) {
@@ -303,3 +311,4 @@ int   archKeyboardIsKeySelected(int msxKeyCode) { return 0; }
 char* archKeyconfigSelectedKeyTitle() { return ""; }
 char* archKeyconfigMappedToTitle() { return ""; }
 char* archKeyconfigMappingSchemeTitle() { return ""; }
+
