@@ -428,6 +428,8 @@ int main(int argc, char **argv)
 		emulatorStart(NULL);
 	}
 
+	piScanDevices();
+	
 	fprintf(stderr, "Powering on\n");
 
 #ifdef RASPI_GPIO

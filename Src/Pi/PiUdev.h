@@ -32,5 +32,7 @@
 int piInitUdev();
 int piDestroyUdev();
 
+void piScanDevices();
+
 #endif
 

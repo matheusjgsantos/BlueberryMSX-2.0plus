@@ -31,6 +31,7 @@
 #include "Language.h"
 #include "Properties.h"
 #include "InputEvent.h"
+#include "JoystickPort.h"
 #include <stdio.h>
 #include <SDL.h>
 
@@ -38,6 +39,8 @@ static int kbdTable[3][SDLK_LAST];
 
 static int inputTypeScanStart = 0;
 static int inputTypeScanEnd = 1;
+
+extern Properties *properties;
 
 static void initKbdTable()
 {
@@ -181,6 +184,43 @@ void piInputResetJoysticks()
 	SDL_InitSubSystem(SDL_INIT_JOYSTICK);
 	SDL_JoystickEventState(SDL_ENABLE);
 	SDL_JoystickOpen(0);
+	SDL_JoystickOpen(1);
+}
+
+void piInputResetMSXDevices(int realMice, int realJoysticks)
+{
+	int port = 0;
+	// Any connected joysticks take priority
+	while (realJoysticks > 0 && port < 2) {
+		if (port == 0) {
+			properties->joy1.typeId = JOYSTICK_PORT_JOYSTICK;
+			joystickPortSetType(port, JOYSTICK_PORT_JOYSTICK);
+		} else if (port == 1) {
+			properties->joy2.typeId = JOYSTICK_PORT_JOYSTICK;
+			joystickPortSetType(port, JOYSTICK_PORT_JOYSTICK);
+		}
+		
+		realJoysticks--;
+		port++;
+
+		fprintf(stderr, "Connecting a joystick to port %d\n", port);
+	}
+
+	// If there are still open ports and a mouse,
+	// connect it to the remaining port 
+	if (realMice > 0) {
+		if (port == 0) {
+			properties->joy1.typeId = JOYSTICK_PORT_MOUSE;
+			joystickPortSetType(port++, properties->joy1.typeId);
+			fprintf(stderr, "Connecting a mouse to port 1\n");
+		} else if (port == 1) {
+			properties->joy2.typeId = JOYSTICK_PORT_MOUSE;
+			joystickPortSetType(port++, properties->joy2.typeId);
+			fprintf(stderr, "Connecting a mouse to port 2\n");
+		}
+		
+		realMice--;
+	}
 }
 
 void keyboardInit(Properties *properties)

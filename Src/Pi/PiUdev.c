@@ -38,6 +38,12 @@ static struct udev_monitor *mon;
 
 static void udevMon(void *arg);
 
+static int connectedMice = 0;
+static int connectedJoysticks = 0;
+
+// Based on
+// http://www.signal11.us/oss/udev/udev_example.c
+
 int piInitUdev()
 {
 	if (!(udev = udev_new())) {
@@ -68,6 +74,36 @@ int piDestroyUdev()
 	udev_unref(udev);
 }
 
+void piScanDevices()
+{
+	connectedMice = 0;
+	connectedJoysticks = 0;
+	struct udev_enumerate *uenum;
+	struct udev_list_entry *devices, *devEntry;
+	
+	uenum = udev_enumerate_new(udev);
+	udev_enumerate_add_match_subsystem(uenum, "input");
+	udev_enumerate_scan_devices(uenum);
+	devices = udev_enumerate_get_list_entry(uenum);
+	udev_list_entry_foreach(devEntry, devices) {
+		const char *path = udev_list_entry_get_name(devEntry);
+		struct udev_device *dev = udev_device_new_from_syspath(udev, path);
+		
+		const char *sysname = udev_device_get_sysname(dev);
+		if (strncmp(sysname, "mouse", 5) == 0) {
+			connectedMice++;
+		} else if (strncmp(sysname, "js", 2) == 0) {
+			connectedJoysticks++;
+		}
+		
+		udev_device_unref(dev);
+	};
+	
+	udev_enumerate_unref(uenum);
+
+	piInputResetMSXDevices(connectedMice, connectedJoysticks);
+}
+
 static void udevMon(void *arg)
 {
 	fprintf(stderr, "udev monitor starting\n");
@@ -90,23 +126,28 @@ static void udevMon(void *arg)
 			//   select() ensured that this will not block.
 			dev = udev_monitor_receive_device(mon);
 			if (dev) {
-				if (strncmp(udev_device_get_sysname(dev), "js", 2) == 0) {
-					fprintf(stderr, "FIXME: resetting joysticks\n");
-					piInputResetJoysticks();
-					
-					/*
-					printf("   Subsystem: %s\n", udev_device_get_subsystem(dev));
-					printf("   Devnode: %s\n", udev_device_get_devnode(dev));
-					printf("   Devtype: %s\n", udev_device_get_devtype(dev));
-					printf("   Devpath: %s\n", udev_device_get_devpath(dev));
-					printf("   Syspath: %s\n", udev_device_get_syspath(dev));
-					printf("   Sysname: %s\n", udev_device_get_sysname(dev));
-					printf("   Sysnum: %s\n", udev_device_get_sysnum(dev));
-					printf("   Action: %s\n",udev_device_get_action(dev));
-					*/
+				const char *action = udev_device_get_action(dev);
+				int diff = 0;
+				if (strncmp(action, "add", 3) == 0) {
+					diff = 1;
+				} else if (strncmp(action, "remove", 6) == 0) {
+					diff = -1;
 				}
+
+				if (diff != 0) {
+					const char *sysname = udev_device_get_sysname(dev);
+					if (strncmp(sysname, "mouse", 5) == 0) {
+						connectedMice += diff;
+						piInputResetMSXDevices(connectedMice, connectedJoysticks);
+					} else if (strncmp(sysname, "js", 2) == 0) {
+						connectedJoysticks += diff;
+						piInputResetJoysticks();
+						piInputResetMSXDevices(connectedMice, connectedJoysticks);
+					}
+				}
+
 				udev_device_unref(dev);
-			}					
+			}
 		}
 		
 		usleep(250*1000);
