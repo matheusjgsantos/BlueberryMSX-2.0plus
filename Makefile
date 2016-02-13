@@ -281,6 +281,7 @@ SOURCE_FILES += romMapperSvi707Fdc.c
 SOURCE_FILES += romMapperSg1000RamExpander.c
 SOURCE_FILES += romMapperDooly.c
 SOURCE_FILES += romMapperMuPack.c
+SOURCE_FILES += romMapperMSXSlotPi.c
 
 
 SOURCE_FILES += Crc32Calc.c
@@ -338,6 +339,7 @@ SOURCE_FILES += MB89352.c
 SOURCE_FILES += ScsiDevice.c
 SOURCE_FILES += ft245.c
 SOURCE_FILES += Z8530.c
+SOURCE_FILES += MSXSlotPi.cpp
 
 SOURCE_FILES += LanguageMinimal.c
 

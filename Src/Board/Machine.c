@@ -1507,6 +1507,9 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             success &= romMapperGameReaderCreate(0, slot, subslot);
             break;
 #endif
+		case ROM_MSXSLOTPI:
+			success &= romMapperMSXSlotPiCreate(0, slot, subslot);
+			break;
 
         case ROM_MAJUTSUSHI:
             success &= romMapperMajutsushiCreate(romName, buf, size, slot, subslot, startPage);
