@@ -40,7 +40,7 @@ COMMON_FLAGS = -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMB
 CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer $(COMMON_FLAGS)
 CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  = 
-LIBS     =  -lSDL -lz -lbcm_host -lEGL -lGLESv2 -lpthread -ludev
+LIBS     =  -lSDL -lz -lbcm_host -lEGL -lGLESv2 -lpthread -ludev -lbcm2835
 # Uncomment the following line to enable GPIO (requires wiring-pi)
 #CFLAGS   += -DRASPI_GPIO
 
@@ -281,8 +281,7 @@ SOURCE_FILES += romMapperSvi707Fdc.c
 SOURCE_FILES += romMapperSg1000RamExpander.c
 SOURCE_FILES += romMapperDooly.c
 SOURCE_FILES += romMapperMuPack.c
-SOURCE_FILES += romMapperMSXSlotPi.c
-
+SOURCE_FILES += romMapperMsxBus.c
 
 SOURCE_FILES += Crc32Calc.c
 SOURCE_FILES += MediaDb.cpp
@@ -308,6 +307,7 @@ SOURCE_FILES += DirAsDisk.c
 SOURCE_FILES += Disk.c 
 SOURCE_FILES += FdcAudio.c
 SOURCE_FILES += GameReader.c
+SOURCE_FILES += MsxBusPi.c
 SOURCE_FILES += HarddiskIDE.c
 SOURCE_FILES += I8250.c
 SOURCE_FILES += I8251.c
@@ -339,7 +339,7 @@ SOURCE_FILES += MB89352.c
 SOURCE_FILES += ScsiDevice.c
 SOURCE_FILES += ft245.c
 SOURCE_FILES += Z8530.c
-SOURCE_FILES += MSXSlotPi.cpp
+SOURCE_FILES += MsxBus.cpp
 
 SOURCE_FILES += LanguageMinimal.c
 

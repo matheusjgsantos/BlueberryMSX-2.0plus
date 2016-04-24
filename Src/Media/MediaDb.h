@@ -199,7 +199,8 @@ enum  {
     ROM_MSXMIDI_EXTERNAL     = 169,
 	ROM_MSXSLOTPI	= 170,
     ROM_MUPACK               = 171,
-    ROM_MAXROMID    = 171,
+	ROM_MSXBUS		= 172,
+    ROM_MAXROMID    = 172,
 };
 
 typedef struct MediaType MediaType;

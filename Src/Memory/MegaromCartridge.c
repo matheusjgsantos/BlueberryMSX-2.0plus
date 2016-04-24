@@ -78,6 +78,9 @@
 #include "romMapperSvi738Fdc.h"
 #include "romMapperSonyHBI55.h"
 #include "romMapperMoonsound.h"
+#ifndef WIN32
+#include "romMapperMsxBus.h"
+#endif
 #ifdef WIN32
 #include "romMapperGameReader.h"
 #endif

@@ -257,7 +257,7 @@ RomType mediaDbStringToType(const char* romName)
     if (iequals(name, "opcodeslot"))   return ROM_OPCODESLOT;
     if (iequals(name, "opcodeega"))    return ROM_OPCODEMEGA;
     if (iequals(name, "coleco"))       return ROM_COLECO;
-
+	if (iequals(name, "msxbus"))	   return ROM_MSXBUS;
 
     // SG-1000 roms
     if (iequals(name, "sg1000"))       return ROM_SG1000;
@@ -739,6 +739,7 @@ extern "C" const char* romTypeToString(RomType romType)
     case SRAM_ESESCC256:  return langRomTypeEseSCC256();
     case SRAM_ESESCC512:  return langRomTypeEseSCC512();
     case ROM_GOUDASCSI:   return langRomTypeGoudaSCSI();
+	case ROM_MSXBUS:	  return "msxbus";
 
     case ROM_UNKNOWN:     return langTextUnknown();
     }
