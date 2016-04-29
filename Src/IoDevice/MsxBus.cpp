@@ -27,10 +27,12 @@
 */
 
 #include <stddef.h>
-
+#include <stdio.h>
+#include <stdlib.h>
 extern "C" {
 #include "MsxBusPi.h"
 #include "MsxBus.h"
+#include "RomLoader.h"
 };
 
 #ifdef WIN32
@@ -64,51 +66,43 @@ public:
 private:
     bool inserted;
     int  slot;
+	UInt8 *bin;
 };
 
 CMSXBUS::CMSXBUS(int mbSlot) : 
     slot(mbSlot)
 {
-
+	int size;
+	bin = romLoad("./aa.rom", NULL, &size);
 }
 
 CMSXBUS::~CMSXBUS() {
+	free(bin);
 	msxclose();
 }
 
 int CMSXBUS::readMemory(UInt16 address)
 {
-    if (slot == -1) {
-        return false;
-    }
-    return msxread(slot, address);
+	int value = msxread(slot, address);
+	//printf("read%d: 0x%04x-%02x\n", slot, address, value);
+    return value;
+	//return (address >=0x4000 && address < 0xc000 ? bin[address-0x4000] : 0);
 }
 
 int CMSXBUS::writeMemory(UInt16 address, UInt8 value)
 {
-    if (slot == -1) {
-        return false;
-    }
-    
 	msxwrite(slot, address, value);
+	printf("write%d: 0x%04x-%02x\n", slot, address, value);
     return true;
 }
 
 int CMSXBUS::readIo(UInt16 port)
 {
-    if (slot == -1) {
-        return false;
-    }
-
     return msxreadio(port);
 }
 
 int CMSXBUS::writeIo(UInt16 port, UInt8 value)
 {
-    if (slot == -1) {
-        return false;
-    }
-    
 	msxwriteio(port, value);
     return true;
 }
@@ -124,7 +118,9 @@ static void InitializeMSXBUSs()
 		msxinit();
 #endif
         MSXBUSs[0] = new CMSXBUS(1);
+		printf("MSXBUSs[0]=%d\n", MSXBUSs[0]);
 		MSXBUSs[1] = new CMSXBUS(2);
+		printf("MSXBUSs[0]=%d\n", MSXBUSs[0]);
     }
 }
 
@@ -148,6 +144,7 @@ static void DeinitializeMSXBUSs()
 extern "C" MbHandle* msxBusCreate(int slot)
 {
 	InitializeMSXBUSs();
+	printf("msxBusCreate %d\n", slot);
 	if (slot == 1 || slot == 2)
 		return (MbHandle*)MSXBUSs[slot-1];
 	return 0;

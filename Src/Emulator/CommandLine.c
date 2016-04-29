@@ -366,6 +366,7 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
             if (argument == NULL) return 0; // Invaid argument
             romType1 = romNameToType(argument);
             startEmu = 1;
+			printf("romtype=%d\n", romType1);
         }
         if (checkArg(argument, "rom2")) {
             argument = extractTokenEx(cmdLine, ++i, gamedir);
@@ -482,6 +483,7 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
         case ROM_GOUDASCSI:   strcat(rom1, CARTNAME_GOUDASCSI); break;
         case ROM_NMS1210:     strcat(rom1, CARTNAME_NMS1210); break;
         case ROM_SONYHBI55:   strcat(rom1, CARTNAME_SONYHBI55); break;
+		case ROM_MSXBUS:	  strcat(rom1, CARTNAME_MSXBUS); break;
         }
     }
 
@@ -503,6 +505,7 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
         case ROM_GOUDASCSI:   strcat(rom2, CARTNAME_GOUDASCSI); break;
         case ROM_NMS1210:     strcat(rom2, CARTNAME_NMS1210); break;
         case ROM_SONYHBI55:   strcat(rom2, CARTNAME_SONYHBI55); break;
+		case ROM_MSXBUS:	  strcat(rom2, CARTNAME_MSXBUS); break;
         }
     }
 

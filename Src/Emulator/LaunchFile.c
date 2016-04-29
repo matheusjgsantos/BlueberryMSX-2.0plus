@@ -181,6 +181,10 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
                 romType = chkRomType;
             }
         }
+		else
+		{
+			printf("insertCartridge error\n");
+		}
     }
 
     romType = 0 == strcmp(CARTNAME_SNATCHER,    filename) ? ROM_SNATCHER :
@@ -235,6 +239,7 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
               0 == strcmp(CARTNAME_ESESCC128,   filename) ? SRAM_ESESCC128 :
               0 == strcmp(CARTNAME_ESESCC256,   filename) ? SRAM_ESESCC256 :
               0 == strcmp(CARTNAME_ESESCC512,   filename) ? SRAM_ESESCC512 :
+			  0 == strcmp(CARTNAME_MSXBUS, 		filename) ? ROM_MSXBUS :
               romType;
 
     if (drive == 0) {

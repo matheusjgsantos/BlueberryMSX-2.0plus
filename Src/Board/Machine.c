@@ -356,7 +356,6 @@ static int readMachine(Machine* machine, const char* machineName, const char* fi
         char* arg;
         char slotInfoName[512];
 		char *slotFilename;
-
         machine->slotInfo[i].slot = toint(extractToken(slotBuf, 0));    
         machine->slotInfo[i].subslot = toint(extractToken(slotBuf, 1));
         machine->slotInfo[i].startPage = toint(extractToken(slotBuf, 2));
@@ -428,6 +427,7 @@ static int readMachine(Machine* machine, const char* machineName, const char* fi
             sprintf(machine->slotInfo[i].inZipName, "%s%s",
                     iniFilePath, slotFilename);
         }
+		//printf("Slot: %d %d\n", machine->slotInfo[i].slot, machine->slotInfo[i].romType );
         
 #ifdef __APPLE__
         // On OS X, replace all backslashes with slashes

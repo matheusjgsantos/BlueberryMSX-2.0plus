@@ -77,6 +77,9 @@ volatile unsigned *clkReg;
 #define GPIO_PULL *(gpio+37) // Pull up/pull down
 #define GPIO_PULLCLK0 *(gpio+38) // Pull up/pull down clock
 
+
+
+
 // MSX slot access macro
 #define MCS_PIN     0 
 #define MA0_PIN     1
@@ -191,9 +194,19 @@ static int termClock(int clock)
       usleep(10);
    }
 }
- 
+/*
+#0001 1122 2333 4445 5566 6777 8889 9900
+                   1 0010 0100 1001 0000
+				   8  4    2   9
+#aaab bbcc cddd eeef ff
+ 1001 0010 0100 1001 00				   
+*/ 
 void setDataIn()
 {
+#if 1
+	*gpio =  0x00004049;
+	*(gpio+1) = 0x09249200;
+#else	
 	INP_GPIO(MD00_PIN);
 	INP_GPIO(MD01_PIN);
 	INP_GPIO(MD02_PIN);
@@ -202,10 +215,15 @@ void setDataIn()
 	INP_GPIO(MD05_PIN);
 	INP_GPIO(MD06_PIN);
 	INP_GPIO(MD07_PIN);
+#endif	
 }
 
 void setDataOut()
 {
+#if 1
+	*gpio = 0x0924c049;
+	*(gpio+1) = 0x09249249;
+#else	
 	OUT_GPIO(MD00_PIN);
 	OUT_GPIO(MD01_PIN);
 	OUT_GPIO(MD02_PIN);
@@ -214,6 +232,7 @@ void setDataOut()
 	OUT_GPIO(MD05_PIN);
 	OUT_GPIO(MD06_PIN);
 	OUT_GPIO(MD07_PIN);
+#endif	
 }
 
 int msxinit()
@@ -232,7 +251,10 @@ int msxinit()
 
 	usleep(1000);
 	for (i = 0; i < 16; i++)
-	OUT_GPIO(MD00_PIN+i);
+	{
+		INP_GPIO(MD00_PIN+i);
+		OUT_GPIO(MD00_PIN+i);
+	}
 }
 
 int msxclose()
@@ -252,15 +274,16 @@ int msxclose()
 	 GPIO_SET = MSX_MA0;
 	 setDataIn();
 	 GPIO_CLR = MSX_CS;
-	 while(!GET_GPIO(MREADY_PIN));
+	 //while(!GET_GPIO(MREADY_PIN));
 	 GET_DATA(byte);	 
-	 setDataOut();
-	 GPIO_SET = MSX_CS;
+//	 setDataOut();
+	 GPIO_SET = MSX_CS | MSX_MODE;
 	 return byte;	 
  }
  
  void msxwrite(int slot, unsigned short  addr, unsigned char byte)
  {
+	 int i = 0;
 	 GPIO_CLR = MSX_MA0 | MSX_MODE;
 	 GPIO_SET = MSX_CS | MSX_RESET | MSX_M1 | (slot != 1 ? MSX_SLTSL : 0);
 	 SET_ADDR(addr);
@@ -272,7 +295,7 @@ int msxclose()
 	 GPIO_SET = MSX_MA0;
 	 GPIO_CLR = MSX_CS;
 	 while(!GET_GPIO(MREADY_PIN));
-	 GPIO_SET = MSX_CS;
+	 GPIO_SET = MSX_CS | MSX_MODE;
 	 return;
  }
 
@@ -292,7 +315,7 @@ int msxclose()
 	 GPIO_CLR = MSX_CS;
 	 while(!GET_GPIO(MREADY_PIN));
 	 GET_DATA(byte);	 
-	 GPIO_SET = MSX_CS;
+	 GPIO_SET = MSX_CS | MSX_MODE;
 	 setDataOut();	 
 	 return byte;	 
  }
@@ -305,12 +328,12 @@ int msxclose()
 	 GPIO_CLR = MSX_CS;
 	 while(!GET_GPIO(MREADY_PIN));
 	 GPIO_SET = MSX_CS;
+	 SET_DATA(byte);	 
 	 GPIO_SET = MSX_MA0;
 	 GPIO_CLR = MSX_RW;
-	 SET_DATA(byte);	 
 	 GPIO_CLR = MSX_CS;
 	 while(!GET_GPIO(MREADY_PIN));
-	 GPIO_SET = MSX_CS;
+	 GPIO_SET = MSX_CS | MSX_MODE;
 	 return;
  }
  
