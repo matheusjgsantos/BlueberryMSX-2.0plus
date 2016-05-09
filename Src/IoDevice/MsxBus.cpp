@@ -85,6 +85,7 @@ int CMSXBUS::readMemory(UInt16 address)
 {
 	int value = msxread(slot, address);
 	//printf("read%d: 0x%04x-%02x\n", slot, address, value);
+	//if (value != bin[address-0x4000])
     return value;
 	//return (address >=0x4000 && address < 0xc000 ? bin[address-0x4000] : 0);
 }
