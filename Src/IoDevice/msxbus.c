@@ -244,9 +244,9 @@ int msxclose()
  {
 	 unsigned char byte;
 	 GPIO_CLR = MSX_MA0 | MSX_MODE;
-	 GPIO_SET = MSX_CS | MSX_RESET | MSX_M1 | (slot !=1 ? MSX_SLTSL : 0);
-	 SET_ADDR(addr);
-	 GPIO_CLR = MSX_RW | MSX_MIO | (slot == 1 ? MSX_SLTSL : 0);
+	 GPIO_SET = MSX_CS | MSX_RESET | MSX_M1 | (slot !=2 ? MSX_SLTSL : 0);
+	 SET_ADDR(addr); 
+	 GPIO_CLR = MSX_RW | MSX_MIO | (slot == 2 ? MSX_SLTSL : 0);
 	 GPIO_CLR = MSX_CS;
 	 while(!GET_GPIO(MREADY_PIN));
 	 GPIO_SET = MSX_MA0;
@@ -262,10 +262,10 @@ int msxclose()
  void writemsx(int slot, int addr, int byte)
  {
 	 GPIO_CLR = MSX_MA0 | MSX_MODE;
-	 GPIO_SET = MSX_CS | MSX_RESET | MSX_M1 | (slot != 1 ? MSX_SLTSL : 0);
+	 GPIO_SET = MSX_CS | MSX_RESET | MSX_M1 | (slot != 2 ? MSX_SLTSL : 0);
 	 SET_ADDR(addr);
 	 GPIO_SET = MSX_RW;
-	 GPIO_CLR = MSX_MIO | (slot == 1 ? MSX_SLTSL : 0);
+	 GPIO_CLR = MSX_MIO | (slot == 2 ? MSX_SLTSL : 0);
 	 GPIO_CLR = MSX_CS;
 	 while(!GET_GPIO(MREADY_PIN));
 	 SET_DATA(byte);	 

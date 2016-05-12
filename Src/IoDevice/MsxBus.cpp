@@ -67,13 +67,17 @@ private:
     bool inserted;
     int  slot;
 	UInt8 *bin;
+	int page[4];
+	int skip = 0;
 };
 
 CMSXBUS::CMSXBUS(int mbSlot) : 
     slot(mbSlot)
 {
-	int size;
-	bin = romLoad("./aa.rom", NULL, &size);
+	int size, i;
+	bin = romLoad("./MMCSD514.ROM", NULL, &size);
+	for(i=0; i<4; i++)
+		page[i]=i;
 }
 
 CMSXBUS::~CMSXBUS() {
@@ -84,8 +88,20 @@ CMSXBUS::~CMSXBUS() {
 int CMSXBUS::readMemory(UInt16 address)
 {
 	int value = msxread(slot, address);
-	//printf("read%d: 0x%04x-%02x\n", slot, address, value);
-	//if (value != bin[address-0x4000])
+#if 0	
+	int p = -1;
+	if (address >= 0x4000 && address <= 0x5fff)
+		p = 0;
+	else if (address >= 0x6000 && address <= 0x7fff)
+		p = 1;
+	else if (address >= 0x8000 && address <= 0x9fff)
+		p = 2;
+	else if (address >= 0xa000 && address <= 0xbfff)
+		p = 3;
+	if (p > -1 && skip == 0)
+		value = bin[address & 0x1fff + page[p] * 0x2000];
+#endif
+//	printf("read%d: 0x%04x-%02x\n", slot, address, value);
     return value;
 	//return (address >=0x4000 && address < 0xc000 ? bin[address-0x4000] : 0);
 }
@@ -93,18 +109,33 @@ int CMSXBUS::readMemory(UInt16 address)
 int CMSXBUS::writeMemory(UInt16 address, UInt8 value)
 {
 	msxwrite(slot, address, value);
-	printf("write%d: 0x%04x-%02x\n", slot, address, value);
+#if 0
+	if (address == 0x5000)
+		page[0] = value;
+	else if (address == 0x7000)
+		page[1] = value;
+	else if (address == 0x9000)
+		page[2] = value;
+	else if (address == 0xb000)
+		page[3] = value;
+	else if (address == 0x4000)
+		skip = 1;
+#endif	
+  	printf("write%d: 0x%04x-%02x\n", slot, address, value);
     return true;
 }
 
 int CMSXBUS::readIo(UInt16 port)
 {
-    return msxreadio(port);
+	int value = msxreadio(port);
+ 	printf("readio(%02x): %02x\n", port, value);
+   return value;
 }
 
 int CMSXBUS::writeIo(UInt16 port, UInt8 value)
 {
 	msxwriteio(port, value);
+ 	printf("writeio(%02x): %02x\n", port, value);
     return true;
 }
 
