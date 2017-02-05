@@ -191,6 +191,7 @@ DSKE diskRead(int driveId, UInt8* buffer, int sector)
         if ((drives[driveId] != NULL)) {
             if (0 == fseek(drives[driveId], sector * sectorSize[driveId], SEEK_SET)) {
                 UInt8 success = fread(buffer, 1, sectorSize[driveId], drives[driveId]) == sectorSize[driveId];
+//				printf("diskRead=disk%d, offset=\n", driveId, sector * sectorSize[driveId]);
                 return success? diskReadError(driveId, sector) : DSKE_NO_DATA;
             }
         }
@@ -232,6 +233,7 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
         if ((drives[driveId] != NULL)) {
             if (0 == fseek(drives[driveId], offset, SEEK_SET)) {
                 UInt8 success = fread(buffer, 1, secSize, drives[driveId]) == secSize;
+				//printf("diskRead=disk%d, offset=%d\n", driveId, offset);				
                 int sectornum = sector - 1 + diskGetSectorsPerTrack(driveId) * (track * diskGetSides(driveId) + side);
                 return success? diskReadError(driveId, sectornum) : DSKE_NO_DATA;
             }
@@ -580,15 +582,16 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
         return 1;
     }
 
-    rv = stat(fileName, &s);
-    if (rv == 0) {
-        if (s.st_mode & S_IFDIR) {
-            ramImageBuffer[driveId] = dirLoadFile(DDT_MSX, fileName, &ramImageSize[driveId]);
-            fileSize[driveId] = ramImageSize[driveId];
-            diskUpdateInfo(driveId);
-            return ramImageBuffer[driveId] != NULL;
-        }
-    }
+	if (fileName[0] != '/')
+	{
+		rv = stat(fileName, &s);
+		if (rv == 0 & s.st_mode & S_IFDIR) {
+			ramImageBuffer[driveId] = dirLoadFile(DDT_MSX, fileName, &ramImageSize[driveId]);
+			fileSize[driveId] = ramImageSize[driveId];
+			diskUpdateInfo(driveId);
+			return ramImageBuffer[driveId] != NULL;
+		}
+	}
 
     if (fileInZipFile != NULL) {
         ramImageBuffer[driveId] = zipLoadFile(fileName, fileInZipFile, &ramImageSize[driveId]);
@@ -611,41 +614,52 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
         return ramImageBuffer[driveId] != NULL;
     }
 
-    drives[driveId] = fopen(fileName, "r+b");
-    RdOnly[driveId] = 0;
+	if (1)
+	{
+		drives[driveId] = fopen(fileName, "r+b");
+		setbuf(drives[driveId],0);
+		printf("fid=%d, disk=%s\n",drives[driveId], fileName);
+		RdOnly[driveId] = 0;
 
-    if (drives[driveId] == NULL) {
-        drives[driveId] = fopen(fileName, "rb");
-        RdOnly[driveId] = 1;
-    }
+		if (drives[driveId] == NULL) {
+			drives[driveId] = fopen(fileName, "rb");
+			RdOnly[driveId] = 1;
+		}
 
-    if (drives[driveId] == NULL) {
-        return 0;
-    }
+		if (drives[driveId] == NULL) {
+			return 0;
+		}
+	}
 
-    fname = makeErrorsFileName(fileName);
-    if( fname != NULL ) {
-        FILE *f = fopen(fname, "rb");
-        if( f != NULL ) {
-            char *p = (char*)malloc(DISK_ERRORS_SIZE);
-            if( fread(p, 1, DISK_ERRORS_HEADER_SIZE, f) == DISK_ERRORS_HEADER_SIZE ) {
-                if( strcmp(p, DISK_ERRORS_HEADER) == 0 ) {
-                    fread(p, 1, DISK_ERRORS_SIZE, f);
-                    drivesErrors[driveId] = p;
-                    p = NULL;
-                }
-            }
-                        if( p != NULL ) {
-                free(p);
-            }
-            fclose(f);
-        }
-        free(fname);
-    }
-
-    fseek(drives[driveId],0,SEEK_END);
-    fileSize[driveId] = ftell(drives[driveId]);
-
+	if (fileName[0] != '/')
+	{
+		fname = makeErrorsFileName(fileName);
+		if( fname != NULL ) {
+			FILE *f = fopen(fname, "rb");
+			if( f != NULL ) {
+				char *p = (char*)malloc(DISK_ERRORS_SIZE);
+				if( fread(p, 1, DISK_ERRORS_HEADER_SIZE, f) == DISK_ERRORS_HEADER_SIZE ) {
+					if( strcmp(p, DISK_ERRORS_HEADER) == 0 ) {
+						fread(p, 1, DISK_ERRORS_SIZE, f);
+						drivesErrors[driveId] = p;
+						p = NULL;
+					}
+				}
+							if( p != NULL ) {
+					free(p);
+				}
+				fclose(f);
+			}
+			free(fname);
+		}
+		fseek(drives[driveId],0,SEEK_END);
+		fileSize[driveId] = ftell(drives[driveId]);
+	}
+	else
+	{
+		fileSize[driveId] = 720 * 1024;
+	}
+	
     diskUpdateInfo(driveId);
 
     return 1;

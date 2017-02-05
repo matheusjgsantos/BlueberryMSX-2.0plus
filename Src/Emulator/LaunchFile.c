@@ -376,10 +376,10 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
 
     strcpy(properties->media.disks[drive].fileName, filename);
     strcpy(properties->media.disks[drive].fileNameInZip, diskName);
-    updateExtendedDiskName(drive, properties->media.disks[drive].fileName, properties->media.disks[drive].fileNameInZip);
+    //updateExtendedDiskName(drive, properties->media.disks[drive].fileName, properties->media.disks[drive].fileNameInZip);
 #ifndef NO_FILE_HISTORY
     if (drive < 2) {
-        updateFileHistory(*properties->filehistory.diskdrive[drive], NULL, filename, 0);
+//        updateFileHistory(*properties->filehistory.diskdrive[drive], NULL, filename, 0);
     }
 #endif
 

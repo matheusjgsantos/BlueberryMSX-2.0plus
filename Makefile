@@ -19,7 +19,7 @@ OUTPUT_DIR = objs
 
 BCM_INCDIR= /opt/vc/include
 
-X11_LIBDIR= /usr/X11R6/lib
+X11_LIBDIR= /usr/X11R6/libx
 BCM_LIBDIR= /opt/vc/lib
 
 #
@@ -36,7 +36,7 @@ ECHO  = @echo
 #
 # Flags
 #
-COMMON_FLAGS = -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -DRASPI
+COMMON_FLAGS = -DUSE_EGL -DIS_RPI -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -DRASPI
 CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer $(COMMON_FLAGS)
 CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  = 
@@ -427,7 +427,7 @@ clean: clean_$(TARGET)
 
 $(TARGET): $(OUTPUT_OBJS)
 	$(ECHO) Linking $@...
-	$(LD) $(LDFLAGS) -L$(X11_LIBDIR) -L$(BCM_LIBDIR) -o $@ $(OUTPUT_OBJS) $(LIBS)
+	$(LD) -L$(X11_LIBDIR) -L$(BCM_LIBDIR) $(LDFLAGS) -o $@ $(OUTPUT_OBJS) $(LIBS)
 
 clean_$(TARGET):
 	$(ECHO) Cleaning files ...

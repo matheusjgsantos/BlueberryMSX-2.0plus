@@ -306,7 +306,7 @@ void updateExtendedDiskName(int drive, char* filename, char* zipFile) {
     extendedDiskName[drive][0] = 0;
 
 #ifndef WII
-    if (drive < MAX_FDC_COUNT) {
+    if (filename[0] != '/' && drive < MAX_FDC_COUNT) {
         buf = romLoad(filename, zipFile[0] ? zipFile : NULL, &size);
         if (buf != NULL) {
             strcpy(extendedDiskName[drive], mediaDbGetPrettyString(mediaDbLookupDisk(buf, size)));

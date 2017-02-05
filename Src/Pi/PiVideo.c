@@ -134,6 +134,7 @@ static const GLfloat vertices[] = {
 int piInitVideo()
 {
 	bcm_host_init();
+	bcm_host_init();
 
 	// get an EGL display connection
 	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -144,6 +145,7 @@ int piInitVideo()
 
 	// initialize the EGL display connection
 	EGLBoolean result = eglInitialize(display, NULL, NULL);
+	result = eglInitialize(display, NULL, NULL);
 	if (result == EGL_FALSE) {
 		fprintf(stderr, "eglInitialize() failed: EGL_FALSE\n");
 		return 0;
@@ -282,7 +284,7 @@ int piInitVideo()
 	}
 
 	setOrtho(projection, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f,
-		sx * zoom, sy * zoom);
+		sx * zoom * 1.1, sy * zoom);
 
 	fprintf(stderr, "Setting up screen...\n");
 
@@ -353,7 +355,7 @@ void piUpdateEmuDisplay()
 	if (frameBuffer == NULL) {
 		frameBuffer = frameBufferGetWhiteNoiseFrame();
 	}
-	int borderWidth = ((320 - frameBuffer->maxWidth) * ZOOM) >> 1;
+	int borderWidth = ((int)((320 - frameBuffer->maxWidth) * ZOOM)) >> 1;
 
 	videoRender(video, frameBuffer, BIT_DEPTH, 1,
 				msxScreen + borderWidth * BYTES_PER_PIXEL, 0, msxScreenPitch, -1);
