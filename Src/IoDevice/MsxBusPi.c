@@ -73,7 +73,7 @@ volatile unsigned *gpio;
 #define MSX_SLTSL1  (1<<SLTSL1_PIN)
 
 #define GET_DATA(x) setDataIn(); x = GPIO >> MD00_PIN;
-#define SET_DATA(x) GPIO_CLR = 0xff << MD00_PIN; GPIO_SET = (x & 0xff) << MD00_PIN;
+#define SET_DATA(x) setDataOut(); GPIO_CLR = (0xff) << MD00_PIN; GPIO_SET = (x & 0xff) << MD00_PIN;
 
 #define MSX_SET_OUTPUT(g) {INP_GPIO(g); OUT_GPIO(g);}
 #define MSX_SET_INPUT(g)  INP_GPIO(g)
@@ -85,21 +85,39 @@ void msxwrite(int slot, unsigned short addr, unsigned char byte);
 int msxreadio(unsigned short addr);
 void msxwriteio(unsigned short addr, unsigned char byte);
 void clear_io();
+void setDataIn();
+void setDataOut();
+void spi_clear();
+void spi_set(int addr, int rd, int mreq, int slt1);
 
 void setDataIn()
 {
-	OUT_GPIO(MD00_PIN);
-	OUT_GPIO(MD01_PIN);
-	OUT_GPIO(MD02_PIN);
-	OUT_GPIO(MD03_PIN);
-	OUT_GPIO(MD04_PIN);
-	OUT_GPIO(MD05_PIN);
-	OUT_GPIO(MD06_PIN);
-	OUT_GPIO(MD07_PIN);
+#if 0
+	INP_GPIO(MD00_PIN);
+	INP_GPIO(MD01_PIN);
+	INP_GPIO(MD02_PIN);
+	INP_GPIO(MD03_PIN);
+	INP_GPIO(MD04_PIN);
+	INP_GPIO(MD05_PIN);
+	INP_GPIO(MD06_PIN);
+	INP_GPIO(MD07_PIN);
+#else
+	*(gpio+1) &= 0x03f;
+#endif	
 }
+
+/*
+0099 9888 7776 6655 5444 3332 2211 1000
+
+0099 9888 7776 6655 5444 3332 2211 1000
+  00 1001 0010 0100 1001 0010 01xx xxxx
+   0    9    2    4    9    2    7    f
+0099 9888 7776 6655 5444 3332 2211 1000
+*/
 
 void setDataOut()
 {
+#if 0
 	OUT_GPIO(MD00_PIN);
 	OUT_GPIO(MD01_PIN);
 	OUT_GPIO(MD02_PIN);
@@ -108,6 +126,10 @@ void setDataOut()
 	OUT_GPIO(MD05_PIN);
 	OUT_GPIO(MD06_PIN);
 	OUT_GPIO(MD07_PIN);
+#else
+	*(gpio+1) &= 0x0924927f;
+	*(gpio+1) |= 0x09249240;
+#endif	
 }
 
 void spi_clear()
@@ -125,20 +147,30 @@ void spi_clear()
 
 void spi_set(int addr, int rd, int mreq, int slt1)
 {
-	int cs1, cs12, cs2, wr, iorq, x, spi_data;
-	cs1 = !(addr >= 0x4000 && addr < 0x8000);
-	cs2 = !(addr >= 0x8000 && addr < 0xc000);
-	cs12 = cs1 & cs2;
+	int cs1, cs12, cs2, wr, iorq, x, spi_data, spi_result;
+	cs1 = !(addr & 0xc000 == 0x4000);
+	cs2 = !(addr & 0xc000 == 0x8000);
+	cs12 = cs1 && cs2;
 	iorq = !mreq;
 	wr = !rd;
 	if (!iorq)
+	{
 		slt1 = 1;
-	spi_data = cs12 << 23 | cs1 << 22 | cs2 << 21 | mreq << 20 | iorq << 19 | rd << 18 | wr << 17 | slt1 << 16 | addr & 0xffff;
+		GPIO_SET = MSX_SLTSL1;
+	}
+	else 
+	{
+		if (slt1 == 2)
+			GPIO_CLR = MSX_SLTSL1;
+		else
+			GPIO_SET = MSX_SLTSL1;
+	}
+	spi_data = cs12 << 23 | cs1 << 22 | cs2 << 21 | mreq << 20 | iorq << 19 | rd << 18 | wr << 17 | slt1 << 16 | (addr & 0xffff);
 	GPIO_CLR = SPI_CS;
-	for(x = 0; x < 24; x++)
+	for(x = 23; x >= 0; x--)
 	{
 		GPIO_CLR = SPI_SCLK;
-		if (spi_data & 0x800000)
+		if (spi_data & (1<<x))
 		{
 			GPIO_SET = SPI_MOSI;
 		}
@@ -146,20 +178,19 @@ void spi_set(int addr, int rd, int mreq, int slt1)
 		{
 			GPIO_CLR = SPI_MOSI;
 		}
-		spi_data <<= 1;
 		GPIO_SET = SPI_SCLK;
 	}
 	GPIO_SET = SPI_CS;
 	return;
 }
 	
-#if 0
+#ifdef _MAIN
 int main(int argc, char **argv)
 {
   int g,rep,i,addr, page=4;
   char byte;
   int offset = 0x4000;
-  int size = 0x4000;
+  int size = 0x20000;
   FILE *fp = 0;
   
   if (argc > 1)
@@ -178,11 +209,6 @@ int main(int argc, char **argv)
   // Set up gpi pointer for direct register access
   setup_io();
  
-	MSX_SET_OUTPUT(SPI_CS_PIN);
-	MSX_SET_OUTPUT(SPI_SCLK_PIN);
-	MSX_SET_OUTPUT(SPI_MOSI_PIN);
-	MSX_SET_OUTPUT(SLTSL1_PIN);
-	GPIO_SET = MSX_SLTSL1 | SPI_CS | SPI_SCLK | SPI_MOSI;  
 	msxwrite(1, 0x6000, 3);
 	for(addr=offset; addr < offset + size; addr ++)
 	{
@@ -221,9 +247,9 @@ int main(int argc, char **argv)
 	tv.tv_sec = 0;
 	tv.tv_nsec = 200;
 	spi_set(addr, 0, 0, slot != 1);
-	//nanosleep(&tv, &tr);
+//	nanosleep(&tv, &tr);
 	GET_DATA(byte);
-	spi_clear();
+	//spi_clear();
 	return byte;	 
  }
  
@@ -231,7 +257,7 @@ int main(int argc, char **argv)
  {
 	struct timespec tv, tr;
 	tv.tv_sec = 0;
-	tv.tv_nsec = 200;
+	tv.tv_nsec = 100;
  	SET_DATA(byte);
 	spi_set(addr, 1, 0, slot != 1);
 	nanosleep(&tv, &tr);
@@ -266,6 +292,7 @@ int main(int argc, char **argv)
 	 return;
  }
  
+#if 0 
 int rtapi_open_as_root(const char *filename, int mode) {
 	fprintf (stderr, "euid: %d uid %d\n", geteuid(), getuid());
 	seteuid(0);
@@ -275,13 +302,14 @@ int rtapi_open_as_root(const char *filename, int mode) {
 	setfsuid(getuid());
 	return r;
 }
+#endif
 //
 // Set up a memory regions to access GPIO
 //
 void setup_io()
 {
    /* open /dev/mem */
-   if ((mem_fd = rtapi_open_as_root("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
+   if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
       printf("can't open /dev/mem \n");
       exit(-1);
    }
@@ -306,10 +334,26 @@ void setup_io()
    // Always use volatile pointer!
    gpio = (volatile unsigned *)gpio_map;
 
+	MSX_SET_OUTPUT(SPI_CS_PIN);
+	MSX_SET_OUTPUT(SPI_SCLK_PIN);
+	MSX_SET_OUTPUT(SPI_MOSI_PIN);
+	MSX_SET_OUTPUT(SLTSL1_PIN);
+	OUT_GPIO(MD00_PIN);
+	OUT_GPIO(MD01_PIN);
+	OUT_GPIO(MD02_PIN);
+	OUT_GPIO(MD03_PIN);
+	OUT_GPIO(MD04_PIN);
+	OUT_GPIO(MD05_PIN);
+	OUT_GPIO(MD06_PIN);
+	OUT_GPIO(MD07_PIN);	
+	GPIO_SET = MSX_SLTSL1 | SPI_CS | SPI_SCLK | SPI_MOSI;  
+	SET_DATA(0);
+   
 } // setup_io
 
 void clear_io()
 {
+	spi_clear();
 }
 
 void msxinit()
