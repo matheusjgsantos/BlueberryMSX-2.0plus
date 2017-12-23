@@ -10,10 +10,9 @@
  
 #define BCM2708_PERI_BASE        0x3F000000 // Raspberry Pi 2
 #define GPIO_BASE                (BCM2708_PERI_BASE + 0x200000) /* GPIO controller */
-#define CLOCK_BASE				 (BCM2708_PERI_BASE + 0x101000) /* CLK controller */
   
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h>  
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -22,52 +21,16 @@
  
 #define PAGE_SIZE (4*1024)
 #define BLOCK_SIZE (4*1024)
-#define PI_ALT0   4
-
-#include "MsxBusPi.h"
-#define RPMC_SLOT_V2 1
-
+ 
 int  mem_fd;
 void *gpio_map;
  
 // I/O access
 volatile unsigned *gpio;
-volatile unsigned *clkReg;
-
-#define CLK_PASSWD  (0x5A<<24)
-
-#define CLK_CTL_MASH(x)((x)<<9)
-#define CLK_CTL_BUSY    (1 <<7)
-#define CLK_CTL_KILL    (1 <<5)
-#define CLK_CTL_ENAB    (1 <<4)
-#define CLK_CTL_SRC(x) ((x)<<0)
-
-#define CLK_SRCS 4
-
-#define CLK_CTL_SRC_OSC  1  /* 19.2 MHz */
-#define CLK_CTL_SRC_PLLC 5  /* 1000 MHz */
-#define CLK_CTL_SRC_PLLD 6  /*  500 MHz */
-#define CLK_CTL_SRC_HDMI 7  /*  216 MHz */
-
-#define CLK_DIV_DIVI(x) ((x)<<12)
-#define CLK_DIV_DIVF(x) ((x)<< 0)
-
-#define CLK_GP0_CTL 28
-#define CLK_GP0_DIV 29
-#define CLK_GP1_CTL 30
-#define CLK_GP1_DIV 31
-#define CLK_GP2_CTL 32
-#define CLK_GP2_DIV 33
-
-#define CLK_PCM_CTL 38
-#define CLK_PCM_DIV 39
-
-#define CLK_PWM_CTL 40
-#define CLK_PWM_DIV 41 
+ 
  
 // GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
 #define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
-#define ALT0_GPIO(g) *(gpio+((g)/10)) |=  (4<<(((g)%10)*3))
 #define OUT_GPIO(g) *(gpio+((g)/10)) |=  (1<<(((g)%10)*3))
 #define SET_GPIO_ALT(g,a) *(gpio+(((g)/10))) |= (((a)<=3?(a)+4:(a)==4?3:2)<<(((g)%10)*3))
  
@@ -75,229 +38,56 @@ volatile unsigned *clkReg;
 #define GPIO_CLR *(gpio+10) // clears bits which are 1 ignores bits which are 0
  
 #define GET_GPIO(g) (*(gpio+13)&(1<<g)) // 0 if LOW, (1<<g) if HIGH
-#define GET_GPIOS(s,g) (*(gpio+13)&(s<<g)) // 0 if LOW, (1<<g) if HIGH
-#define GPIO  (*(gpio+13))
+#define GPIO (*(gpio+13))
  
 #define GPIO_PULL *(gpio+37) // Pull up/pull down
 #define GPIO_PULLCLK0 *(gpio+38) // Pull up/pull down clock
 
 // MSX slot access macro
-#ifdef RPMC_SLOT_V1
-#define MCS_PIN     0 
-#define MA0_PIN     1
-#define MODE_PIN    2
-#define MREADY_PIN  3
-#define MCLK_PIN    4
-#define MD00_PIN    5
-#define MD01_PIN    6
-#define MD02_PIN    7
-#define MD03_PIN    8
-#define MD04_PIN    9
-#define MD05_PIN    10
-#define MD06_PIN    11
-#define MD07_PIN    12
-#define MD08_PIN    13
-#define MD09_PIN    14
-#define MD10_PIN    15
-#define MD11_PIN    16
-#define MD12_PIN    17
-#define MD13_PIN    18
-#define MD14_PIN    19
-#define MD15_PIN    20
-#define RW_PIN      21
-#define MIO_PIN     22
-#define SLTSL_PIN   23
-#define RESET_PIN   24
-#define M1_PIN      25
+#define MD00_PIN	12
+#define MD01_PIN	13
+#define MD02_PIN	14
+#define MD03_PIN	15
+#define MD04_PIN	16
+#define MD05_PIN	17
+#define MD06_PIN	18
+#define MD07_PIN	19
+#define SLTSL1_PIN	3
+#define MCLK_PIN	4
+#define SPI_CS_PIN	8
+#define SPI_MOSI_PIN 10
+#define SPI_SCLK_PIN 11
 
-#define MSX_CS       1
+#define MSX_SLTSL0	(1<<0)
+#define MSX_WR		(1<<1)
+#define MSX_RD		(1<<2)
+#define MSX_IORQ	(1<<3)
+#define MSX_MERQ	(1<<4)
+#define MSX_CS2		(1<<5)
+#define MSX_CS1		(1<<6)
+#define MSX_CS12	(1<<7)
 
-#define MSX_MA0     (1<<MA0_PIN)
-#define MSX_MODE    (1<<MODE_PIN)
-#define MSX_READY   (1<<MREADY_PIN)
-#define MSX_RW      (1<<RW_PIN)
-#define MSX_MIO     (1<<MIO_PIN)
-#define MSX_SLTSL   (1<<SLTSL_PIN)
-#define MSX_RESET   (1<<RESET_PIN)
-#define MSX_M1      (1<<M1_PIN)
+#define SPI_CS		(1<<SPI_CS_PIN)
+#define SPI_MOSI	(1<<SPI_MOSI_PIN)
+#define SPI_SCLK	(1<<SPI_SCLK_PIN)
+#define MSX_SLTSL1  (1<<SLTSL1_PIN)
 
-#define SET_ADDR(x) setDataOut(); GPIO_CLR = 0xffff; GPIO_SET = (x & 0xffff)
-#define GET_DATA(x) setDataIn(); x = GPIO   
-#define SET_DATA(x) GPIO_CLR = 0xff << MD00_PIN; GPIO_SET = (x & 0xff) << MD00_PIN
-
-#elif defined (RPMC_SLOT_V2)
-
-#define MCS_PIN     26
-#define MREADY_PIN  25
-#define MA0_PIN     24
-#define MD00_PIN    0
-#define MD01_PIN    1
-#define MD02_PIN    2
-#define MD03_PIN    3
-#define MD04_PIN    4
-#define MD05_PIN    5
-#define MD06_PIN    6
-#define MD07_PIN    7
-#define MD08_PIN    8
-#define MD09_PIN    9
-#define MD10_PIN    10
-#define MD11_PIN    11
-#define MD12_PIN    12
-#define MD13_PIN    13
-#define MD14_PIN    14
-#define MD15_PIN    15
-#define _MEM		16
-#define _RW			17
-#define _SLOT0		18
-#define _SLOT1		19
-#define _RFSH		12
-#define _RESET		11
-#define INT_PIN		15
-#define BDIR_PIN	14
-#define SW0_PIN		13
-#define SW1_PIN		12
-
-#define MSX_CS      (1<<MCS_PIN)
-#define MSX_MA0     (1<<MA0_PIN)
-#define MSX_MEM     (1<<_MEM)
-#define MSX_RW      (1<<_RW)
-#define MSX_SLOT0   (1<<_SLOT0)
-#define MSX_SLOT1   (1<<_SLOT1)
-#define MSX_RESET   (1<<_RESET)
-
-#define MSX_INT     (1<<INT_PIN)
-#define MSX_BDIR    (1<<BDIR_PIN)
-#define MSX_SW0     (1<<SW0_PIN)
-#define MSX_SW1     (1<<SW1_PIN)
-
-#define SET_ADDR(x) setDataOut(); GPIO_CLR = 0xffff; GPIO_SET = (x & 0xffff)
-#define GET_DATA(x) setDataIn(); x = GPIO   
-#define SET_DATA(x) GPIO_CLR = 0xff; GPIO_SET = (x & 0xff)
-
-#endif
-
-
+#define GET_DATA(x) setDataIn(); x = GPIO >> MD00_PIN;
+#define SET_DATA(x) GPIO_CLR = 0xff << MD00_PIN; GPIO_SET = (x & 0xff) << MD00_PIN;
 
 #define MSX_SET_OUTPUT(g) {INP_GPIO(g); OUT_GPIO(g);}
 #define MSX_SET_INPUT(g)  INP_GPIO(g)
 #define MSX_SET_CLOCK(g)  INP_GPIO(g); ALT0_GPIO(g)
 
 void setup_io();
+int msxread(int slot, unsigned short addr);
+void msxwrite(int slot, unsigned short addr, unsigned char byte);
+int msxreadio(unsigned short addr);
+void msxwriteio(unsigned short addr, unsigned char byte);
 void clear_io();
 
-static int initClock(int clock, int source, int divI, int divF, int MASH)
+void setDataIn()
 {
-   int ctl[] = {CLK_GP0_CTL, CLK_GP2_CTL};
-   int div[] = {CLK_GP0_DIV, CLK_GP2_DIV};
-   int src[CLK_SRCS] =
-      {CLK_CTL_SRC_PLLD,
-       CLK_CTL_SRC_OSC,
-       CLK_CTL_SRC_HDMI,
-       CLK_CTL_SRC_PLLC};
-
-   int clkCtl, clkDiv, clkSrc;
-   uint32_t setting;
-
-   if ((clock  < 0) || (clock  > 1))    return -1;
-   if ((source < 0) || (source > 3 ))   return -2;
-   if ((divI   < 2) || (divI   > 4095)) return -3;
-   if ((divF   < 0) || (divF   > 4095)) return -4;
-   if ((MASH   < 0) || (MASH   > 3))    return -5;
-
-   clkCtl = ctl[clock];
-   clkDiv = div[clock];
-   clkSrc = src[source];
-
-   clkReg[clkCtl] = CLK_PASSWD | CLK_CTL_KILL;
-
-   /* wait for clock to stop */
-
-   while (clkReg[clkCtl] & CLK_CTL_BUSY)
-   {
-      usleep(10);
-   }
-
-   clkReg[clkDiv] =
-      (CLK_PASSWD | CLK_DIV_DIVI(divI) | CLK_DIV_DIVF(divF));
-
-   usleep(10);
-
-   clkReg[clkCtl] =
-      (CLK_PASSWD | CLK_CTL_MASH(MASH) | CLK_CTL_SRC(clkSrc));
-
-   usleep(10);
-
-   clkReg[clkCtl] |= (CLK_PASSWD | CLK_CTL_ENAB);
-}
-
-static int termClock(int clock)
-{
-   int ctl[] = {CLK_GP0_CTL, CLK_GP2_CTL};
-
-   int clkCtl;
-
-   if ((clock  < 0) || (clock  > 1))    return -1;
-
-   clkCtl = ctl[clock];
-
-   clkReg[clkCtl] = CLK_PASSWD | CLK_CTL_KILL;
-
-   /* wait for clock to stop */
-
-   while (clkReg[clkCtl] & CLK_CTL_BUSY)
-   {
-      usleep(10);
-   }
-}
-/*
-V1
-#0001 1122 2333 4445 5566 6777 8889 9900
-                   1 0010 0100 1001 0000
-				   8  4    2   9
-#aaab bbcc cddd eeef ff
- 1001 0010 0100 1001 00		
-
-V2
-#0001 1122 2333 4445 5566 6777 8889 9900
- 1001 0010 0100 1001 0010 0100 1001 0000
-9		4	2	   9  4    2   9
-#aaab bbcc cddd eeef ff00 0111 2223 3300
- 1001 0010 0100 1001 00		
- 
-#4445 5566 6777 8889 99aa abbb cccd dd00
-
-#eeef ff
- 
-*/ 
-void inline setDataIn()
-{
-#ifdef RPMC_SLOT_V1
-	*gpio =  0x00004049;
-	*(gpio+1) = 0x09249200;
-#elif defined (RPMC_SLOT_V2)
-	*gpio &= 0x0;
-	*(gpio+1) &= 0xfffc0000; 	
-#else	
-	INP_GPIO(MD00_PIN);
-	INP_GPIO(MD01_PIN);
-	INP_GPIO(MD02_PIN);
-	INP_GPIO(MD03_PIN);
-	INP_GPIO(MD04_PIN);
-	INP_GPIO(MD05_PIN);
-	INP_GPIO(MD06_PIN);
-	INP_GPIO(MD07_PIN);
-#endif	
-}
-
-void inline setDataOut()
-{
-#if RPMC_SLOT_V1
-	*gpio = 0x0924c049;
-	*(gpio+1) &= 0x09249249;
-#elif defined (RPMC_SLOT_V2)
-	*gpio |= 0x09249249;
-	*(gpio+1) |= 0x9249;
-#else	
 	OUT_GPIO(MD00_PIN);
 	OUT_GPIO(MD01_PIN);
 	OUT_GPIO(MD02_PIN);
@@ -306,195 +96,192 @@ void inline setDataOut()
 	OUT_GPIO(MD05_PIN);
 	OUT_GPIO(MD06_PIN);
 	OUT_GPIO(MD07_PIN);
-#endif	
-//	printf("setDataOut: 0x%08x 0x%08x\n", *gpio, *(gpio+1));
-}
- 
-int msxinit()
-{
-	int i;
-	setup_io();
-	MSX_SET_OUTPUT(MCS_PIN);
-	MSX_SET_OUTPUT(MA0_PIN);
-	MSX_SET_INPUT(MREADY_PIN); 
-#ifdef RPMC_SLOT_V1
-	MSX_SET_OUTPUT(MODE_PIN);  
-	MSX_SET_OUTPUT(RW_PIN);
-	MSX_SET_OUTPUT(MIO_PIN);
-	MSX_SET_OUTPUT(SLTSL_PIN);
-	MSX_SET_OUTPUT(RESET_PIN);
-	initClock(0, 0, 10, 492, 0);
-	MSX_SET_CLOCK(MCLK_PIN);
-	GPIO_CLR = MSX_RESET;
-	usleep(1000);
-	GPIO_SET = MSX_RESET;
-#elif defined (RPMC_SLOT_V2)
-	MSX_SET_OUTPUT(_MEM);
-	MSX_SET_OUTPUT(_SLOT0);
-	MSX_SET_OUTPUT(_SLOT1);
-	MSX_SET_OUTPUT(_RW);
-//	msxreset();
-#endif
-	for (i = 0; i < 16; i++)
-	{
-		OUT_GPIO(i);
-	}
-//	exit(0);
 }
 
-int msxclose()
+void setDataOut()
 {
-	clear_io();	
+	OUT_GPIO(MD00_PIN);
+	OUT_GPIO(MD01_PIN);
+	OUT_GPIO(MD02_PIN);
+	OUT_GPIO(MD03_PIN);
+	OUT_GPIO(MD04_PIN);
+	OUT_GPIO(MD05_PIN);
+	OUT_GPIO(MD06_PIN);
+	OUT_GPIO(MD07_PIN);
 }
- 
-int msxread(int slot, unsigned short addr)
- {
-	 unsigned char byte, byte2, b1;
-	 int i;
-#ifdef RPMC_SLOT_V1
-	 GPIO_CLR = MSX_MA0 | MSX_MODE;
-	 GPIO_SET = MSX_CS | MSX_RESET | MSX_M1 | (slot !=2 ? MSX_SLTSL : 0);
-	 SET_ADDR(addr);
-	 GPIO_CLR = MSX_RW | MSX_MIO | (slot == 2 ? MSX_SLTSL : 0);
-	 GPIO_CLR = MSX_CS;
-	 while(!GET_GPIO(MREADY_PIN));
-	 GPIO_SET = MSX_MA0;
-	 setDataIn();
-//	 while(!GET_GPIO(MREADY_PIN));
-	 GET_DATA(byte);
-	 GPIO_SET = MSX_CS | MSX_MODE;
-#elif defined (RPMC_SLOT_V2)
-	 GPIO_SET = MSX_CS;
-	 SET_ADDR(addr);
-	 GPIO_CLR = MSX_MA0 | MSX_CS;
-	 while(GET_GPIO(MREADY_PIN));
-	 GPIO_SET = MSX_CS | MSX_MA0 | (slot ==2 ? MSX_SLOT0 : MSX_SLOT1);
-	 GPIO_CLR = MSX_MEM | MSX_RW | (slot !=2 ? MSX_SLOT0 : MSX_SLOT1);
-	 GPIO_CLR = MSX_CS;
-	 while(GET_GPIO(MREADY_PIN));
-	 GET_DATA(byte);
-	 //printf("%04x|",(unsigned short)GPIO);
-	 GPIO_SET = MSX_CS;
-#endif
-	 return byte;	 
- }
- int msxread2(int slot, unsigned short addr)
- {
-	 int b, byte, cnt;
-	cnt = 1;
-	while(cnt--)
-	{
-	  byte = msxread2(slot, addr);
-	  if (byte != (b = msxread2(slot, addr)))
-	  {
-		  cnt = 1;
-		  //printf("RM%dx%04x:%02x-%02x\n", slot, addr, byte, b);
-	  }				  
-	}
-	 return byte;
- }
- void msxwrite(int slot, unsigned short  addr, unsigned char byte)
- {
-	 int i;
-	 unsigned short j = 0;
-#ifdef RPMC_SLOT_V1
-	 GPIO_CLR = MSX_MA0 | MSX_MODE;
-	 GPIO_SET = MSX_CS | MSX_RESET | MSX_M1 | (slot != 2 ? MSX_SLTSL : 0);
-	 SET_ADDR(addr);
-	 GPIO_SET = MSX_RW;
-	 GPIO_CLR = MSX_CS | MSX_MIO | (slot == 2 ? MSX_SLTSL : 0);
-	 while(!GET_GPIO(MREADY_PIN));
-	 GPIO_SET = MSX_CS;
-	 SET_DATA(byte);	
-	 GPIO_SET = MSX_MA0;
-	 GPIO_CLR = MSX_CS;
-	 while(!GET_GPIO(MREADY_PIN));
-	 GPIO_SET = MSX_CS | MSX_MODE;
-#elif defined (RPMC_SLOT_V2)	 
-	 GPIO_SET = MSX_CS;
-	 SET_ADDR(addr);
-	 GPIO_CLR = MSX_CS | MSX_MA0;
-	 while(GET_GPIO(MREADY_PIN));
-	 GPIO_SET = MSX_CS | MSX_MA0 | MSX_RW | (slot ==2 ? MSX_SLOT0 : MSX_SLOT1);
-	 SET_DATA(byte);
-	 GPIO_CLR = MSX_CS | MSX_MEM | (slot !=2 ? MSX_SLOT0 : MSX_SLOT1);
-	 while(GET_GPIO(MREADY_PIN));
-	 GPIO_SET = MSX_CS;
-	 i = 100; while(i--);
-#endif
-//	 printf("WM%dx%02x:%02x,%04x|%04x\n", slot, addr, byte, (unsigned char)GPIO, 0xffff & byte);
-	 return;
- }
 
- int msxreadio(unsigned short  addr) 
- {
-	 unsigned char byte;
-#ifdef RPMC_SLOT_V1	 
-	GPIO_SET = MSX_CS | MSX_RESET | MSX_MIO;
-	GPIO_CLR = MSX_MA0 | MSX_MODE | MSX_M1;
-	SET_ADDR(addr);
-	GPIO_CLR = MSX_RW;
-	GPIO_CLR = MSX_CS;
-	while(!GET_GPIO(MREADY_PIN));
-	GPIO_SET = MSX_MA0;
-	setDataIn();	 
-	while(!GET_GPIO(MREADY_PIN));
-	GET_DATA(byte);	 
-	GPIO_SET = MSX_CS | MSX_MODE;
-#elif defined (RPMC_SLOT_V2)
-	GPIO_SET = MSX_CS;
-	GPIO_CLR = MSX_MA0;
-	SET_ADDR(addr);
-	GPIO_CLR = MSX_CS;
-	while(GET_GPIO(MREADY_PIN));
-	GPIO_SET = MSX_CS | MSX_MA0 | MSX_MEM | MSX_SLOT0 | MSX_SLOT1;
-	GPIO_CLR = MSX_RW;
-	GPIO_CLR = MSX_CS;
-	while(GET_GPIO(MREADY_PIN));
-	GET_DATA(byte);	 
-	GPIO_SET = MSX_CS;
-#endif
-	printf("I 0x%02x:%02x\n", addr, byte);
-	 return 0xff;	 
- }
+void spi_clear()
+{
+	int x;
+	 GPIO_CLR = SPI_CS;
+	 GPIO_SET = SPI_MOSI;
+	 for(x = 0; x < 24; x++)
+	 {
+		 GPIO_CLR = SPI_SCLK;
+		 GPIO_SET = SPI_SCLK;
+	 }
+	 GPIO_SET = SPI_CS;
+}	
+
+void spi_set(int addr, int rd, int mreq, int slt1)
+{
+	int cs1, cs12, cs2, wr, iorq, x, spi_data;
+	cs1 = !(addr >= 0x4000 && addr < 0x8000);
+	cs2 = !(addr >= 0x8000 && addr < 0xc000);
+	cs12 = cs1 & cs2;
+	iorq = !mreq;
+	wr = !rd;
+	if (!iorq)
+		slt1 = 1;
+	spi_data = cs12 << 23 | cs1 << 22 | cs2 << 21 | mreq << 20 | iorq << 19 | rd << 18 | wr << 17 | slt1 << 16 | addr & 0xffff;
+	GPIO_CLR = SPI_CS;
+	for(x = 0; x < 24; x++)
+	{
+		GPIO_CLR = SPI_SCLK;
+		if (spi_data & 0x800000)
+		{
+			GPIO_SET = SPI_MOSI;
+		}
+		else
+		{
+			GPIO_CLR = SPI_MOSI;
+		}
+		spi_data <<= 1;
+		GPIO_SET = SPI_SCLK;
+	}
+	GPIO_SET = SPI_CS;
+	return;
+}
+	
+#if 0
+int main(int argc, char **argv)
+{
+  int g,rep,i,addr, page=4;
+  char byte;
+  int offset = 0x4000;
+  int size = 0x4000;
+  FILE *fp = 0;
   
- void msxwriteio(unsigned short  addr, unsigned char byte)
+  if (argc > 1)
+  {
+	  fp = fopen(argv[1], "wb");
+  }
+  if (argc > 2)
+  {
+	  offset = atoi(argv[2]);
+  }
+  if (argc > 3)
+  {
+	  size = atoi(argv[3]);
+  }
+ 
+  // Set up gpi pointer for direct register access
+  setup_io();
+ 
+	MSX_SET_OUTPUT(SPI_CS_PIN);
+	MSX_SET_OUTPUT(SPI_SCLK_PIN);
+	MSX_SET_OUTPUT(SPI_MOSI_PIN);
+	MSX_SET_OUTPUT(SLTSL1_PIN);
+	GPIO_SET = MSX_SLTSL1 | SPI_CS | SPI_SCLK | SPI_MOSI;  
+	msxwrite(1, 0x6000, 3);
+	for(addr=offset; addr < offset + size; addr ++)
+	{
+	  if (addr > 0xbfff)
+	  {
+		 if (!(addr & 0x1fff)) {
+			msxwrite(1, 0x6000, page++);
+			printf("page:%d, address=0x%04x\n", page-1, addr );
+		 }
+		 byte = msxread(1, 0x6000 + (addr & 0x1ffff));
+	  }
+	  else
+	  {
+		  byte = msxread(1, addr);
+	  }
+	  if (fp)
+		  fwrite(&byte, 1, 1, fp);
+	  else
+	  {
+		  if (addr % 16 == 0)
+			  printf("\n%04x:", addr);
+		  printf ("%02x ", byte);
+	  }
+	}
+	printf("\n");
+  clear_io();
+  return 0;
+ 
+} // main
+#endif
+ 
+ int msxread(int slot, unsigned short addr)
  {
-#ifdef RPMC_SLOT_V1	 
-	GPIO_SET = MSX_CS | MSX_MIO;
-	GPIO_CLR = MSX_MA0 | MSX_MODE;
-	SET_ADDR(addr);
-	GPIO_SET = MSX_RW;
-	GPIO_CLR = MSX_CS;
-	while(!GET_GPIO(MREADY_PIN));
-	GPIO_SET = MSX_CS;
-	SET_DATA(byte);	 
-	GPIO_SET = MSX_MA0;
-	GPIO_CLR = MSX_CS;
-	while(!GET_GPIO(MREADY_PIN));
-	GPIO_SET = MSX_CS | MSX_MODE;
-#elif defined (RPMC_SLOT_V2)	 
-	GPIO_SET = MSX_CS;
-	GPIO_CLR = MSX_MA0;
-	SET_ADDR(addr);
-	GPIO_CLR = MSX_CS;
-	while(GET_GPIO(MREADY_PIN));
-	GPIO_SET = MSX_CS | MSX_MA0 | MSX_MEM | MSX_RW | MSX_SLOT0 | MSX_SLOT1;
-	GPIO_CLR = MSX_CS;
-	while(GET_GPIO(MREADY_PIN));
-	GET_DATA(byte);	 	
-    GPIO_SET = MSX_CS;
-#endif		 
+	unsigned char byte;
+	struct timespec tv, tr;
+	tv.tv_sec = 0;
+	tv.tv_nsec = 200;
+	spi_set(addr, 0, 0, slot != 1);
+	//nanosleep(&tv, &tr);
+	GET_DATA(byte);
+	spi_clear();
+	return byte;	 
+ }
+ 
+ void msxwrite(int slot, unsigned short addr, unsigned char byte)
+ {
+	struct timespec tv, tr;
+	tv.tv_sec = 0;
+	tv.tv_nsec = 200;
+ 	SET_DATA(byte);
+	spi_set(addr, 1, 0, slot != 1);
+	nanosleep(&tv, &tr);
+	spi_clear();
+ 	SET_DATA(0);
+	return;
+ }
+ 
+ int msxreadio(unsigned short addr)
+ {
+	unsigned char byte;
+	struct timespec tv, tr;
+	tv.tv_sec = 0;
+	tv.tv_nsec = 200;
+	spi_set(addr, 0, 1, 1);
+	//nanosleep(&tv, &tr);
+	GET_DATA(byte);
+	spi_clear();
+	return byte;	 
+ }
+ 
+ void msxwriteio(unsigned short addr, unsigned char byte)
+ {
+	 struct timespec tv, tr;
+	 tv.tv_sec = 0;
+	 tv.tv_nsec = 400;
+ 	 SET_DATA(byte);
+	 spi_set(addr, 1, 1, 1);
+	 nanosleep(&tv, &tr);
+	 spi_clear();
+ 	 SET_DATA(0);
 	 return;
  }
  
- //
+int rtapi_open_as_root(const char *filename, int mode) {
+	fprintf (stderr, "euid: %d uid %d\n", geteuid(), getuid());
+	seteuid(0);
+	fprintf (stderr, "euid: %d uid %d\n", geteuid(), getuid());
+	setfsuid(geteuid());
+	int r = open(filename, mode);
+	setfsuid(getuid());
+	return r;
+}
+//
 // Set up a memory regions to access GPIO
 //
 void setup_io()
 {
    /* open /dev/mem */
-   if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
+   if ((mem_fd = rtapi_open_as_root("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
       printf("can't open /dev/mem \n");
       exit(-1);
    }
@@ -508,50 +295,29 @@ void setup_io()
       mem_fd,           //File to map
       GPIO_BASE         //Offset to GPIO peripheral
    );
+ 
+   close(mem_fd); //No need to keep mem_fd open after mmap
+ 
    if (gpio_map == MAP_FAILED) {
       printf("mmap error %d\n", (int)gpio_map);//errno also set!
       exit(-1);
    }
+ 
    // Always use volatile pointer!
    gpio = (volatile unsigned *)gpio_map;
 
-#define CLK_LEN   0xA8   
-   gpio_map = mmap(
-      NULL,             //Any adddress in our space will do
-      CLK_LEN,       //Map length
-      PROT_READ|PROT_WRITE,// Enable reading & writting to mapped memory
-      MAP_SHARED,       //Shared with other processes
-      mem_fd,           //File to map
-      CLOCK_BASE         //Offset to GPIO peripheral
-   );
-    if (gpio_map == MAP_FAILED) {
-      printf("mmap error %d\n", (int)gpio_map);//errno also set!
-      exit(-1);
-   }
-   // Always use volatile pointer!
-   clkReg = (volatile unsigned *)gpio_map;
-   
-   close(mem_fd); //No need to keep mem_fd open after mmap
-
-   if (!bcm2835_init())
-   {
-		printf("bcm2835_init error\n");
-		exit(-1);   
-   }
-#if 0   
-    bcm2835_spi_begin();
-    bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);      // The default
-    bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);                   // The default
-    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_4); 
-    bcm2835_spi_chipSelect(BCM2835_SPI_CS0);                      // The default
-    bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);      // the default   
-#endif
 } // setup_io
 
 void clear_io()
 {
-#if 0
-    bcm2835_spi_end();
-#endif
-    bcm2835_close();
+}
+
+void msxinit()
+{
+	setup_io();
+}
+
+void msxclose()
+{
+	clear_io();
 }
