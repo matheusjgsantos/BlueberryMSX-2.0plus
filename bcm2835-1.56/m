@@ -1,0 +1,7 @@
+#!/bin/bash
+./configure
+make
+sudo make check
+sudo make install
+make clean
+
