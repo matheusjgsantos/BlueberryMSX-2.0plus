@@ -462,18 +462,17 @@ void inline spi_set(int addr, int rd, int mreq, int slt1)
  {
 	struct timespec tv, tr;
 #ifdef RPMC_V5
-	GPIO_CLR = LE_C | LE_D;
-	GPIO_SET = addr;
-    GPIO_CLR = 0xffff;
-//	asm volatile ("nop;");	
-	GPIO_CLR = LE_A;
+    GPIO_CLR = LE_C | 0xffff;
+	GPIO_SET = LE_D | LE_A | addr;
+    GPIO_CLR = LE_A;
     GPIO_CLR = 0xff;
-    GPIO_SET = LE_C | 0xff00 | byte;
-	GPIO_CLR = (slot == 1 ? MSX_SLTSL1 : slot == 2 ? MSX_SLTSL3 : 0) | MSX_MREQ | MSX_WR;
+    GPIO_SET = LE_C | MSX_IORQ | MSX_RD | MSX_CS1 | MSX_CS2 | MSX_CS12 | byte;
+	GPIO_CLR = LE_D | (slot == 1 ? MSX_SLTSL1 : 0) | MSX_MREQ | MSX_WR;
 	GPIO_CLR = LE_C;
-	tv.tv_sec = 0;
-	tv.tv_nsec = 10;
-	nanosleep(&tv, &tr);
+	GET_DATA(byte);
+	GET_DATA(byte);
+	GET_DATA(byte);
+	GET_DATA(byte);
 	GPIO_SET = LE_A | LE_C | LE_D | 0xffff;
 #else	
 	tv.tv_sec = 0;
