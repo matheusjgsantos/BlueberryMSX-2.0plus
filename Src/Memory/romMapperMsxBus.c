@@ -107,9 +107,8 @@ int romMapperMsxBusCreate(int cartSlot, int slot, int sslot)
     rm->sslot    = sslot;
     rm->cartSlot = cartSlot;
 
-//    f = fopen("c:\\grlog.txt", "w+");
     rm->msxBus = msxBusCreate(cartSlot+1);
-	printf("MSXBus created. msxBus=%d slot=%d sslot=%d\n", rm->msxBus, slot, sslot);
+//	printf("MSXBus created. msxBus=%d slot=%d sslot=%d\n", rm->msxBus, slot, sslot);
 
     if (rm->msxBus != NULL) {
         ioPortRegisterUnused(cartSlot, readIo, writeIo, rm);

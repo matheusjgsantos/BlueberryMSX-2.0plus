@@ -71,7 +71,7 @@ private:
 	int inst = 0;
     int  slot;
 	int size;
-	UInt8 *bin;
+//	UInt8 *bin;
 	int page[4];
 	int skip = 0;
 	struct timespec t1, t2;	
@@ -81,14 +81,14 @@ CMSXBUS::CMSXBUS(int mbSlot) :
     slot(mbSlot)
 {
 	int i;
-	bin = romLoad("./adventure.rom", NULL, &size);
+//	bin = romLoad("./adventure.rom", NULL, &size);
 	for(i=0; i<4; i++)
 		page[i]=i;
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
 }
 
 CMSXBUS::~CMSXBUS() {
-	free(bin);
+//	free(bin);
 	msxclose();
 }
 
@@ -135,9 +135,7 @@ int CMSXBUS::readMemory(UInt16 address)
 		value = 0xff;
 	byte = value;
 #endif
-//	timelog();
     return byte;
-	//return (address >=0x4000 && address < 0xc000 ? bin[address-0x4000] : 0);
 }
 
 int CMSXBUS::writeMemory(UInt16 address, UInt8 value)
@@ -186,9 +184,9 @@ static void InitializeMSXBUSs()
 		msxinit();
 #endif
         MSXBUSs[0] = new CMSXBUS(1);
-		printf("MSXBUSs[0]=%d\n", MSXBUSs[0]);
+//		printf("MSXBUSs[0]=%d\n", MSXBUSs[0]);
 		MSXBUSs[1] = new CMSXBUS(2);
-		printf("MSXBUSs[0]=%d\n", MSXBUSs[0]);
+//		printf("MSXBUSs[0]=%d\n", MSXBUSs[0]);
     }
 }
 

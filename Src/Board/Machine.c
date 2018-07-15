@@ -428,6 +428,7 @@ static int readMachine(Machine* machine, const char* machineName, const char* fi
                     iniFilePath, slotFilename);
         }
 		//printf("Slot: %d %d\n", machine->slotInfo[i].slot, machine->slotInfo[i].romType );
+		//printf("slotInfo.name:%s\n", machine->slotInfo[i].name);
         
 #ifdef __APPLE__
         // On OS X, replace all backslashes with slashes
@@ -594,6 +595,7 @@ Machine* machineCreate(const char* machineName)
     }
     
     success = readMachine(machine, machineName, configIni);
+	printf("readMachine:%d\n", success);
     if (!success)
     {
 		machineDestroy(machine);
@@ -664,6 +666,7 @@ int machineIsValid(const char* machineName, int checkRoms)
                             FILE* file = fopen(machine->slotInfo[i].name, "r");
                             if (file == NULL)
                             {
+								printf("File not found:%s\n", machine->slotInfo[i].name);
                                 success = 0;
                                 continue;
                             }

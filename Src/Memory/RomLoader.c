@@ -40,6 +40,7 @@ UInt8* romLoad(const char *fileName, const char *fileInZipFile, int* size)
     UInt8* buf = NULL;
     FILE *file;
 
+	printf("romLoad:%s\n", fileName);
     if (fileName == NULL || strlen(fileName) == 0) {
         return NULL;
     }
@@ -55,6 +56,7 @@ UInt8* romLoad(const char *fileName, const char *fileInZipFile, int* size)
 
     file = fopen(fileName, "rb");
     if (file == NULL) {
+		printf("File not found:%s\n", fileName);
         return NULL;
     }
 

@@ -1,1 +1,1 @@
-sudo ./bluemsx-pi /machine "MSX - Daewoo DPC-200" /romtype1 msxbus /romtype2 /msxbus
+./bluemsx-pi /machine "MSX - Daewoo DPC-200" /romtype1 msxbus /romtype2 /msxbus

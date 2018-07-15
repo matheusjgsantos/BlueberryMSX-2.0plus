@@ -183,7 +183,7 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
         }
 		else
 		{
-			printf("insertCartridge error\n");
+			//printf("insertCartridge error\n");
 		}
     }
 
