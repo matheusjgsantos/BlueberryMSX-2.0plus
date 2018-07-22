@@ -134,7 +134,7 @@ static const GLfloat vertices[] = {
 int piInitVideo()
 {
 	bcm_host_init();
-	bcm_host_init();
+	//bcm_host_init();
 
 	// get an EGL display connection
 	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -300,7 +300,7 @@ int piInitVideo()
 	// We're doing our own video rendering - this is just so SDL-based keyboard
 	// can work
 	sdlScreen = SDL_SetVideoMode(0, 0, 0, 0);
-
+    SDL_ShowCursor(SDL_DISABLE);
 	return 1;
 }
 

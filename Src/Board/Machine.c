@@ -595,7 +595,6 @@ Machine* machineCreate(const char* machineName)
     }
     
     success = readMachine(machine, machineName, configIni);
-	printf("readMachine:%d\n", success);
     if (!success)
     {
 		machineDestroy(machine);
