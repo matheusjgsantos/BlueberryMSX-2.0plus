@@ -28,7 +28,7 @@ done < m
 echo "3>&2 2>&1 1>&3" >> msx
 
 choice=$(./msx)
-a=`sed -n ${choice}p < x`
+a=`sed -n ${choice}p < menu`
 clear
 echo ./bluemsx-pi /machine \"${a}\" /romtype1 msxbus /romtype2 msxbus > xx
 ./bluemsx-pi /machine "$a" /romtype1 msxbus /romtype2 msxbus
