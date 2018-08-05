@@ -1,1 +1,1 @@
-./bluemsx-pi /machine "MSX - Daewoo DPC-200" /romtype1 msxbus /romtype2 /msxbus
+taskset 4 ./bluemsx-pi /machine "MSX - Daewoo DPC-200" /romtype1 msxbus /romtype2 /msxbus

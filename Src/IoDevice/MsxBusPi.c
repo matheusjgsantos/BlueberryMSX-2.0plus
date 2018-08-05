@@ -25,7 +25,7 @@
  
 #define PAGE_SIZE (4*1024)
 #define BLOCK_SIZE (4*1024)
- 
+
 int  mem_fd;
 void *gpio_map;
  
@@ -207,21 +207,32 @@ int msxread(int slot, unsigned short addr)
  
  void msxwrite(int slot, unsigned short addr, unsigned char byte)
  {
+	int i;
 	pthread_mutex_lock(&mutex);		 
-    GPIO_CLR = LE_C | 0xffff;
+    GPIO_CLR = 0xffff;
 	GPIO_SET = LE_D | LE_A | addr;
     GPIO_CLR = LE_A;
     GPIO_CLR = 0xff;
-    GPIO_SET = LE_C | MSX_IORQ | MSX_RD | MSX_CS1 | MSX_CS2 | MSX_CS12 | byte;
+    GPIO_SET = LE_C | MSX_RD | MSX_CS1 | MSX_CS2 | MSX_CS12 | byte;
 	GPIO_CLR = LE_D | (slot == 1 ? MSX_SLTSL1 : 0) | MSX_MREQ | MSX_WR;
 	GPIO_CLR = LE_C;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-	GPIO_SET = LE_A | LE_C | LE_D | 0xffff;
+	byte = GPIO;
+	byte = GPIO;
+	byte = GPIO;
+	byte = GPIO;
+	byte = GPIO;
+	byte = GPIO;
+	byte = GPIO;
+	byte = GPIO;
+	byte = GPIO;
+	byte = GPIO;
+	byte = GPIO;
+	GPIO_SET = LE_D | 0xff00;
+    GPIO_CLR = LE_C;
+	for(i=0;i<9;i++) 
+	{
+		byte = GPIO;
+	}
 	pthread_mutex_unlock(&mutex);		
 	return;
  }
@@ -229,22 +240,19 @@ int msxread(int slot, unsigned short addr)
  int msxreadio(unsigned short addr)
  {
 	unsigned char byte;
+	int i;
 	pthread_mutex_lock(&mutex);			
     GPIO_CLR = LE_C | 0xffff;
 	GPIO_SET = LE_D | LE_A | addr;
     GPIO_CLR = LE_A;
     GPIO_SET = LE_C | MSX_MREQ | MSX_WR;
     GPIO_CLR = LE_D | MSX_IORQ | MSX_RD | 0xff;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
+	for(i=0;i<13;i++) 
+	{
+		byte = GPIO;
+	}
 	//printf("\n");
-	GPIO_SET = LE_D | 0xff00;
+    GPIO_SET = LE_D | 0xff00;
     GPIO_CLR = LE_C;
 	pthread_mutex_unlock(&mutex);		
 	return byte;	 
@@ -252,6 +260,7 @@ int msxread(int slot, unsigned short addr)
  
  void msxwriteio(unsigned short addr, unsigned char byte)
  {
+	 int i;
 	pthread_mutex_lock(&mutex);			 
     GPIO_CLR = LE_C | 0xffff;
 	GPIO_SET = LE_D | LE_A | addr;
@@ -260,15 +269,10 @@ int msxread(int slot, unsigned short addr)
     GPIO_SET = LE_C | MSX_MREQ | MSX_RD | MSX_CS1 | MSX_CS2 | MSX_CS12 | byte;
 	GPIO_CLR = LE_D | MSX_IORQ | MSX_WR;
 	GPIO_CLR = LE_C;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;	
+	for(i=0;i<16;i++) 
+	{
+		byte = GPIO;
+	}
 	GPIO_SET = LE_A | LE_C | LE_D | 0xffff;
 	pthread_mutex_unlock(&mutex);		
 	 return;
