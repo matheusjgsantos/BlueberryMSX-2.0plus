@@ -162,7 +162,6 @@ int CMSXBUS::readIo(UInt16 port)
 {
 	int value = msxreadio(port);
 // 	printf("readio(%02x): %02x\n", port, value);
-	value = 0xff;
     return value;
 }
 
