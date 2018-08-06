@@ -161,14 +161,14 @@ int CMSXBUS::writeMemory(UInt16 address, UInt8 value)
 int CMSXBUS::readIo(UInt16 port)
 {
 	int value = msxreadio(port);
-// 	printf("readio(%02x): %02x\n", port, value);
+ 	printf("readio(%02x): %02x\n", port, value);
     return value;
 }
 
 int CMSXBUS::writeIo(UInt16 port, UInt8 value)
 {
 	msxwriteio(port, value);
-// 	printf("writeio(%02x): %02x\n", port, value);
+ 	printf("writeio(%02x): %02x\n", port, value);
     return true;
 }
 
