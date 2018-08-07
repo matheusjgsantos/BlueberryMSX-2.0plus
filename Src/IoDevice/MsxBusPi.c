@@ -438,16 +438,13 @@ void inline spi_set(int addr, int rd, int mreq, int slt1)
 	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2 | MSX_CS12 : 0;
     GPIO_CLR = LE_C | 0xffff;
 	GPIO_SET = LE_D | LE_A | addr;
-	GPIO_SET = LE_D | LE_A | addr;
+	GPIO_SET = 0;
     GPIO_CLR = LE_A;
-	GPIO_SET = LE_C | MSX_IORQ | MSX_WR;
     GPIO_CLR = LE_D | (slot == 1 ? MSX_SLTSL1 : 0) | MSX_MREQ | MSX_RD | cs1 | cs2 | 0xff;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
+	GPIO_SET = LE_C | MSX_IORQ | MSX_WR;
+for(i=0;i<10;i++) byte = GPIO;
 	GPIO_SET = LE_D | 0xff00;
+	GPIO_SET = 0;
     GPIO_CLR = LE_C;
 	pthread_mutex_unlock(&mutex);	
 #else	
@@ -468,13 +465,10 @@ void inline spi_set(int addr, int rd, int mreq, int slt1)
 	pthread_mutex_lock(&mutex);
     GPIO_CLR = LE_C | 0xffff;
 	GPIO_SET = LE_D | LE_A | addr;
-	GPIO_SET = LE_D | LE_A | addr;
+	GPIO_SET = 0;
     GPIO_CLR = LE_A;
-    GPIO_CLR = LE_A;
-    GPIO_CLR = 0xff;
-    GPIO_CLR = 0xff;
+	GPIO_CLR = LE_D | (slot == 1 ? MSX_SLTSL1 : 0) | MSX_MREQ | MSX_WR | 0xff;
     GPIO_SET = LE_C | MSX_IORQ | MSX_RD | MSX_CS1 | MSX_CS2 | MSX_CS12 | byte;
-	GPIO_CLR = LE_D | (slot == 1 ? MSX_SLTSL1 : 0) | MSX_MREQ | MSX_WR;
     byte = GPIO;
     byte = GPIO;
     byte = GPIO;
@@ -484,6 +478,8 @@ void inline spi_set(int addr, int rd, int mreq, int slt1)
     byte = GPIO;
     byte = GPIO;
     byte = GPIO;
+	byte= GPIO;
+	byte=GPIO;
 	GPIO_SET = LE_D | 0xff00;
     GPIO_CLR = LE_C;
 	pthread_mutex_unlock(&mutex);	
