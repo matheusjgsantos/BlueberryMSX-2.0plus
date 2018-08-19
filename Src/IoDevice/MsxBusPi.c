@@ -35,6 +35,7 @@ volatile unsigned *gpio10;
 volatile unsigned *gpio7;
 volatile unsigned *gpio13;
 volatile unsigned *gpio1;
+volatile unsigned *gclk_base;
  
  
 // GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
@@ -50,6 +51,10 @@ volatile unsigned *gpio1;
  
 #define GPIO_PULL *(gpio+37) // Pull up/pull down
 #define GPIO_PULLCLK0 *(gpio+38) // Pull up/pull down clock
+
+#define GZ_CLK_BUSY    (1 << 7)
+#define GP_CLK0_CTL *(gclk_base + 0x1C)
+#define GP_CLK0_DIV *(gclk_base + 0x1D)
 
 #ifdef RPMC_V5
 #define RD0		0
@@ -116,6 +121,9 @@ volatile unsigned *gpio1;
 #define LE_A	(1 << LE_A_PIN)
 #define LE_C	(1 << LE_C_PIN)
 #define LE_D	(1 << LE_D_PIN)
+#define MSX_CLK (1 << CLK_PIN)
+
+#define MSX_CTRL_FLAG (MSX_SLTSL1 | MSX_SLTSL3 | MSX_CS1 | MSX_CS2 | MSX_CS12 | MSX_RD | MSX_WR | MSX_IORQ | MSX_MREQ)
 
 #else
 // MSX slot access macro
@@ -181,6 +189,7 @@ void setDataIn();
 void setDataOut();
 void spi_clear();
 void spi_set(int addr, int rd, int mreq, int slt1);
+void setup_gclk();
 
 void setDataIn()
 {
@@ -425,72 +434,73 @@ void inline spi_set(int addr, int rd, int mreq, int slt1)
 #endif
 	return;
 }
-	
+
+void SetAddress(unsigned short addr)
+{
+	GPIO_CLR = 0xffff;
+	GPIO_SET = LE_A | addr;
+	GPIO_SET = LE_A;
+    GPIO_CLR = LE_A;
+	GPIO_SET = LE_C | MSX_CTRL_FLAG;
+    GPIO_SET = LE_C;
+    GPIO_CLR = LE_C | LE_D | 0xff;
+}	
+
+void SetDelay(int j)
+{
+	for(int i=0; i<j; i++)
+		GPIO_SET = 0;
+}
+
+void SetData(int flag, int delay, unsigned char byte)
+{
+//	SetDelay(delay);
+	GPIO_CLR = flag | LE_D;
+	GPIO_SET = byte;
+	for (int i = 0; i < 5; i++)
+	{
+		GPIO_CLR = LE_D | flag;
+		GPIO_SET = LE_C | byte;
+	}
+	GPIO_SET = LE_D | flag;   	
+	GPIO_CLR = LE_C;
+}
+
+unsigned char GetData(int flag, int delay)
+{
+	unsigned char byte;
+	GPIO_SET = LE_C;
+	GPIO_CLR = MSX_CLK | flag;
+	SetDelay(delay);
+	byte = GPIO;
+	GPIO_SET = LE_D;
+	GPIO_SET = MSX_CTRL_FLAG | MSX_CLK;
+   	GPIO_SET = MSX_CLK;
+   	GPIO_CLR = LE_C | MSX_CLK;
+   	GPIO_SET = MSX_CLK;
+	return byte;
+}
 
  int msxread(int slot, unsigned short addr)
  {
 	unsigned char byte;
-	int i, j;
-#ifdef RPMC_V5
 	int cs1, cs2, cs12;
+	cs1 = (addr & 0xc000) == 0x4000 ? MSX_CS1: 0;
+	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2: 0;
+	cs12 = (cs1 | cs2 ? MSX_CS12 : 0);
 	pthread_mutex_lock(&mutex);
-	cs1 = (addr & 0xc000) == 0x4000 ? MSX_CS1 | MSX_CS12 : 0;
-	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2 | MSX_CS12 : 0;
-    GPIO_CLR = LE_C | 0xffff;
-	GPIO_SET = LE_D | LE_A | addr;
-	GPIO_SET = 0;
-    GPIO_CLR = LE_A;
-    GPIO_CLR = LE_D | (slot == 1 ? MSX_SLTSL1 : 0) | MSX_MREQ | MSX_RD | cs1 | cs2 | 0xff;
-	GPIO_SET = LE_C | MSX_IORQ | MSX_WR;
-for(i=0;i<10;i++) byte = GPIO;
-	GPIO_SET = LE_D | 0xff00;
-	GPIO_SET = 0;
-    GPIO_CLR = LE_C;
+	SetAddress(addr);
+	byte = GetData((slot == 1 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_RD | cs1 | cs2 | cs12, 20);
 	pthread_mutex_unlock(&mutex);	
-#else	
-	spi_set(addr, 0, 0, slot);
-	GET_DATA(byte);
-	GET_DATA(byte);
-	GET_DATA(byte);
-	GET_DATA(byte);
-	spi_clear();
-#endif
 	return byte;	 
  }
  
  void msxwrite(int slot, unsigned short addr, unsigned char byte)
  {
-	struct timespec tv, tr;
-#ifdef RPMC_V5
 	pthread_mutex_lock(&mutex);
-    GPIO_CLR = LE_C | 0xffff;
-	GPIO_SET = LE_D | LE_A | addr;
-	GPIO_SET = 0;
-    GPIO_CLR = LE_A;
-	GPIO_CLR = LE_D | (slot == 1 ? MSX_SLTSL1 : 0) | MSX_MREQ | MSX_WR | 0xff;
-    GPIO_SET = LE_C | MSX_IORQ | MSX_RD | MSX_CS1 | MSX_CS2 | MSX_CS12 | byte;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-	byte= GPIO;
-	byte=GPIO;
-	GPIO_SET = LE_D | 0xff00;
-    GPIO_CLR = LE_C;
+	SetAddress(addr);
+	SetData((slot == 1 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_WR, 35, byte);
 	pthread_mutex_unlock(&mutex);	
-#else	
-	tv.tv_sec = 0;
-	tv.tv_nsec = 20;
-	spi_set(addr, 1, 0, slot);
-	nanosleep(&tv, &tr);
-	spi_clear();
-	GPIO_SET = 0xff << MD00_PIN;
-#endif	
 	return;
  }
  
@@ -498,50 +508,17 @@ for(i=0;i<10;i++) byte = GPIO;
  {
 	unsigned char byte;
 	pthread_mutex_lock(&mutex);
-    GPIO_CLR = LE_C | 0xffff;
-	GPIO_SET = LE_D | LE_A | addr;
-	GPIO_SET = LE_D | LE_A | addr;
-    GPIO_CLR = LE_A;
-	GPIO_SET = 0xff00;
-    GPIO_SET = LE_C | MSX_MREQ | MSX_WR;
-    GPIO_CLR = LE_D | MSX_IORQ | MSX_RD | 0xff;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-    byte = GPIO;
-	GPIO_SET = LE_D | 0xff00;
-    GPIO_CLR = LE_C;
+	SetAddress(addr);
+	byte = GetData(MSX_IORQ | MSX_RD, 30);
 	pthread_mutex_unlock(&mutex);	
 	return byte;	 
  }
  
  void msxwriteio(unsigned short addr, unsigned char byte)
- {
+   {
 	pthread_mutex_lock(&mutex);
-	GPIO_CLR = LE_C | 0xffff;
-	GPIO_SET = LE_D | LE_A | addr;
-	GPIO_SET = LE_D | LE_A | addr;
-	GPIO_CLR = LE_A;
-	GPIO_CLR = 0xff;
-	GPIO_SET = 0xff00;
-	GPIO_SET = LE_C | MSX_MREQ | MSX_RD | MSX_CS1 | MSX_CS2 | MSX_CS12 | byte;
-	GPIO_CLR = LE_D | MSX_IORQ | MSX_WR;
-	GPIO_CLR = LE_C;
-	byte = GPIO;
-	byte = GPIO;
-	byte = GPIO;
-	byte = GPIO;
-	byte = GPIO;
-	byte = GPIO;
-	byte = GPIO;
-	byte = GPIO;
-	byte = GPIO;	
-	GPIO_SET = LE_D | 0xff00;
-	GPIO_CLR = LE_C;
+	SetAddress(addr);
+	SetData(MSX_IORQ | MSX_WR, 40, byte);
 	pthread_mutex_unlock(&mutex);		
 	return;
  }
@@ -562,22 +539,45 @@ int rtapi_open_as_root(const char *filename, int mode) {
 //
 int setup_io()
 {
-	int i ;	
+	int i, speed_id, divisor ;	
 	if (!bcm2835_init()) return -1;
 	gpio = bcm2835_regbase(BCM2835_REGBASE_GPIO);
 	for(int i=0; i < 28; i++)
 	{
-		bcm2835_gpio_fsel(i, i < 21 ? 1 : 0);    
+		bcm2835_gpio_fsel(i, 1);    
 	}
 
 	gpio10 = gpio+10;
 	gpio7 = gpio+7;
 	gpio13 = gpio+13;
 	gpio1 = gpio+1;
-   
-	GPIO_SET = LE_A | LE_C | LE_D;
+	//SET_GPIO_ALT(20, 5);
+	gclk_base = bcm2835_regbase(BCM2835_REGBASE_CLK);
+	if (gclk_base != MAP_FAILED)
+	{
+		int divi, divr, divf, freq;
+		bcm2835_gpio_fsel(20, BCM2835_GPIO_FSEL_ALT5); // GPIO_20
+		speed_id = 1;
+		freq = 3500000;
+		divi = 19200000 / freq ;
+		divr = 19200000 % freq ;
+		divf = (int)((double)divr * 4096.0 / 19200000.0) ;
+		if (divi > 4095)
+			divi = 4095 ;		
+		divisor = 1 < 12;// | (int)(6648/1024);
+		GP_CLK0_CTL = 0x5A000000 | speed_id;    // GPCLK0 off
+		while (GP_CLK0_CTL & 0x80);    // Wait for BUSY low
+		GP_CLK0_DIV = 0x5A000000 | (divi << 12) | divf; // set DIVI
+		GP_CLK0_CTL = 0x5A000010 | speed_id;    // GPCLK0 on
+		printf("clock enabled: 0x%08x\n", GP_CLK0_CTL );
+	}
+	else
+		printf("clock disabled\n");
+	
+//	GPIO_SET = LE_C | MSX_IORQ | MSX_RD | MSX_WR | MSX_MREQ | MSX_CS1 | MSX_CS2 | MSX_CS12 | MSX_SLTSL1 | MSX_SLTSL3;
+//	GPIO_SET = LE_A | LE_D;
 	GPIO_CLR = 0xffff;
-	GPIO_CLR = MSX_RESET | LE_A ;
+	GPIO_CLR = MSX_RESET;
 	for(int i=0;i<1000000;i++);
 	GPIO_SET = MSX_RESET;
 	for(int i=0;i<1000000;i++);

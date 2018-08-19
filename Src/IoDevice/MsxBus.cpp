@@ -80,11 +80,6 @@ private:
 CMSXBUS::CMSXBUS(int mbSlot) : 
     slot(mbSlot)
 {
-	int i;
-//	bin = romLoad("./adventure.rom", NULL, &size);
-	for(i=0; i<4; i++)
-		page[i]=i;
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
 }
 
 CMSXBUS::~CMSXBUS() {
@@ -141,20 +136,7 @@ int CMSXBUS::readMemory(UInt16 address)
 int CMSXBUS::writeMemory(UInt16 address, UInt8 value)
 {
 	msxwrite(slot, address, value);
-#if 0
-	if (address == 0x5000)
-		page[0] = value;
-	else if (address == 0x7000)
-		page[1] = value;
-	else if (address == 0x9000)
-		page[2] = value;
-	else if (address == 0xb000)
-		page[3] = value;
-	else if (address == 0x4000)
-		skip = 1;
-#endif	
-//	timelog();
-//  	printf("write%d: 0x%04x-%02x\n", slot, address, value);
+ 	printf("write%d: 0x%04x-%02x\n", slot, address, value);
     return true;
 }
 
@@ -179,14 +161,12 @@ static CMSXBUS* MSXBUSs[2] = { NULL, NULL };
 static void InitializeMSXBUSs()
 {
     if (MSXBUSs[0] == NULL) {
-#ifndef WIN32
-		msxinit();
-#endif
         MSXBUSs[0] = new CMSXBUS(1);
-//		printf("MSXBUSs[0]=%d\n", MSXBUSs[0]);
+		printf("MSXBUSs[0]=%d\n", MSXBUSs[0]);
 		MSXBUSs[1] = new CMSXBUS(2);
 //		printf("MSXBUSs[0]=%d\n", MSXBUSs[0]);
     }
+	msxinit();
 }
 
 static void DeinitializeMSXBUSs()

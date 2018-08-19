@@ -157,6 +157,11 @@ static UInt8 readPort(R800* r800, UInt16 port) {
     delayVdpIO(r800, port);
 
     value = r800->readIoPort(r800->ref, port);
+#if 0	
+	UInt16 addr = (UInt16) (r800->regs.PC.W);
+	if (addr > 0x4000 && addr < 0xc000)
+		printf ("addr(%04x),readio:%02x,%02x\n", addr, port & 0xff, value);	
+#endif	
     delayPostIo(r800);
 
     return value;
@@ -167,6 +172,11 @@ static void writePort(R800* r800, UInt16 port, UInt8 value) {
     delayPreIo(r800);
 
     delayVdpIO(r800, port);
+#if 0	
+	UInt16 addr = (UInt16) (r800->regs.PC.W);
+	if (addr > 0x4000 && addr < 0xc000)
+		printf ("addr(%04x),writeio:%02x,%02x\n", addr, port & 0xff, value);
+#endif	
     r800->writeIoPort(r800->ref, port, value);
     delayPostIo(r800);
     

@@ -115,6 +115,9 @@ UInt8 ioPortRead(void* ref, UInt16 port)
 
     if (boardGetType() == BOARD_MSX && port >= 0x40 && port < 0x50) {
         if (ioSubTable[currentSubport].read == NULL) {
+//			if (ioUnused[0].read != NULL) {
+//				return ioUnused[0].read(ioUnused[0].ref, port);
+//			}
             return 0xff;
         }
 
@@ -141,7 +144,10 @@ void  ioPortWrite(void* ref, UInt16 port, UInt8 value)
     if (boardGetType() == BOARD_MSX && port >= 0x40 && port < 0x50) {
         if (port == 0x40) {
             currentSubport = value;
-            return;
+//			if (ioUnused[0].write != NULL) {
+//				ioUnused[0].write(ioUnused[0].ref, port, value);            
+//				return;
+//			}
         }
         
         if (ioSubTable[currentSubport].write != NULL) {

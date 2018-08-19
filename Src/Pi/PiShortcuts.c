@@ -41,6 +41,20 @@ typedef struct {
     unsigned key  : 16;
 } ShortcutHotkey;
 
+struct IniFile
+{
+    char *iniBuffer;
+    char *iniPtr;
+    char *iniEnd;
+    char *wrtBuffer;
+    int   wrtBufferSize;
+    int   wrtOffset;
+    int   modified;
+    char  iniFilename[512];
+    char  zipFile[512];
+    int   isZipped;
+};
+
 static const ShortcutHotkey quitHotKey = {
     HOTKEY_TYPE_KEYBOARD, 0, SDLK_F12,
 };
@@ -55,6 +69,9 @@ static const ShortcutHotkey mediumFrameskipHotKey = {
 };
 static const ShortcutHotkey highFrameskipHotKey = {
     HOTKEY_TYPE_KEYBOARD, 0, SDLK_F8,
+};
+static const ShortcutHotkey resetHard = {
+    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F7,	
 };
 
 struct Shortcuts {
@@ -181,52 +198,58 @@ Shortcuts* shortcutsCreate()
 
     IniFile *iniFile = iniFileOpen(filename);
 
-    LOAD_SHORTCUT(switchMsxAudio);
-    LOAD_SHORTCUT(spritesEnable);
-    LOAD_SHORTCUT(fdcTiming);
-    LOAD_SHORTCUT(switchFront);
-    LOAD_SHORTCUT(switchPause);
-    LOAD_SHORTCUT(quit);
-    LOAD_SHORTCUT(captureAudio);
-    LOAD_SHORTCUT(captureScreenshot);
-    LOAD_SHORTCUT(cpuStateQuickLoad);
-    LOAD_SHORTCUT(cpuStateQuickSave);
-    
-    LOAD_SHORTCUT(cartRemove[0]);
-    LOAD_SHORTCUT(cartRemove[1]);
-    LOAD_SHORTCUT(cartAutoReset);
-    
-    LOAD_SHORTCUT(diskRemove[0]);
-    LOAD_SHORTCUT(diskRemove[1]);
-    LOAD_SHORTCUT(diskQuickChange);
-    LOAD_SHORTCUT(diskAutoReset);
+	if (iniFile->iniBuffer) {
+		LOAD_SHORTCUT(switchMsxAudio);
+		LOAD_SHORTCUT(spritesEnable);
+		LOAD_SHORTCUT(fdcTiming);
+		LOAD_SHORTCUT(switchFront);
+		LOAD_SHORTCUT(switchPause);
+		LOAD_SHORTCUT(quit);
+		LOAD_SHORTCUT(captureAudio);
+		LOAD_SHORTCUT(captureScreenshot);
+		LOAD_SHORTCUT(cpuStateQuickLoad);
+		LOAD_SHORTCUT(cpuStateQuickSave);
+		
+		LOAD_SHORTCUT(cartRemove[0]);
+		LOAD_SHORTCUT(cartRemove[1]);
+		LOAD_SHORTCUT(cartAutoReset);
+		
+		LOAD_SHORTCUT(diskRemove[0]);
+		LOAD_SHORTCUT(diskRemove[1]);
+		LOAD_SHORTCUT(diskQuickChange);
+		LOAD_SHORTCUT(diskAutoReset);
 
-    LOAD_SHORTCUT(casRewind);
-    LOAD_SHORTCUT(casRemove);
-    LOAD_SHORTCUT(casToggleReadonly);
-    LOAD_SHORTCUT(casAutoRewind);
-    LOAD_SHORTCUT(casSave);
-    
-    LOAD_SHORTCUT(emulationRunPause);
-    LOAD_SHORTCUT(emulationStop);
-    LOAD_SHORTCUT(emuSpeedFull);
-    LOAD_SHORTCUT(emuSpeedToggle);
-    LOAD_SHORTCUT(emuSpeedNormal);
-    LOAD_SHORTCUT(emuSpeedInc);
-    LOAD_SHORTCUT(emuSpeedDec);
-    LOAD_SHORTCUT(windowSizeNormal);
-    LOAD_SHORTCUT(windowSizeFullscreen);
-    LOAD_SHORTCUT(windowSizeFullscreenToggle);
-    LOAD_SHORTCUT(resetSoft);
-    LOAD_SHORTCUT(resetHard);
-    LOAD_SHORTCUT(resetClean);
-    LOAD_SHORTCUT(volumeIncrease);
-    LOAD_SHORTCUT(volumeDecrease);
-    LOAD_SHORTCUT(volumeMute);
-    LOAD_SHORTCUT(volumeStereo);
+		LOAD_SHORTCUT(casRewind);
+		LOAD_SHORTCUT(casRemove);
+		LOAD_SHORTCUT(casToggleReadonly);
+		LOAD_SHORTCUT(casAutoRewind);
+		LOAD_SHORTCUT(casSave);
+		
+		LOAD_SHORTCUT(emulationRunPause);
+		LOAD_SHORTCUT(emulationStop);
+		LOAD_SHORTCUT(emuSpeedFull);
+		LOAD_SHORTCUT(emuSpeedToggle);
+		LOAD_SHORTCUT(emuSpeedNormal);
+		LOAD_SHORTCUT(emuSpeedInc);
+		LOAD_SHORTCUT(emuSpeedDec);
+		LOAD_SHORTCUT(windowSizeNormal);
+		LOAD_SHORTCUT(windowSizeFullscreen);
+		LOAD_SHORTCUT(windowSizeFullscreenToggle);
+		LOAD_SHORTCUT(resetSoft);
+		LOAD_SHORTCUT(resetHard);
+		LOAD_SHORTCUT(resetClean);
+		LOAD_SHORTCUT(volumeIncrease);
+		LOAD_SHORTCUT(volumeDecrease);
+		LOAD_SHORTCUT(volumeMute);
+		LOAD_SHORTCUT(volumeStereo);
 
-    iniFileClose(iniFile);
-
+	}
+	else
+	{
+		printf("Reset Hard\n");
+		shortcuts->resetSoft = resetHard;
+	}
+	iniFileClose(iniFile);
     return shortcuts;
 }
 
