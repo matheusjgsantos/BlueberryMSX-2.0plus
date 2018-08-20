@@ -244,6 +244,24 @@ int main(int argc, char **argv)
 #ifdef RASPI_GPIO
 	gpioInit();
 #endif
+	int resetProperties;
+	char szLine[8192] = "";
+	char path[512] = "";
+	
+	setDefaultPaths(archGetCurrentDirectory());
+
+	resetProperties = emuCheckResetArgument(szLine);
+	strcat(path, archGetCurrentDirectory());
+	strcat(path, DIR_SEPARATOR "bluemsx.ini");
+
+	properties = propCreate(resetProperties, 0, P_KBD_EUROPEAN, 0, "");
+
+	if (resetProperties == 2) {
+//		piDestroyVideo();
+//		piDestroyUdev();
+		propDestroy(properties);
+		return 0;
+	}
 
 	if (!piInitVideo()) {
 		fprintf(stderr, "piInitVideo() failed");
@@ -261,9 +279,7 @@ int main(int argc, char **argv)
 	SDL_JoystickEventState(SDL_ENABLE);
 
 	SDL_Event event;
-	char szLine[8192] = "";
-	int resetProperties;
-	char path[512] = "";
+
 	int i;
 
 	for (i = 1; i < argc; i++) {
@@ -281,20 +297,7 @@ int main(int argc, char **argv)
 		joysticks[i] = SDL_JoystickOpen(i);
 	}
 
-	setDefaultPaths(archGetCurrentDirectory());
 
-	resetProperties = emuCheckResetArgument(szLine);
-	strcat(path, archGetCurrentDirectory());
-	strcat(path, DIR_SEPARATOR "bluemsx.ini");
-
-	properties = propCreate(resetProperties, 0, P_KBD_EUROPEAN, 0, "");
-
-	if (resetProperties == 2) {
-		piDestroyVideo();
-		piDestroyUdev();
-		propDestroy(properties);
-		return 0;
-	}
 
 	video = videoCreate();
 	videoSetPalMode(video, VIDEO_PAL_FAST);

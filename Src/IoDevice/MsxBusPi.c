@@ -454,14 +454,19 @@ void SetDelay(int j)
 
 void SetData(int flag, int delay, unsigned char byte)
 {
-//	SetDelay(delay);
 	GPIO_CLR = flag | LE_D;
-	GPIO_SET = byte;
-	for (int i = 0; i < 5; i++)
+	GPIO_SET = MSX_WR;
+	GPIO_SET = LE_C | byte;
+	for(int i=0; i < 10; i++)
+		GPIO_SET = 0;
+	for(int i=0; i < delay; i++)
 	{
-		GPIO_CLR = LE_D | flag;
 		GPIO_SET = LE_C | byte;
+		GPIO_CLR = MSX_WR;
 	}
+	GPIO_SET = MSX_WR;
+	byte = GPIO;
+	byte = GPIO;
 	GPIO_SET = LE_D | flag;   	
 	GPIO_CLR = LE_C;
 }
@@ -490,7 +495,7 @@ unsigned char GetData(int flag, int delay)
 	cs12 = (cs1 | cs2 ? MSX_CS12 : 0);
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
-	byte = GetData((slot == 1 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_RD | cs1 | cs2 | cs12, 20);
+	byte = GetData((slot == 1 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_RD | cs1 | cs2 | cs12, 25);
 	pthread_mutex_unlock(&mutex);	
 	return byte;	 
  }
@@ -578,7 +583,7 @@ int setup_io()
 //	GPIO_SET = LE_A | LE_D;
 	GPIO_CLR = 0xffff;
 	GPIO_CLR = MSX_RESET;
-	for(int i=0;i<1000000;i++);
+	for(int i=0;i<2000000;i++);
 	GPIO_SET = MSX_RESET;
 	for(int i=0;i<1000000;i++);
 	return 0;
@@ -612,13 +617,13 @@ void msxinit()
         printf("GPIO init error\n");
         exit(0);
     }
+	printf("MSX BUS initialized\n");
 }
 
 void msxclose()
 {
 	clear_io();
 }
-
 
 
 #ifdef _MAIN

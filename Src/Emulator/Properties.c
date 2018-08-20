@@ -487,6 +487,7 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->video.driver = P_VIDEO_DRVDIRECTX_VIDEO;
     properties->video.monitorType = P_VIDEO_PALNONE;
     properties->video.horizontalStretch = 0;
+	properties->video.screenRatio = 100;
     properties->emulation.syncMethod = P_EMU_SYNCFRAMES;
     properties->emulation.reverseEnable = 0;
     properties->sound.chip.enableYM2413 = 0;
@@ -616,6 +617,7 @@ static void propLoad(Properties* properties)
     GET_ENUM_VALUE_2(propFile, video, detectActiveMonitor, BoolPair);
     GET_INT_VALUE_2(propFile, video, captureFps);
     GET_INT_VALUE_2(propFile, video, captureSize);
+	GET_INT_VALUE_2(propFile, video, screenRatio);
 
     GET_ENUM_VALUE_3(propFile, video, d3d, linearFiltering, BoolPair);
     GET_ENUM_VALUE_3(propFile, video, d3d, extendBorderColor, BoolPair);
@@ -881,6 +883,8 @@ void propSave(Properties* properties)
     SET_INT_VALUE_2(propFile, video, captureFps);
     
     SET_INT_VALUE_2(propFile, video, captureSize);
+	
+	SET_INT_VALUE_2(propFile, video, screenRatio);
 
     SET_ENUM_VALUE_3(propFile, video, d3d, linearFiltering, BoolPair);
     SET_ENUM_VALUE_3(propFile, video, d3d, extendBorderColor, BoolPair);

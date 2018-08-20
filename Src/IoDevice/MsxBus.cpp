@@ -124,8 +124,8 @@ int CMSXBUS::readMemory(UInt16 address)
 		else
 			value = bin[address & 0xcfff];
 	}
-	if (slot == 1 && byte != value)
-		printf("read%d: 0x%04x-%02x:%02x\n", slot, address, value, byte);
+//	if (slot == 1 && byte != value)
+//		printf("read%d: 0x%04x-%02x:%02x\n", slot, address, value, byte);
 	if (address >= 0x8000)
 		value = 0xff;
 	byte = value;
@@ -136,21 +136,23 @@ int CMSXBUS::readMemory(UInt16 address)
 int CMSXBUS::writeMemory(UInt16 address, UInt8 value)
 {
 	msxwrite(slot, address, value);
- 	printf("write%d: 0x%04x-%02x\n", slot, address, value);
+	msxwrite(slot, address, value);
+//	if (slot == 1)
+//		printf("write%d: 0x%04x-%02x\n", slot, address, value);
     return true;
 }
 
 int CMSXBUS::readIo(UInt16 port)
 {
 	int value = msxreadio(port);
- 	printf("readio(%02x): %02x\n", port, value);
+// 	printf("readio(%02x): %02x\n", port, value);
     return value;
 }
 
 int CMSXBUS::writeIo(UInt16 port, UInt8 value)
 {
 	msxwriteio(port, value);
- 	printf("writeio(%02x): %02x\n", port, value);
+// 	printf("writeio(%02x): %02x\n", port, value);
     return true;
 }
 

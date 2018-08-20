@@ -274,7 +274,7 @@ int piInitVideo()
 	float zoom = (float)ZOOM;
 
 	// Screen aspect ratio adjustment // ratio
-	float a = (float)(screenWidth) / screenHeight;
+	float a = (float)(screenWidth) / screenHeight * (float)(properties->video.screenRatio) / 100;
 	float a0 = (float)WIDTH / (float)HEIGHT;
 
 	if (a > a0) {
