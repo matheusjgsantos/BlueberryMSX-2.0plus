@@ -276,6 +276,7 @@ typedef struct {
     int detectActiveMonitor;
     int captureFps;
     int captureSize;
+	int screenRatio;
 	D3DProperties d3d;
 } VideoProperties;
 
