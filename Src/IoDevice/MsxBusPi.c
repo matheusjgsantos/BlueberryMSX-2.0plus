@@ -579,6 +579,10 @@ int setup_io()
 	else
 		printf("clock disabled\n");
 	
+	bcm2835_gpio_pud(BCM2835_GPIO_PUD_UP);
+	for(int i = 0; i < 8; i++)
+		bcm2835_gpio_pudclk(i, 1);
+	
 //	GPIO_SET = LE_C | MSX_IORQ | MSX_RD | MSX_WR | MSX_MREQ | MSX_CS1 | MSX_CS2 | MSX_CS12 | MSX_SLTSL1 | MSX_SLTSL3;
 //	GPIO_SET = LE_A | LE_D;
 	GPIO_CLR = 0xffff;

@@ -389,7 +389,7 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
         if (checkArg(argument, "diskA")) {
             argument = extractTokenEx(cmdLine, ++i, gamedir);
 //            if (argument == NULL || !isDskFileType(argument, diskAzip)) return 0; // Invaid argument
-//			printf("diskA=%s\n", argument);
+			printf("diskA=%s\n", argument);
             strcpy(diskA, argument);
             startEmu = 1;
         }

@@ -63,6 +63,15 @@ CFLAGS += $(SDL_CFLAGS)
 CPPFLAGS += $(SDL_CFLAGS)
 LDFLAGS += $(SDL_LDFLAGS)
 
+DEPS := $(OBJS:.o=.d)
+
+-include $(DEPS)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -MM -MF $(patsubst %.o,%.d,$@) -o $@ $<
+
+
+	
 #
 # Include paths
 #
@@ -457,4 +466,3 @@ $(OUTPUT_DIR)/%.o: %.cxx  $(HEADER_FILES)
 $(OUTPUT_DIR)/%.res: %.rc $(HEADER_FILES)
 	$(ECHO) Compiling $<...
 	$(RC) $(CPPFLAGS) $(INCLUDE) -o $@ -i $<
-
