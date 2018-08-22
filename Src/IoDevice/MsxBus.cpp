@@ -136,7 +136,7 @@ int CMSXBUS::readMemory(UInt16 address)
 int CMSXBUS::writeMemory(UInt16 address, UInt8 value)
 {
 	msxwrite(slot, address, value);
-	msxwrite(slot, address, value);
+//	msxwrite(slot, address, value);
 //	if (slot == 1)
 //		printf("write%d: 0x%04x-%02x\n", slot, address, value);
     return true;

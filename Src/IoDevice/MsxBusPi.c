@@ -122,6 +122,7 @@ volatile unsigned *gclk_base;
 #define LE_C	(1 << LE_C_PIN)
 #define LE_D	(1 << LE_D_PIN)
 #define MSX_CLK (1 << CLK_PIN)
+#define SW1 	(1 << SW1_PIN)
 
 #define MSX_CTRL_FLAG (MSX_SLTSL1 | MSX_SLTSL3 | MSX_CS1 | MSX_CS2 | MSX_CS12 | MSX_RD | MSX_WR | MSX_IORQ | MSX_MREQ)
 
@@ -466,8 +467,9 @@ void SetData(int flag, int delay, unsigned char byte)
 	}
 	GPIO_SET = MSX_WR;
 	byte = GPIO;
+	GPIO_CLR = MSX_WR;
 	byte = GPIO;
-	GPIO_SET = LE_D | flag;   	
+	GPIO_SET = LE_D | flag | MSX_SLTSL1 | MSX_SLTSL3;   	
 	GPIO_CLR = LE_C;
 }
 
@@ -493,6 +495,8 @@ unsigned char GetData(int flag, int delay)
 	cs1 = (addr & 0xc000) == 0x4000 ? MSX_CS1: 0;
 	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2: 0;
 	cs12 = (cs1 | cs2 ? MSX_CS12 : 0);
+	if (GPIO & SW1)
+		return 0xff;
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
 	byte = GetData((slot == 1 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_RD | cs1 | cs2 | cs12, 25);
@@ -504,7 +508,7 @@ unsigned char GetData(int flag, int delay)
  {
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
-	SetData((slot == 1 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_WR, 35, byte);
+	SetData((slot == 1 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, 35, byte);
 	pthread_mutex_unlock(&mutex);	
 	return;
  }
@@ -523,7 +527,7 @@ unsigned char GetData(int flag, int delay)
    {
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
-	SetData(MSX_IORQ | MSX_WR, 40, byte);
+	SetData(MSX_IORQ, 40, byte);
 	pthread_mutex_unlock(&mutex);		
 	return;
  }
