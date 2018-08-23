@@ -288,7 +288,7 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
     RomType romType1  = ROM_UNKNOWN;
     RomType romType2  = ROM_UNKNOWN;
     char    machineName[64] = "";
-    char    diskA[512] = "";
+    char    diskA[512] = "/dev/sda";
     char    diskB[512] = "";
     char    diskAzip[256] = "";
     char    diskBzip[256] = "";

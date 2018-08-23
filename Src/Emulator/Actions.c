@@ -717,7 +717,7 @@ void actionEmuResetSoft() {
 
 void actionEmuResetHard() {
     archUpdateMenu(0);
-    emulatorStop();
+	emulatorStop();
     emulatorStart(NULL);
     archUpdateMenu(0);
 }

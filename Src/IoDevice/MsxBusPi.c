@@ -87,7 +87,7 @@ volatile unsigned *gclk_base;
 #define RC27	27
 
 #define MD00_PIN 	0
-#define SLTSL3_PIN	0
+#define SLTSL3_PIN	RC26
 #define SLTSL1_PIN 	RA8
 #define CS12_PIN 	RA9
 #define CS1_PIN		RA10
@@ -123,8 +123,9 @@ volatile unsigned *gclk_base;
 #define LE_D	(1 << LE_D_PIN)
 #define MSX_CLK (1 << CLK_PIN)
 #define SW1 	(1 << SW1_PIN)
+#define DAT_DIR (1 << RC21)
 
-#define MSX_CTRL_FLAG (MSX_SLTSL1 | MSX_SLTSL3 | MSX_CS1 | MSX_CS2 | MSX_CS12 | MSX_RD | MSX_WR | MSX_IORQ | MSX_MREQ)
+#define MSX_CTRL_FLAG (MSX_SLTSL1 | MSX_SLTSL3 | MSX_CS1 | MSX_CS2 | MSX_CS12 | MSX_RD | MSX_WR | MSX_IORQ | MSX_MREQ | DAT_DIR)
 
 #else
 // MSX slot access macro
@@ -455,28 +456,26 @@ void SetDelay(int j)
 
 void SetData(int flag, int delay, unsigned char byte)
 {
-	GPIO_CLR = flag | LE_D;
+	GPIO_CLR = flag | LE_D | DAT_DIR;
 	GPIO_SET = MSX_WR;
 	GPIO_SET = LE_C | byte;
 	for(int i=0; i < 10; i++)
 		GPIO_SET = 0;
+	GPIO_CLR = MSX_WR;
 	for(int i=0; i < delay; i++)
 	{
 		GPIO_SET = LE_C | byte;
-		GPIO_CLR = MSX_WR;
 	}
 	GPIO_SET = MSX_WR;
 	byte = GPIO;
-	GPIO_CLR = MSX_WR;
-	byte = GPIO;
-	GPIO_SET = LE_D | flag | MSX_SLTSL1 | MSX_SLTSL3;   	
+	GPIO_SET = LE_D | MSX_CTRL_FLAG | DAT_DIR;   	
 	GPIO_CLR = LE_C;
-}
+}   
 
 unsigned char GetData(int flag, int delay)
 {
 	unsigned char byte;
-	GPIO_SET = LE_C;
+	GPIO_SET = LE_C | DAT_DIR;
 	GPIO_CLR = MSX_CLK | flag;
 	SetDelay(delay);
 	byte = GPIO;
@@ -551,7 +550,7 @@ int setup_io()
 	int i, speed_id, divisor ;	
 	if (!bcm2835_init()) return -1;
 	gpio = bcm2835_regbase(BCM2835_REGBASE_GPIO);
-	for(int i=0; i < 28; i++)
+	for(int i=0; i < 27; i++)
 	{
 		bcm2835_gpio_fsel(i, 1);    
 	}
@@ -586,6 +585,7 @@ int setup_io()
 	bcm2835_gpio_pud(BCM2835_GPIO_PUD_UP);
 	for(int i = 0; i < 8; i++)
 		bcm2835_gpio_pudclk(i, 1);
+	bcm2835_gpio_pudclk(27,1);
 	
 //	GPIO_SET = LE_C | MSX_IORQ | MSX_RD | MSX_WR | MSX_MREQ | MSX_CS1 | MSX_CS2 | MSX_CS12 | MSX_SLTSL1 | MSX_SLTSL3;
 //	GPIO_SET = LE_A | LE_D;

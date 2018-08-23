@@ -46,6 +46,15 @@
 // PacketFileSystem.h Need to be included after all other includes
 #include "PacketFileSystem.h"
 
+int cfileexists(const char * filename){
+    /* try to open file to read */
+    FILE *file;
+    if (file = fopen(filename, "r")){
+        fclose(file);
+        return 1;
+    }
+    return 0;
+}
 
 void archUpdateMenu(int show);
 
@@ -373,6 +382,9 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
             free(fileList);
         }
     }
+	
+	if (!cfileexists(filename))
+		return 1;
 
     strcpy(properties->media.disks[drive].fileName, filename);
     strcpy(properties->media.disks[drive].fileNameInZip, diskName);
