@@ -91,21 +91,98 @@ static char *msxScreen = NULL;
 static int msxScreenPitch;
 
 static const char* vertexShaderSrc =
+#if 0
 	"uniform mat4 u_vp_matrix;\n"
 	"attribute vec4 a_position;\n"
 	"attribute vec2 a_texcoord;\n"
+	"attribute vec4 in_Colour;\n"
+	"varying vec4 v_vColour;\n"
 	"varying mediump vec2 v_texcoord;\n"
 	"void main() {\n"
 	"	v_texcoord = a_texcoord;\n"
+	"	v_vColour = in_Colour;\n"
 	"	gl_Position = u_vp_matrix * a_position;\n"
 	"}\n";
-
+#else
+	"uniform mat4 u_vp_matrix;\n"
+	"attribute vec4 a_position;\n"
+	"attribute vec2 a_texcoord;\n"
+	"attribute vec4 in_Colour;\n"
+	"varying vec4 TEX0;\n"
+	"varying vec2 v_texcoord;\n"
+	"void main() {\n"
+	"	v_texcoord = a_texcoord;\n"
+//	"	gl_Position = u_vp_matrix * TexCoord;\n"
+	"   gl_Position = a_position.x*u_vp_matrix[0] + a_position.y*u_vp_matrix[1] + a_position.z*u_vp_matrix[2] + a_position.w*u_vp_matrix[3];\n"
+	"   TEX0.xy = a_position.xy;\n"
+	"}\n";
+#endif
+	
 static const char* fragmentShaderSrc =
-	"varying mediump vec2 v_texcoord;\n"
+#if 0
+	"varying  vec2 v_texcoord;\n"
 	"uniform sampler2D u_texture;\n"
 	"void main() {\n"
 	"	gl_FragColor = texture2D(u_texture, v_texcoord);\n"
 	"}\n";
+	"varying vec2 v_texcoord;\n"
+	"varying vec4 v_vColour;\n"
+	"uniform sampler2D u_texture;\n"
+	"uniform float texelSize;\n"
+	"\n"
+	"void main(){\n"
+//	"    gl_FragColor = 1.0 * ;\n"
+	"    gl_FragColor = texture2D( u_texture, v_texcoord ) * (mod(v_texcoord.y, 0.0005 * 2.0) * 1.0);\n"
+	"}\n";
+#endif
+#if 1	// version 2
+	"varying vec2 v_texcoord;\n"
+	"uniform sampler2D Texture;\n"
+	"varying vec4 TEX0;\n"
+	"uniform vec2 TextureSize;\n"
+	"void main() {\n"
+	"  vec3 col;\n"
+	"  float x = TEX0.x * TextureSize.x;\n"
+	"  float y = floor(gl_FragCoord.y / 3.0) + 0.5;\n"
+	"  float ymod = mod(gl_FragCoord.y, 3.0);\n"
+	"  vec2 f0 = vec2(x, y);\n"
+	"  vec2 uv0 = f0 / TextureSize.xy;\n"
+ 	"  vec3 t0 = texture2D(Texture, v_texcoord).xyz;\n"
+	"  if (ymod > 2.0) {\n"
+	"    vec2 f1 = vec2(x, y + 1.0);\n"
+	"    vec2 uv1 = f1 / TextureSize.xy;\n"
+	"    vec3 t1 = texture2D(Texture, uv1).xyz;\n"
+	"    col = (t0 + t1) / 2.0 * 0.8;\n"
+	"  } else {\n"
+	"    col = t0;\n"
+	"  } \n"
+	"  gl_FragColor = vec4(col, 1.0);\n"
+//	"  gl_FragColor = (col, 1.0) * texture2D( Texture, v_texcoord );\n"
+	"}\n";
+#else
+	// version 3
+	"varying vec2 v_texcoord;\n"
+	"uniform sampler2D Texture;\n"
+	"varying vec4 TEX0;\n"
+	"uniform vec2 TextureSize;\n"
+	"uniform vec2 InputSize;\n"
+	"void main() {;\n"
+	"  vec3 col;\n"
+	// "  if (InputSize.y > 220.0 && InputSize.y < 242.0) {;\n"
+	// "    float x = TEX0.x;\n"
+	// "    float y = TEX0.y + (0.25 / TextureSize.y);\n"
+	// "    col = texture2D(Texture, vec2(x, y)).xyz;\n"
+	// "    float texel_y = TEX0.y * TextureSize.y * 3.0;\n"
+	// "    float ymod = mod(texel_y, 3.0);\n"
+	// "    if (ymod >= 1.5) {;\n"
+	// "      col = col * 0.6;\n"
+	// "    };\n"
+	// "  } else {;\n"
+	"    col = texture2D(Texture, TEX0.xy).xyz;\n"
+	//"  };\n"
+	"  gl_FragColor = vec4( col, 1.0 );\n"
+	"}\n";	
+#endif	
 
 static const GLfloat uvs[] = {
 	minU, minV,
