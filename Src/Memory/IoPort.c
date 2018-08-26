@@ -38,6 +38,7 @@ typedef struct IoPortInfo {
 } IoPortInfo;
 
 static IoPortInfo ioTable[256];
+static IoPortInfo ioMonTable[256];
 static IoPortInfo ioSubTable[256];
 static IoPortInfo ioUnused[2];
 static int currentSubport;
@@ -45,6 +46,7 @@ static int currentSubport;
 void ioPortReset()
 {
     memset(ioTable, 0, sizeof(ioTable));
+    memset(ioMonTable, 0, sizeof(ioMonTable));
     memset(ioSubTable, 0, sizeof(ioSubTable));
 
     currentSubport = 0;
@@ -66,7 +68,6 @@ void ioPortRegister(int port, IoPortRead read, IoPortWrite write, void* ref)
         ioTable[port].ref   = ref;
     }
 }
-
 
 void ioPortUnregister(int port)
 {
@@ -96,7 +97,6 @@ void ioPortRegisterSub(int subport, IoPortRead read, IoPortWrite write, void* re
     ioSubTable[subport].ref   = ref;
 }
 
-
 void ioPortUnregisterSub(int subport)
 {
     ioSubTable[subport].read  = NULL;
@@ -112,12 +112,14 @@ int ioPortCheckSub(int subport)
 UInt8 ioPortRead(void* ref, UInt16 port)
 {
     port &= 0xff;
-
+	
     if (boardGetType() == BOARD_MSX && port >= 0x40 && port < 0x50) {
         if (ioSubTable[currentSubport].read == NULL) {
             return 0xff;
         }
-
+		if (ioMonTable[currentSubport].read != NULL)
+			ioMonTable[currentSubport].read(ioMonTable[currentSubport].ref, port);
+		
         return ioSubTable[currentSubport].read(ioSubTable[currentSubport].ref, port);
     }
 
@@ -130,6 +132,9 @@ UInt8 ioPortRead(void* ref, UInt16 port)
         }
         return 0xff;
     }
+	
+	if (ioMonTable[port].read != NULL)
+		ioMonTable[port].read(ioMonTable[port].ref, port);
 
     return ioTable[port].read(ioTable[port].ref, port);
 }
@@ -143,22 +148,42 @@ void  ioPortWrite(void* ref, UInt16 port, UInt8 value)
             currentSubport = value;
             return;
         }
-        
+		if (ioMonTable[currentSubport].write != NULL)
+			ioMonTable[currentSubport].write(ioMonTable[currentSubport].ref, port, value); 
         if (ioSubTable[currentSubport].write != NULL) {
             ioSubTable[currentSubport].write(ioSubTable[currentSubport].ref, port, value);
         }
         return;
     }
+    if (ioTable[port].write == NULL) {
+		if (ioUnused[0].write != NULL) {
+			ioUnused[0].write(ioUnused[0].ref, port, value);
+		}
+		else if (ioUnused[1].write != NULL) {
+			ioUnused[1].write(ioUnused[1].ref, port, value);
+		}
+		if (ioMonTable[port].write != NULL)
+			ioMonTable[port].write(ioMonTable[port].ref, port, value); 
+		return;
+	}
+    ioTable[port].write(ioTable[port].ref, port, value);
+}
 
-    if (ioTable[port].write != NULL) {
-        ioTable[port].write(ioTable[port].ref, port, value);
-    }
-    else if (ioUnused[0].write != NULL) {
-        ioUnused[0].write(ioUnused[0].ref, port, value);
-    }
-    else if (ioUnused[1].write != NULL) {
-        ioUnused[1].write(ioUnused[1].ref, port, value);
+void ioMonPortRegister(int port, IoPortRead read, IoPortWrite write, void* ref)
+{
+    if (ioMonTable[port].read  == NULL && 
+        ioMonTable[port].write == NULL && 
+        ioMonTable[port].ref   == NULL)
+    {
+        ioMonTable[port].read  = read;
+        ioMonTable[port].write = write;
+        ioMonTable[port].ref   = ref;
     }
 }
 
-
+void ioMonPortUnregister(int port)
+{
+    ioMonTable[port].read  = NULL;
+    ioMonTable[port].write = NULL;
+    ioMonTable[port].ref   = NULL;
+}

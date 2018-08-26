@@ -93,6 +93,8 @@ static void write(RomMapperMsxBus* rm, UInt16 address, UInt8 value)
 	msxBusWrite(rm->msxBus, address, value);
 }
 
+static const int mon_ports[] = { 0x7c, 0x7d, 0x7e, 0x7f, 0xa0, 0xa1, 0xa2, 0xa3, 0 };
+
 int romMapperMsxBusCreate(int cartSlot, int slot, int sslot) 
 {
     DeviceCallbacks callbacks = { destroy, NULL, saveState, loadState };
@@ -110,13 +112,15 @@ int romMapperMsxBusCreate(int cartSlot, int slot, int sslot)
     rm->msxBus = msxBusCreate(cartSlot+1);
 	//printf("MSXBus created. msxBus=%d slot=%d sslot=%d\n", rm->msxBus, slot, sslot);
 
-    if (rm->msxBus != NULL) {
+    if (rm->msxBus != NULL && cartSlot == 0) {
         ioPortRegisterUnused(cartSlot, readIo, writeIo, rm);
         slotRegister(slot, sslot, 0, 8, read, read, write, destroy, rm);
         for (i = 0; i < 8; i++) {   
             slotMapPage(rm->slot, rm->sslot, i, NULL, 0, 0);
         }
 		printf("MSXBus created. cartSlot=%d slot=%d sslot=%d\n", cartSlot, slot, sslot);
+		for(i = 0; mon_ports[i] != 0; i++)
+			ioMonPortRegister(mon_ports[i], readIo, writeIo, rm);
     }
 
     return 1;
