@@ -59,7 +59,9 @@ static void saveState(RomMapperActivisionPcb* rm)
     saveStateSet(state, "latch",      rm->latch);
     saveStateClose(state);
 
-    microchip24x00SaveState(rm->eeprom);
+    if (rm->eeprom != NULL) {
+        microchip24x00SaveState(rm->eeprom);
+    }
 }
 
 static void loadState(RomMapperActivisionPcb* rm)
@@ -69,14 +71,18 @@ static void loadState(RomMapperActivisionPcb* rm)
     rm->latch     = (UInt8)saveStateGet(state, "latch",      0);
     slotSetMapper(rm, rm->romMapper);
     
-    microchip24x00LoadState(rm->eeprom);
+    if (rm->eeprom != NULL) {
+        microchip24x00LoadState(rm->eeprom);
+    }
 }
 
 static void destroy(RomMapperActivisionPcb* rm)
 {
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
-    microchip24x00Destroy(rm->eeprom);
+    if (rm->eeprom != NULL) {
+        microchip24x00Destroy(rm->eeprom);
+    }
     free(rm->romData);
     free(rm);
 }
@@ -108,11 +114,15 @@ static void write(RomMapperActivisionPcb* rm, UInt16 address, UInt8 value)
         break;
     case 4:
     case 5:
-        microchip24x00SetScl(rm->eeprom, hotspot & 1);
+        if (rm->eeprom != NULL) {
+            microchip24x00SetScl(rm->eeprom, hotspot & 1);
+        }
         break;
     case 6:
     case 7:
-        microchip24x00SetSda(rm->eeprom, hotspot & 1);
+        if (rm->eeprom != NULL) {
+            microchip24x00SetSda(rm->eeprom, hotspot & 1);
+        }
         break;
     }
 }
@@ -133,7 +143,9 @@ static UInt8 read(RomMapperActivisionPcb* rm, UInt16 address)
     hotspot = (address >> 4) & 7;
     switch (hotspot) {
     case 0:
-        return microchip24x00GetSda(rm->eeprom);
+        if (rm->eeprom != NULL) {
+            return microchip24x00GetSda(rm->eeprom);
+        }
     case 1:
     case 2:
     case 3:
@@ -161,7 +173,9 @@ static UInt8 peek(RomMapperActivisionPcb* rm, UInt16 address)
     hotspot = (address >> 4) & 7;
     switch (hotspot) {
     case 0:
-        return microchip24x00GetSda(rm->eeprom);
+        if (rm->eeprom != NULL) {
+            return microchip24x00GetSda(rm->eeprom);
+        }
     case 1:
     case 2:
     case 3:
@@ -176,7 +190,7 @@ static UInt8 peek(RomMapperActivisionPcb* rm, UInt16 address)
     return 0;
 }
 
-int romMapperActivisionPcbCreate(const char* filename, UInt8* romData, 
+int romMapperActivisionPcbCreate(const char* filename, int romType, UInt8* romData, 
                                  int size, int slot, int sslot, 
                                  int startPage) 
 {
@@ -189,7 +203,7 @@ int romMapperActivisionPcbCreate(const char* filename, UInt8* romData,
     
     rm = malloc(sizeof(RomMapperActivisionPcb));
 
-    rm->deviceHandle = deviceManagerRegister(ROM_ACTIVISIONPCB, &callbacks, rm);
+    rm->deviceHandle = deviceManagerRegister(romType, &callbacks, rm);
     slotRegister(slot, sslot, startPage, 4, read, peek, write, destroy, rm);
 
     rm->romData = calloc(1, size);
@@ -199,8 +213,14 @@ int romMapperActivisionPcbCreate(const char* filename, UInt8* romData,
     rm->sslot = sslot;
     rm->startPage  = startPage;
     rm->romMapper = 1;
-    rm->eeprom = microchip24x00Create(16, sramCreateFilename(filename));
-
+    if (romType == ROM_ACTIVISIONPCB) {
+        rm->eeprom = NULL;
+    }
+    else {
+        rm->eeprom = microchip24x00Create(
+            romType == ROM_ACTIVISIONPCB_2K ? AT24C02 :
+            (romType == ROM_ACTIVISIONPCB_16K ? AT24C16 : AT24C256), sramCreateFilename(filename));
+    }
     slotMapPage(rm->slot, rm->sslot, rm->startPage + 0, rm->romData + 0x0000, 1, 0);
     slotMapPage(rm->slot, rm->sslot, rm->startPage + 1, rm->romData + 0x2000, 1, 0);
     slotMapPage(rm->slot, rm->sslot, rm->startPage + 2, rm->romData + 0x0000 + (rm->romMapper << 14), 0, 0);

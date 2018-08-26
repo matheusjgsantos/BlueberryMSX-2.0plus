@@ -486,6 +486,8 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
         case ROM_GOUDASCSI:   strcat(rom1, CARTNAME_GOUDASCSI); break;
         case ROM_NMS1210:     strcat(rom1, CARTNAME_NMS1210); break;
         case ROM_SONYHBI55:   strcat(rom1, CARTNAME_SONYHBI55); break;
+        case ROM_MEGAFLSHSCC: strcat(rom1, CARTNAME_MEGAFLSHSCC); break;
+        case ROM_MEGAFLSHSCCPLUS:   strcat(rom1, CARTNAME_MEGAFLSHSCCPLUS); break;
 		case ROM_MSXBUS:	  strcat(rom1, CARTNAME_MSXBUS); break;
         }
     }
@@ -508,6 +510,8 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
         case ROM_GOUDASCSI:   strcat(rom2, CARTNAME_GOUDASCSI); break;
         case ROM_NMS1210:     strcat(rom2, CARTNAME_NMS1210); break;
         case ROM_SONYHBI55:   strcat(rom2, CARTNAME_SONYHBI55); break;
+        case ROM_MEGAFLSHSCC: strcat(rom2, CARTNAME_MEGAFLSHSCC); break;
+        case ROM_MEGAFLSHSCCPLUS:   strcat(rom2, CARTNAME_MEGAFLSHSCCPLUS); break;
 		case ROM_MSXBUS:	  strcat(rom2, CARTNAME_MSXBUS); break;
         }
     }

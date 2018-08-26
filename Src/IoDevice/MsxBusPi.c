@@ -445,7 +445,7 @@ void SetAddress(unsigned short addr)
     GPIO_CLR = LE_A;
 	GPIO_SET = LE_C | MSX_CTRL_FLAG;
     GPIO_SET = LE_C;
-    GPIO_CLR = LE_C | LE_D | 0xff;
+    GPIO_CLR = LE_C | LE_D;
 }	
 
 void SetDelay(int j)
@@ -456,10 +456,10 @@ void SetDelay(int j)
 
 void SetData(int flag, int delay, unsigned char byte)
 {
-	GPIO_CLR = flag | LE_D | DAT_DIR;
+	GPIO_CLR = flag | LE_D | DAT_DIR | 0xff;
 	GPIO_SET = MSX_WR;
 	GPIO_SET = LE_C | byte;
-	for(int i=0; i < 10; i++)
+	for(int i=0; i < 5; i++)
 		GPIO_SET = 0;
 	GPIO_CLR = MSX_WR;
 	for(int i=0; i < delay; i++)
@@ -468,6 +468,7 @@ void SetData(int flag, int delay, unsigned char byte)
 	}
 	GPIO_SET = MSX_WR;
 	byte = GPIO;
+	byte = GPIO;
 	GPIO_SET = LE_D | MSX_CTRL_FLAG | DAT_DIR;   	
 	GPIO_CLR = LE_C;
 }   
@@ -475,7 +476,7 @@ void SetData(int flag, int delay, unsigned char byte)
 unsigned char GetData(int flag, int delay)
 {
 	unsigned char byte;
-	GPIO_SET = LE_C | DAT_DIR;
+	GPIO_SET = LE_C | DAT_DIR | 0xff;
 	GPIO_CLR = MSX_CLK | flag;
 	SetDelay(delay);
 	byte = GPIO;
@@ -517,7 +518,7 @@ unsigned char GetData(int flag, int delay)
 	unsigned char byte;
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
-	byte = GetData(MSX_IORQ | MSX_RD, 30);
+	byte = GetData(MSX_IORQ | MSX_RD, 35);
 	pthread_mutex_unlock(&mutex);	
 	return byte;	 
  }
@@ -526,7 +527,7 @@ unsigned char GetData(int flag, int delay)
    {
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
-	SetData(MSX_IORQ, 40, byte);
+	SetData(MSX_IORQ, 45, byte);
 	pthread_mutex_unlock(&mutex);		
 	return;
  }

@@ -73,6 +73,13 @@ static const ShortcutHotkey highFrameskipHotKey = {
 static const ShortcutHotkey resetHard = {
     HOTKEY_TYPE_KEYBOARD, 0, SDLK_F7,	
 };
+static const ShortcutHotkey screenShot = {
+    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F6,	
+};
+static const ShortcutHotkey scanlineToggle = {
+    HOTKEY_TYPE_KEYBOARD, KMOD_LALT, SDLK_F10,	
+};
+
 
 struct Shortcuts {
     ShortcutHotkey quit;
@@ -116,6 +123,7 @@ struct Shortcuts {
     ShortcutHotkey windowSizeNormal;
     ShortcutHotkey windowSizeFullscreen;
     ShortcutHotkey windowSizeFullscreenToggle;
+	ShortcutHotkey scanlinesToggle;
 
     struct {
         int maxSpeedIsSet;
@@ -242,12 +250,16 @@ Shortcuts* shortcutsCreate()
 		LOAD_SHORTCUT(volumeDecrease);
 		LOAD_SHORTCUT(volumeMute);
 		LOAD_SHORTCUT(volumeStereo);
+		LOAD_SHORTCUT(captureScreenshot);
+		LOAD_SHORTCUT(scanlinesToggle);
 
 	}
 	else
 	{
 		printf("Reset Hard\n");
 		shortcuts->resetSoft = resetHard;
+		shortcuts->captureScreenshot = screenShot;
+		shortcuts->scanlinesToggle = scanlineToggle;
 	}
 	iniFileClose(iniFile);
     return shortcuts;
@@ -336,6 +348,7 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
     if (HOTKEY_EQ(key, s->windowSizeNormal))             actionWindowSizeNormal();
     if (HOTKEY_EQ(key, s->windowSizeFullscreen))         actionWindowSizeFullscreen();
     if (HOTKEY_EQ(key, s->windowSizeFullscreenToggle))   actionFullscreenToggle();
+	if (HOTKEY_EQ(key, s->scanlinesToggle))	 	actionToggleScanlinesEnable();
 }
 
 

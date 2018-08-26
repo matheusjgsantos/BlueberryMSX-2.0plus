@@ -148,7 +148,10 @@ RomType mediaDbStringToType(const char* romName)
     if (iequals(name, "CasPatch"))     return ROM_CASPATCH;
     if (iequals(name, "Coleco"))       return ROM_COLECO;
     if (iequals(name, "MegaCart"))     return ROM_CVMEGACART;
-    if (iequals(name, "ActivisionPCB"))return ROM_ACTIVISIONPCB;
+    if (iequals(name, "ActivisionPCB")) return ROM_ACTIVISIONPCB;
+    if (iequals(name, "ActivisionPCB 2K")) return ROM_ACTIVISIONPCB_2K;
+    if (iequals(name, "ActivisionPCB 16K")) return ROM_ACTIVISIONPCB_16K;
+    if (iequals(name, "ActivisionPCB 256K")) return ROM_ACTIVISIONPCB_256K;
     if (iequals(name, "SG1000"))       return ROM_SG1000;
     if (iequals(name, "SC3000"))       return ROM_SC3000;
     if (iequals(name, "SG1000Castle")) return ROM_SG1000CASTLE;
@@ -359,7 +362,9 @@ static void mediaDbAddDump(TiXmlElement* dmp,
             }
         }
 
-        if (romType != ROM_CVMEGACART && romType != ROM_ACTIVISIONPCB) {
+        if (romType != ROM_CVMEGACART && 
+            romType != ROM_ACTIVISIONPCB && romType != ROM_ACTIVISIONPCB_2K && 
+            romType != ROM_ACTIVISIONPCB_16K && romType != ROM_ACTIVISIONPCB_256K) {
             if (strcmpnocase(system.c_str(), "coleco") == 0) {
                 romType = ROM_COLECO;
             }
@@ -718,7 +723,10 @@ extern "C" const char* romTypeToString(RomType romType)
     case ROM_OPCODESAVE:  return "ColecoVision Opcode SaveRam";
     case ROM_OPCODESLOT:  return "ColecoVision Opcode Slot Manager";
     case ROM_CVMEGACART:  return "ColecoVision MegaCart(R)";
-    case ROM_ACTIVISIONPCB:return "Colecovision Activision PCB";
+    case ROM_ACTIVISIONPCB:  return "Colecovision Activision PCB";
+    case ROM_ACTIVISIONPCB_2K:  return "Colecovision Activision PCB 2K";
+    case ROM_ACTIVISIONPCB_16K:  return "Colecovision Activision PCB 16K";
+    case ROM_ACTIVISIONPCB_256K: return "Colecovision Activision PCB 256K";
     case SRAM_MEGASCSI:   return langRomTypeMegaSCSI();
     case SRAM_MEGASCSI128:return langRomTypeMegaSCSI128();
     case SRAM_MEGASCSI256:return langRomTypeMegaSCSI256();
@@ -892,7 +900,10 @@ extern "C" const char* romTypeToShortString(RomType romType)
     case ROM_YAMAHANET:   return "YAMAHA NET";
     case ROM_SF7000IPL:   return "SF-7000 IPL";
     case ROM_CVMEGACART:  return "MEGACART";
-    case ROM_ACTIVISIONPCB:return "ACTIVISION";
+    case ROM_ACTIVISIONPCB:     return "ACTIVISION";
+    case ROM_ACTIVISIONPCB_2K:  return "ACTIVISN2";
+    case ROM_ACTIVISIONPCB_16K: return "ACTIVISI16";
+    case ROM_ACTIVISIONPCB_256K:return "ACTIVISI256";
     case SRAM_MEGASCSI:   return "MEGASCSI";
     case SRAM_MEGASCSI128:return "MEGASCSI128";
     case SRAM_MEGASCSI256:return "MEGASCSI256";

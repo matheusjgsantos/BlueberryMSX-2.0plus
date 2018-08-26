@@ -47,16 +47,17 @@ typedef	struct ShaderInfo {
 	GLint a_texcoord;
 	GLint u_vp_matrix;
 	GLint u_texture;
+	GLboolean scanline;
 } ShaderInfo;
 
-#define	TEX_WIDTH  512
-#define	TEX_HEIGHT 256
+#define	TEX_WIDTH  600
+#define	TEX_HEIGHT 240
 
 #define BIT_DEPTH       16
 #define BYTES_PER_PIXEL (BIT_DEPTH >> 3)
 #define ZOOM            1
-#define	WIDTH           320
-#define	HEIGHT          240
+#define	WIDTH           544
+#define	HEIGHT          230
 
 #define	minU 0.0f
 #define	maxU ((float)WIDTH / TEX_WIDTH - minU)
@@ -87,102 +88,60 @@ static GLuint textures[2];
 
 static SDL_Surface *sdlScreen;
 
-static char *msxScreen = NULL;
-static int msxScreenPitch;
+char *msxScreen = NULL;
+int msxScreenPitch;
+int height;
 
 static const char* vertexShaderSrc =
-#if 0
 	"uniform mat4 u_vp_matrix;\n"
+	"uniform bool scanline;\n"
 	"attribute vec4 a_position;\n"
 	"attribute vec2 a_texcoord;\n"
 	"attribute vec4 in_Colour;\n"
 	"varying vec4 v_vColour;\n"
 	"varying mediump vec2 v_texcoord;\n"
+	"varying vec4 TEX0;\n"
 	"void main() {\n"
 	"	v_texcoord = a_texcoord;\n"
 	"	v_vColour = in_Colour;\n"
-	"	gl_Position = u_vp_matrix * a_position;\n"
+	"   if (scanline)\n"
+	"	{\n"
+	"   	gl_Position = a_position.x*u_vp_matrix[0] + a_position.y*u_vp_matrix[1] + a_position.z*u_vp_matrix[2] + a_position.w*u_vp_matrix[3];\n"
+	"   	TEX0.xy = a_position.xy;\n"
+	"	} else {"
+	"		gl_Position = u_vp_matrix * a_position;\n"
+	"	}\n"
 	"}\n";
-#else
-	"uniform mat4 u_vp_matrix;\n"
-	"attribute vec4 a_position;\n"
-	"attribute vec2 a_texcoord;\n"
-	"attribute vec4 in_Colour;\n"
-	"varying vec4 TEX0;\n"
-	"varying vec2 v_texcoord;\n"
-	"void main() {\n"
-	"	v_texcoord = a_texcoord;\n"
-//	"	gl_Position = u_vp_matrix * TexCoord;\n"
-	"   gl_Position = a_position.x*u_vp_matrix[0] + a_position.y*u_vp_matrix[1] + a_position.z*u_vp_matrix[2] + a_position.w*u_vp_matrix[3];\n"
-	"   TEX0.xy = a_position.xy;\n"
-	"}\n";
-#endif
 	
 static const char* fragmentShaderSrc =
-#if 0
 	"varying  vec2 v_texcoord;\n"
+	"uniform bool scanline;\n"
 	"uniform sampler2D u_texture;\n"
-	"void main() {\n"
-	"	gl_FragColor = texture2D(u_texture, v_texcoord);\n"
-	"}\n";
-	"varying vec2 v_texcoord;\n"
-	"varying vec4 v_vColour;\n"
-	"uniform sampler2D u_texture;\n"
-	"uniform float texelSize;\n"
-	"\n"
-	"void main(){\n"
-//	"    gl_FragColor = 1.0 * ;\n"
-	"    gl_FragColor = texture2D( u_texture, v_texcoord ) * (mod(v_texcoord.y, 0.0005 * 2.0) * 1.0);\n"
-	"}\n";
-#endif
-#if 1	// version 2
-	"varying vec2 v_texcoord;\n"
-	"uniform sampler2D Texture;\n"
 	"varying vec4 TEX0;\n"
 	"uniform vec2 TextureSize;\n"
 	"void main() {\n"
-	"  vec3 col;\n"
-	"  float x = TEX0.x * TextureSize.x;\n"
-	"  float y = floor(gl_FragCoord.y / 3.0) + 0.5;\n"
-	"  float ymod = mod(gl_FragCoord.y, 3.0);\n"
-	"  vec2 f0 = vec2(x, y);\n"
-	"  vec2 uv0 = f0 / TextureSize.xy;\n"
- 	"  vec3 t0 = texture2D(Texture, v_texcoord).xyz;\n"
-	"  if (ymod > 2.0) {\n"
-	"    vec2 f1 = vec2(x, y + 1.0);\n"
-	"    vec2 uv1 = f1 / TextureSize.xy;\n"
-	"    vec3 t1 = texture2D(Texture, uv1).xyz;\n"
-	"    col = (t0 + t1) / 2.0 * 0.8;\n"
-	"  } else {\n"
-	"    col = t0;\n"
-	"  } \n"
-	"  gl_FragColor = vec4(col, 1.0);\n"
-//	"  gl_FragColor = (col, 1.0) * texture2D( Texture, v_texcoord );\n"
+	"   if (scanline)\n"
+	"	{\n"
+	"  		vec3 col;\n"
+	"  		float x = TEX0.x * TextureSize.x;\n"
+	"  		float y = floor(gl_FragCoord.y / 3.0) + 0.5;\n"
+	"  		float ymod = mod(gl_FragCoord.y, 3.0);\n"
+	"  		vec2 f0 = vec2(x, y);\n"
+	"  		vec2 uv0 = f0 / TextureSize.xy;\n"
+ 	"  		vec3 t0 = texture2D(u_texture, v_texcoord).xyz;\n"
+	"  		if (ymod > 2.0) {\n"
+	"    		vec2 f1 = vec2(x, y + 1.0);\n"
+	"    		vec2 uv1 = f1 / TextureSize.xy;\n"
+	"    		vec3 t1 = texture2D(u_texture, uv1).xyz;\n"
+	"    		col = (t0 + t1) / 2.0 * 0.8;\n"
+	"  		} else {\n"
+	"    		col = t0;\n"
+	"  		} \n"
+	"  		gl_FragColor = vec4(col, 1.0);\n"
+	"	} else {"
+	"		gl_FragColor = texture2D(u_texture, v_texcoord);\n"
+	"	}\n"
 	"}\n";
-#else
-	// version 3
-	"varying vec2 v_texcoord;\n"
-	"uniform sampler2D Texture;\n"
-	"varying vec4 TEX0;\n"
-	"uniform vec2 TextureSize;\n"
-	"uniform vec2 InputSize;\n"
-	"void main() {;\n"
-	"  vec3 col;\n"
-	// "  if (InputSize.y > 220.0 && InputSize.y < 242.0) {;\n"
-	// "    float x = TEX0.x;\n"
-	// "    float y = TEX0.y + (0.25 / TextureSize.y);\n"
-	// "    col = texture2D(Texture, vec2(x, y)).xyz;\n"
-	// "    float texel_y = TEX0.y * TextureSize.y * 3.0;\n"
-	// "    float ymod = mod(texel_y, 3.0);\n"
-	// "    if (ymod >= 1.5) {;\n"
-	// "      col = col * 0.6;\n"
-	// "    };\n"
-	// "  } else {;\n"
-	"    col = texture2D(Texture, TEX0.xy).xyz;\n"
-	//"  };\n"
-	"  gl_FragColor = vec4( col, 1.0 );\n"
-	"}\n";	
-#endif	
 
 static const GLfloat uvs[] = {
 	minU, minV,
@@ -269,7 +228,7 @@ int piInitVideo()
 		return 0;
 	}
 
-	fprintf(stderr, "Width/height: %d/%d\n", screenWidth, screenHeight);
+	printf( "Width/height: %d/%d\n", screenWidth, screenHeight);
 
 	VC_RECT_T dstRect;
 	dstRect.x = 0;
@@ -327,7 +286,8 @@ int piInitVideo()
 	shader.a_texcoord	= glGetAttribLocation(shader.program,	"a_texcoord");
 	shader.u_vp_matrix	= glGetUniformLocation(shader.program,	"u_vp_matrix");
 	shader.u_texture	= glGetUniformLocation(shader.program,	"u_texture");
-
+	shader.scanline		= glGetUniformLocation(shader.program,  "scanline");
+	
 	glGenTextures(1, textures);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TEX_WIDTH, TEX_HEIGHT, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, NULL);
@@ -346,26 +306,25 @@ int piInitVideo()
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_DITHER);
 
-	float sx = 1.0f;
-	float sy = 1.0f;
-	float zoom = (float)ZOOM;
+	// float sx = 1.0f;
+	// float sy = 1.0f;
+	// float zoom = (float)ZOOM;
 
-	// Screen aspect ratio adjustment // ratio
-	float a = (float)(screenWidth) / screenHeight * (float)(properties->video.screenRatio) / 100;
-	float a0 = (float)WIDTH / (float)HEIGHT;
+	// // Screen aspect ratio adjustment // ratio
+	// float a = (float)(screenWidth) / screenHeight * (float)(properties->video.screenRatio) / 100;
+	// float a0 = (float)WIDTH / (float)HEIGHT;
 
-	if (a > a0) {
-		sx = a0/a;
-	} else {
-		sy = a/a0;
-	}
+	// if (a > a0) {
+		// sx = a0/a;
+	// } else {
+		// sy = a/a0;
+	// }
 
-	setOrtho(projection, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f,
-		sx * zoom * 1.1, sy * zoom);
+	// setOrtho(projection, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f, sx * zoom * 1.1, sy * zoom);
 
 	fprintf(stderr, "Setting up screen...\n");
 
-	msxScreenPitch = WIDTH * BIT_DEPTH / 8;
+//	msxScreenPitch = WIDTH * BIT_DEPTH / 8;
 	msxScreen = (char*)calloc(1, BIT_DEPTH / 8 * TEX_WIDTH * TEX_HEIGHT);
 	if (!msxScreen) {
 		fprintf(stderr, "Error allocating screen texture\n");
@@ -396,7 +355,7 @@ void piDestroyVideo()
 		glDeleteBuffers(3, buffers);
 		glDeleteTextures(1, textures);
 	}
-
+	
 	// Release OpenGL resources
 	if (display) {
 		eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -407,6 +366,8 @@ void piDestroyVideo()
 
 	bcm_host_deinit();
 }
+
+int width = -1;
 
 void piUpdateEmuDisplay()
 {
@@ -422,20 +383,46 @@ void piUpdateEmuDisplay()
 
 	glDisable(GL_BLEND);
 	glUseProgram(sh->program);
-	glUniformMatrix4fv(sh->u_vp_matrix, 1, GL_FALSE, &projection[0][0]);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textures[0]);
 
 	FrameBuffer* frameBuffer;
 	frameBuffer = frameBufferFlipViewFrame(properties->emulation.syncMethod == P_EMU_SYNCTOVBLANKASYNC);
 	if (frameBuffer == NULL) {
 		frameBuffer = frameBufferGetWhiteNoiseFrame();
 	}
-	int borderWidth = ((int)((320 - frameBuffer->maxWidth) * ZOOM)) >> 1;
+	if (frameBufferGetDoubleWidth(frameBuffer, 0) != width)
+	{
+		width = frameBufferGetDoubleWidth(frameBuffer, 0);
+		msxScreenPitch = (256+16)*(width+1);
+		height = frameBuffer->lines;
+		// Screen aspect ratio adjustment // ratio
+		float sx = 1.0f;
+		float sy = 1.0f;
+		float a = (float)(screenWidth) / screenHeight;// * (float)(properties->video.screenRatio) / 100;
+		float a0 = (float) msxScreenPitch / (float) height;
+
+		//printf("screen = %x, width = %d, height = %d, double = %d, sx=%f, sy=%f\n", msxScreen, msxScreenPitch, frameBuffer->lines, width, (a>a0 ? a0/a : 1), (a < a0 ? a/a0 : 1));
+		if (a > a0) {
+			sx = a0/a;
+			setOrtho(projection, -sx, 0.0f, +0.5f, -0.5f, -0.5f, 0.5f, sx * 2, sy);		
+		} else {
+			sy = a/a0;
+			setOrtho(projection, -0.5f, +0.5f, sy, -sy, -0.5f, 0.5f, sx, sy * 2);		
+		}
+		glUniformMatrix4fv(sh->u_vp_matrix, 1, GL_FALSE, &projection[0][0]);
+	}
+	int borderWidth = ((int)((WIDTH - frameBuffer->maxWidth)  * ZOOM)) >> 1;
+	if (borderWidth < 0)
+		borderWidth = 0;
+
+	glUniform1i(shader.scanline, properties->video.scanlinesEnable);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	
+//	videoRender(video, frameBuffer, BIT_DEPTH, 1,
+//				msxScreen + borderWidth * BYTES_PER_PIXEL, 0, msxScreenPitch, -1);
 
 	videoRender(video, frameBuffer, BIT_DEPTH, 1,
-				msxScreen + borderWidth * BYTES_PER_PIXEL, 0, msxScreenPitch, -1);
+				msxScreen, 0, msxScreenPitch*2, -1);
 
 	// if (borderWidth > 0) {
 	// 	int h = height;
@@ -446,9 +433,12 @@ void piUpdateEmuDisplay()
 	// 	}
 	// }
 
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT,
-					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
+//	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT,
+//					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
 
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, msxScreenPitch, frameBuffer->lines,
+					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
+					
 	drawQuad(sh);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -558,7 +548,7 @@ static void drawQuad(const ShaderInfo *sh)
 {
 	glUniform1i(sh->u_texture, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
 	glVertexAttribPointer(sh->a_position, 3, GL_FLOAT,

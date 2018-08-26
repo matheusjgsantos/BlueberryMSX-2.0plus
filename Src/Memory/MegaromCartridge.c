@@ -698,9 +698,12 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
         case ROM_CVMEGACART:
             success &= romMapperCvMegaCartCreate(romName, buf, size, 0, 0, 4);
             break;
-
+            
         case ROM_ACTIVISIONPCB:
-            success &= romMapperActivisionPcbCreate(romName, buf, size, 0, 0, 4);
+        case ROM_ACTIVISIONPCB_2K:
+        case ROM_ACTIVISIONPCB_16K:
+        case ROM_ACTIVISIONPCB_256K:
+            success &= romMapperActivisionPcbCreate(romName, romType, buf, size, 0, 0, 4);
             break;
 
         case ROM_SG1000:

@@ -25,11 +25,11 @@
 **
 ******************************************************************************
 */
-#ifndef ROMMAPPER_MSX_BUS_H
-#define ROMMAPPER_MSX_BUS_H
+#ifndef ROMMAPPER_GAME_READER_H
+#define ROMMAPPER_GAME_READER_H
  
 #include "MsxTypes.h"
 
-int romMapperMsxBusCreate(int cartSlot, int slot, int sslot);
+int romMapperGameReaderCreate(int cartSlot, int slot, int sslot);
 
 #endif

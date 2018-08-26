@@ -32,7 +32,22 @@
 
 typedef struct Microchip24x00 Microchip24x00;
 
-Microchip24x00* microchip24x00Create(int size, const char* sramFilename);
+/* The Microchip24x00 class models a number of eeprom types (mainly atmel,
+ * but they are compatible with similar Microchip eeproms in the 24x series)
+ * see the enum.
+ */
+typedef enum {
+    AT24C01,
+    AT24C02,
+    AT24C04,
+    AT24C08,
+    AT24C16,
+    AT24C128,
+    AT24C256,
+    M24xx64
+} MicroshipDeviceType;
+
+Microchip24x00* microchip24x00Create(MicroshipDeviceType deviceType, const char* sramFilename);
 void microchip24x00Destroy(Microchip24x00* rm);
 
 void microchip24x00Reset(Microchip24x00* rm);

@@ -2261,7 +2261,7 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
     vdp->vdpVersion    = version;
     vdp->vdpConnector  = connector;
 
-    vdp->frameBuffer   = frameBufferDataCreate(8 + 256 + 8, 240, 1);
+    vdp->frameBuffer   = frameBufferDataCreate(SCREEN_WIDTH, SCREEN_HEIGHT, 1);
     vdp->videoHandle   = videoManagerRegister(VdpNames[version], vdp->frameBuffer, &videoCallbacks, vdp);
 
     if (sync == VDP_SYNC_AUTO) {

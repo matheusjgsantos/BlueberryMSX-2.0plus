@@ -146,6 +146,8 @@
 #include "romMapperOpcodeSaveRam.h"
 #include "romMapperOpcodeSlotManager.h"
 #include "romMapperDooly.h"
+#include "romMapperMuPack.h"
+
 
 // PacketFileSystem.h Need to be included after all other includes
 #include "PacketFileSystem.h"
@@ -356,6 +358,7 @@ static int readMachine(Machine* machine, const char* machineName, const char* fi
         char* arg;
         char slotInfoName[512];
 		char *slotFilename;
+
         machine->slotInfo[i].slot = toint(extractToken(slotBuf, 0));    
         machine->slotInfo[i].subslot = toint(extractToken(slotBuf, 1));
         machine->slotInfo[i].startPage = toint(extractToken(slotBuf, 2));
@@ -1430,6 +1433,10 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             
         case ROM_MSXDOS2:
             success &= romMapperMsxDos2Create(romName, buf, size, slot, subslot, startPage);
+            break;
+            
+        case ROM_MUPACK:
+            success &= romMapperMuPackCreate(romName, buf, size, slot, subslot, startPage);
             break;
             
         case ROM_KONAMI5:

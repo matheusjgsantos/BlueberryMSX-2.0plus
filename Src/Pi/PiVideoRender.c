@@ -269,23 +269,35 @@ static inline int videoRender240(Video *pVideo, FrameBuffer *frame,
     UInt16 *pDst     = (UInt16 *)pDestination;
 
     int height   = frame->lines;
-    int srcWidth = frame->maxWidth;
+    int srcWidth;
     int h;
+	int doubleWidth = frameBufferGetDoubleWidth(frame, 0);
 
     dstPitch >>= 1; // divided by sizeof(UInt16)
     LineBuffer *lineBuff = frame->line;
+//	printf("double=%d\r", doubleWidth);
 
     for (h = 0; h < height; h++) {
         UInt16 *pOldDst = pDst;
         UInt16 *pSrc = lineBuff->buffer;
+		srcWidth = (256+16)*(lineBuff->doubleWidth+1);
         int width = srcWidth >> 2;
 
-        if (lineBuff->doubleWidth) {
+        if (doubleWidth) {
+//			printf("double\n");
             while (width--) {
-                *(pDst++) = (((rgbTable[*(pSrc++)] & 0xe79c) >> 1) + ((rgbTable[*(pSrc++)] & 0xe79c) >> 1)) & 0xe79c;
-                *(pDst++) = (((rgbTable[*(pSrc++)] & 0xe79c) >> 1) + ((rgbTable[*(pSrc++)] & 0xe79c) >> 1)) & 0xe79c;
-                *(pDst++) = (((rgbTable[*(pSrc++)] & 0xe79c) >> 1) + ((rgbTable[*(pSrc++)] & 0xe79c) >> 1)) & 0xe79c;
-                *(pDst++) = (((rgbTable[*(pSrc++)] & 0xe79c) >> 1) + ((rgbTable[*(pSrc++)] & 0xe79c) >> 1)) & 0xe79c;
+                // *(pDst++) = (((rgbTable[*(pSrc++)] & 0xe79c) >> 1) + ((rgbTable[*(pSrc++)] & 0xe79c) >> 1)) & 0xe79c;
+                // *(pDst++) = (((rgbTable[*(pSrc++)] & 0xe79c) >> 1) + ((rgbTable[*(pSrc++)] & 0xe79c) >> 1)) & 0xe79c;
+                // *(pDst++) = (((rgbTable[*(pSrc++)] & 0xe79c) >> 1) + ((rgbTable[*(pSrc++)] & 0xe79c) >> 1)) & 0xe79c;
+                // *(pDst++) = (((rgbTable[*(pSrc++)] & 0xe79c) >> 1) + ((rgbTable[*(pSrc++)] & 0xe79c) >> 1)) & 0xe79c;
+                *(pDst++) = rgbTable[*(pSrc++)];
+                *(pDst++) = rgbTable[*(pSrc++)];
+                *(pDst++) = rgbTable[*(pSrc++)];
+                *(pDst++) = rgbTable[*(pSrc++)];
+                *(pDst++) = rgbTable[*(pSrc++)];
+                *(pDst++) = rgbTable[*(pSrc++)];
+                *(pDst++) = rgbTable[*(pSrc++)];
+                *(pDst++) = rgbTable[*(pSrc++)];				
             }
         }
         else {
@@ -295,6 +307,7 @@ static inline int videoRender240(Video *pVideo, FrameBuffer *frame,
                 *(pDst++) = rgbTable[*(pSrc++)];
                 *(pDst++) = rgbTable[*(pSrc++)];
             }
+			//memcpy(pDst, pSrc, width*4);
         }
 
         pDst = pOldDst + dstPitch;

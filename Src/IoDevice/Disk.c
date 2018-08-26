@@ -191,7 +191,6 @@ DSKE diskRead(int driveId, UInt8* buffer, int sector)
         if ((drives[driveId] != NULL)) {
             if (0 == fseek(drives[driveId], sector * sectorSize[driveId], SEEK_SET)) {
                 UInt8 success = fread(buffer, 1, sectorSize[driveId], drives[driveId]) == sectorSize[driveId];
-//				printf("diskRead=disk%d, offset=\n", driveId, sector * sectorSize[driveId]);
                 return success? diskReadError(driveId, sector) : DSKE_NO_DATA;
             }
         }
@@ -233,7 +232,6 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
         if ((drives[driveId] != NULL)) {
             if (0 == fseek(drives[driveId], offset, SEEK_SET)) {
                 UInt8 success = fread(buffer, 1, secSize, drives[driveId]) == secSize;
-				//printf("diskRead=disk%d, offset=%d\n", driveId, offset);				
                 int sectornum = sector - 1 + diskGetSectorsPerTrack(driveId) * (track * diskGetSides(driveId) + side);
                 return success? diskReadError(driveId, sectornum) : DSKE_NO_DATA;
             }
@@ -614,22 +612,17 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
         return ramImageBuffer[driveId] != NULL;
     }
 
-	if (1)
-	{
-		drives[driveId] = fopen(fileName, "r+b");
-		setbuf(drives[driveId],0);
-		printf("fid=%d, disk=%s\n",drives[driveId], fileName);
-		RdOnly[driveId] = 0;
+    drives[driveId] = fopen(fileName, "r+b");
+    RdOnly[driveId] = 0;
 
-		if (drives[driveId] == NULL) {
-			drives[driveId] = fopen(fileName, "rb");
-			RdOnly[driveId] = 1;
-		}
+    if (drives[driveId] == NULL) {
+        drives[driveId] = fopen(fileName, "rb");
+        RdOnly[driveId] = 1;
+    }
 
-		if (drives[driveId] == NULL) {
-			return 0;
-		}
-	}
+    if (drives[driveId] == NULL) {
+        return 0;
+    }
 
 	if (fileName[0] != '/')
 	{

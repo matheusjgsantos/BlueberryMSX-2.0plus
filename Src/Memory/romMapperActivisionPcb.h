@@ -26,7 +26,7 @@
  
 #include "MsxTypes.h"
 
-int romMapperActivisionPcbCreate(const char* filename, UInt8* romData, 
+int romMapperActivisionPcbCreate(const char* filename, int romType, UInt8* romData, 
                                  int size, int slot, int sslot, 
                                  int startPage);
 

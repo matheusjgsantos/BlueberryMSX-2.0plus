@@ -190,10 +190,6 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
                 romType = chkRomType;
             }
         }
-		else
-		{
-			//printf("insertCartridge error\n");
-		}
     }
 
     romType = 0 == strcmp(CARTNAME_SNATCHER,    filename) ? ROM_SNATCHER :
