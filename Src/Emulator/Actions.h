@@ -232,6 +232,7 @@ void actionPanSetMidi(int value);
 
 void actionRenshaSetLevel(int value);
 void actionEmuSpeedSet(int value);
+void actionToggleVideoSetForce4x3ratio();
 
 void actionKeyPress(int keyCode, int pressed);
 

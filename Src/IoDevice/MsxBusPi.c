@@ -476,7 +476,7 @@ void SetData(int flag, int delay, unsigned char byte)
 unsigned char GetData(int flag, int delay)
 {
 	unsigned char byte;
-	GPIO_SET = LE_C | DAT_DIR | 0xff;
+	GPIO_SET = LE_C | DAT_DIR;
 	GPIO_CLR = MSX_CLK | flag;
 	SetDelay(delay);
 	byte = GPIO;

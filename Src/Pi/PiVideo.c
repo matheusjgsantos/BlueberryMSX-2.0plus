@@ -57,10 +57,10 @@ typedef	struct ShaderInfo {
 #define BYTES_PER_PIXEL (BIT_DEPTH >> 3)
 #define ZOOM            1
 #define	WIDTH           544
-#define	HEIGHT          230
+#define	HEIGHT          240
 
 #define	minU 0.0f
-#define	maxU ((float)WIDTH / TEX_WIDTH - minU)
+#define	maxU ((float)WIDTH / TEX_WIDTH)	
 #define	minV 0.0f
 #define	maxV ((float)HEIGHT / TEX_HEIGHT)
 
@@ -132,8 +132,8 @@ static const char* fragmentShaderSrc =
 	"  		if (ymod > 2.0) {\n"
 	"    		vec2 f1 = vec2(x, y + 1.0);\n"
 	"    		vec2 uv1 = f1 / TextureSize.xy;\n"
-	"    		vec3 t1 = texture2D(u_texture, uv1).xyz;\n"
-	"    		col = (t0 + t1) / 2.0 * 0.8;\n"
+	"    		vec3 t1 = texture2D(u_texture, uv1).xyz * 0.1;\n"
+	"    		col = (t0 + t1) / 1.6;\n"
 	"  		} else {\n"
 	"    		col = t0;\n"
 	"  		} \n"
@@ -161,10 +161,10 @@ static const int kIndexCount = 6;
 static float projection[4][4];
 
 static const GLfloat vertices[] = {
-	-0.5f, -0.5f, 0.0f,
+	-0.5, -0.5f, 0.0f,
 	+0.5f, -0.5f, 0.0f,
 	+0.5f, +0.5f, 0.0f,
-	-0.5f, +0.5f, 0.0f,
+	-0.5, +0.5f, 0.0f,
 };
 
 int piInitVideo()
@@ -371,13 +371,17 @@ int width = -1;
 
 void piUpdateEmuDisplay()
 {
+	int w = 0;
 	if (!shader.program) {
 		fprintf(stderr, "Shader not initialized\n");
 		return;
 	}
 
 	glClear(GL_COLOR_BUFFER_BIT);
-	glViewport(0, 0, screenWidth, screenHeight);
+	if (properties->video.force4x3ratio)
+		w = (screenWidth - (screenHeight*4/3.0f));
+	if (w < 0) w = 0;
+	glViewport(w/2, 0, screenWidth-w, screenHeight);
 
 	ShaderInfo *sh = &shader;
 
@@ -394,20 +398,12 @@ void piUpdateEmuDisplay()
 		width = frameBufferGetDoubleWidth(frameBuffer, 0);
 		msxScreenPitch = (256+16)*(width+1);
 		height = frameBuffer->lines;
-		// Screen aspect ratio adjustment // ratio
 		float sx = 1.0f;
 		float sy = 1.0f;
-		float a = (float)(screenWidth) / screenHeight;// * (float)(properties->video.screenRatio) / 100;
-		float a0 = (float) msxScreenPitch / (float) height;
-
-		//printf("screen = %x, width = %d, height = %d, double = %d, sx=%f, sy=%f\n", msxScreen, msxScreenPitch, frameBuffer->lines, width, (a>a0 ? a0/a : 1), (a < a0 ? a/a0 : 1));
-		if (a > a0) {
-			sx = a0/a;
-			setOrtho(projection, -sx, 0.0f, +0.5f, -0.5f, -0.5f, 0.5f, sx * 2, sy);		
-		} else {
-			sy = a/a0;
-			setOrtho(projection, -0.5f, +0.5f, sy, -sy, -0.5f, 0.5f, sx, sy * 2);		
-		}
+		//printf("screen = %x, width = %d, height = %d, double = %d", msxScreen, msxScreenPitch, frameBuffer->lines, width);
+		sx = sx * msxScreenPitch/WIDTH;
+		printf("sx=%f,sy=%f\n", sx, sy);
+		setOrtho(projection, -sx/2, sx/2, sy/2, -sy/2, -0.5f, +0.5f,1,1);		
 		glUniformMatrix4fv(sh->u_vp_matrix, 1, GL_FALSE, &projection[0][0]);
 	}
 	int borderWidth = ((int)((WIDTH - frameBuffer->maxWidth)  * ZOOM)) >> 1;
@@ -421,7 +417,7 @@ void piUpdateEmuDisplay()
 //	videoRender(video, frameBuffer, BIT_DEPTH, 1,
 //				msxScreen + borderWidth * BYTES_PER_PIXEL, 0, msxScreenPitch, -1);
 
-	videoRender(video, frameBuffer, BIT_DEPTH, 1,
+	videoRender(video, 	frameBuffer, BIT_DEPTH, 1,
 				msxScreen, 0, msxScreenPitch*2, -1);
 
 	// if (borderWidth > 0) {
@@ -436,7 +432,7 @@ void piUpdateEmuDisplay()
 //	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT,
 //					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
 
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, msxScreenPitch, frameBuffer->lines,
+	glTexSubImage2D(GL_TEXTURE_2D, 0, (WIDTH-msxScreenPitch)/2, 0, msxScreenPitch, frameBuffer->lines,
 					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
 					
 	drawQuad(sh);
@@ -537,10 +533,10 @@ static void setOrtho(float m[4][4],
 	memset(m, 0, 4 * 4 * sizeof(float));
 	m[0][0] = 2.0f / (right - left) * scaleX;
 	m[1][1] = 2.0f / (top - bottom) * scaleY;
-	m[2][2] = -2.0f / (far - near);
+	m[2][2] = 0;//-2.0f / (far - near);
 	m[3][0] = -(right + left) / (right - left);
 	m[3][1] = -(top + bottom) / (top - bottom);
-	m[3][2] = -(far + near) / (far - near);
+	m[3][2] = 0;//-(far + near) / (far - near);
 	m[3][3] = 1;
 }
 

@@ -2,6 +2,7 @@
 num=1
 FILE1="./msx"
 FILE2="./menu"
+ITEM=`cat ./item`
 echo "#!/bin/bash"> msx
 echo -n "whiptail --title \"MSX Machines\" --menu \"Choose a Machine\" 25 78 16 " >> msx
 echo -n "" > menu
@@ -25,11 +26,12 @@ while machine='' read -r line || [[ -n "$line" ]]; do
 	IFS=''
 done < m
 
+echo -n "--default-item \"$ITEM\" " >> msx
 echo "3>&2 2>&1 1>&3" >> msx
 
 choice=$(./msx)
 a=`sed -n ${choice}p < menu`
-clear
+echo $choice > ./item
 echo ./bluemsx-pi /machine \"${a}\" /romtype1 msxbus /romtype2 msxbus > xx
-./bluemsx-pi /machine "$a" /romtype1 msxbus /romtype2 msxbus
+sudo ./bluemsx-pi /machine "$a" /romtype1 msxbus /romtype2 msxbus $@
 

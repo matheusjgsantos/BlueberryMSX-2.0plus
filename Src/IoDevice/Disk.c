@@ -583,12 +583,17 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 	if (fileName[0] != '/')
 	{
 		rv = stat(fileName, &s);
-		if (rv == 0 & s.st_mode & S_IFDIR) {
+		printf("directory as disk:%s,%d, %d, %d\n", fileName, s.st_mode, S_IFDIR, rv);
+	
+		if (rv == 0 && s.st_mode & S_IFDIR) {
 			ramImageBuffer[driveId] = dirLoadFile(DDT_MSX, fileName, &ramImageSize[driveId]);
 			fileSize[driveId] = ramImageSize[driveId];
 			diskUpdateInfo(driveId);
+			printf("directory as disk:%s\n", fileName);
 			return ramImageBuffer[driveId] != NULL;
 		}
+		else
+			printf("No dirLoadFile\n");
 	}
 
     if (fileInZipFile != NULL) {

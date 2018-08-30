@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
 
 #include "ArchDialog.h"
 
@@ -53,6 +54,12 @@ int cfileexists(const char * filename){
         fclose(file);
         return 1;
     }
+	DIR *dir = opendir(filename);
+	if (dir)
+	{
+		closedir(dir);
+		return 1;
+	}
     return 0;
 }
 
@@ -292,6 +299,8 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
     int isZip = isFileExtension(fname, ".zip");
 
     if (fname) strcpy(filename, fname);
+	
+	printf("insertDiskette:%s\n", filename);
 
     emulatorResetMixer();
 
@@ -380,7 +389,11 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
     }
 	
 	if (!cfileexists(filename))
+	{
+		printf("file not exists: %s\n", filename);
 		return 1;
+	}
+	printf("file exists: disk=%d, %s\n", drive, filename);
 
     strcpy(properties->media.disks[drive].fileName, filename);
     strcpy(properties->media.disks[drive].fileNameInZip, diskName);
@@ -393,14 +406,16 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
 
     if (autostart && !noautostart) {
         emulatorStop();
+		printf("boardChangeDiskette\n");
+        boardChangeDiskette(drive, filename, isZip ? diskName : NULL);
         emulatorStart(NULL);
     }
     else if (emulatorGetState() != EMU_STOPPED) {
         emulatorSuspend();
+		printf("boardChangeDiskette\n");
         boardChangeDiskette(drive, filename, isZip ? diskName : NULL);
         emulatorResume();
     }
-
     return 1;
 }
 

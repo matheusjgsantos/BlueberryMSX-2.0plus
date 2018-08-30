@@ -277,6 +277,7 @@ typedef struct {
     int captureFps;
     int captureSize;
 	int screenRatio;
+	int force4x3ratio;
 	D3DProperties d3d;
 } VideoProperties;
 

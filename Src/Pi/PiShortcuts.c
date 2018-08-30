@@ -76,8 +76,11 @@ static const ShortcutHotkey resetHard = {
 static const ShortcutHotkey screenShot = {
     HOTKEY_TYPE_KEYBOARD, 0, SDLK_F6,	
 };
-static const ShortcutHotkey scanlineToggle = {
+static const ShortcutHotkey toggleScanline = {
     HOTKEY_TYPE_KEYBOARD, KMOD_LALT, SDLK_F10,	
+};
+static const ShortcutHotkey toggleAspectRatio = {
+    HOTKEY_TYPE_KEYBOARD, KMOD_LCTRL, SDLK_F10,	
 };
 
 
@@ -124,7 +127,7 @@ struct Shortcuts {
     ShortcutHotkey windowSizeFullscreen;
     ShortcutHotkey windowSizeFullscreenToggle;
 	ShortcutHotkey scanlinesToggle;
-
+    ShortcutHotkey aspectRatioToggle;
     struct {
         int maxSpeedIsSet;
     } state;
@@ -252,14 +255,15 @@ Shortcuts* shortcutsCreate()
 		LOAD_SHORTCUT(volumeStereo);
 		LOAD_SHORTCUT(captureScreenshot);
 		LOAD_SHORTCUT(scanlinesToggle);
-
+		LOAD_SHORTCUT(aspectRatioToggle);
 	}
 	else
 	{
 		printf("Reset Hard\n");
 		shortcuts->resetSoft = resetHard;
 		shortcuts->captureScreenshot = screenShot;
-		shortcuts->scanlinesToggle = scanlineToggle;
+		shortcuts->scanlinesToggle = toggleScanline;
+		shortcuts->aspectRatioToggle = toggleAspectRatio;
 	}
 	iniFileClose(iniFile);
     return shortcuts;
@@ -348,7 +352,8 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
     if (HOTKEY_EQ(key, s->windowSizeNormal))             actionWindowSizeNormal();
     if (HOTKEY_EQ(key, s->windowSizeFullscreen))         actionWindowSizeFullscreen();
     if (HOTKEY_EQ(key, s->windowSizeFullscreenToggle))   actionFullscreenToggle();
-	if (HOTKEY_EQ(key, s->scanlinesToggle))	 	actionToggleScanlinesEnable();
+	if (HOTKEY_EQ(key, s->scanlinesToggle))	 			 actionToggleScanlinesEnable();
+	if (HOTKEY_EQ(key, s->aspectRatioToggle))	 		 actionToggleVideoSetForce4x3ratio();
 }
 
 

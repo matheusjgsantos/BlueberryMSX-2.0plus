@@ -1371,6 +1371,12 @@ void actionSetFullscreen(int value) {
     }
 }
 
+void actionToggleVideoSetForce4x3ratio() {
+    state.properties->video.force4x3ratio = !state.properties->video.force4x3ratio;
+    videoUpdateAll(state.video, state.properties);
+    archUpdateEmuDisplayConfig();
+}
+
 void actionSetCartAutoReset(int value) {
     state.properties->cartridge.autoReset = value ? 1 : 0;
     archUpdateMenu(0);
