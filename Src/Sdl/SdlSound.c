@@ -132,7 +132,7 @@ void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 c
         return;
     }
 
-    sdlSound.bufferSize = 1;
+    sdlSound.bufferSize = 5;
     while (sdlSound.bufferSize < 4 * audioSpec.size) sdlSound.bufferSize *= 2;
     sdlSound.bufferMask = sdlSound.bufferSize - 1;
     sdlSound.buffer = (UInt8*)calloc(1, sdlSound.bufferSize);
