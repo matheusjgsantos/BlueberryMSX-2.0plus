@@ -170,7 +170,6 @@ static const GLfloat vertices[] = {
 int piInitVideo()
 {
 	bcm_host_init();
-	//bcm_host_init();
 
 	// get an EGL display connection
 	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -181,7 +180,6 @@ int piInitVideo()
 
 	// initialize the EGL display connection
 	EGLBoolean result = eglInitialize(display, NULL, NULL);
-	result = eglInitialize(display, NULL, NULL);
 	if (result == EGL_FALSE) {
 		fprintf(stderr, "eglInitialize() failed: EGL_FALSE\n");
 		return 0;

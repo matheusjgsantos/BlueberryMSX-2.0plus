@@ -98,7 +98,7 @@ void piScanDevices()
 		
 		udev_device_unref(dev);
 	};
-	
+	connectedMice = 0;
 	udev_enumerate_unref(uenum);
 
 	piInputResetMSXDevices(connectedMice, connectedJoysticks);
