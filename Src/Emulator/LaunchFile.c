@@ -94,6 +94,7 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
             int countCol;
             int countSg;
             int countSc;
+			int countNul;
             char* fileListRom = zipGetFileList(filename, ".rom", &countRom);
             char* fileListRi  = zipGetFileList(filename, ".ri",  &countRi);
             char* fileListMx1 = zipGetFileList(filename, ".mx1", &countMx1);
@@ -102,7 +103,8 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
             char* fileListCol = zipGetFileList(filename, ".col", &countCol);
             char* fileListSg  = zipGetFileList(filename, ".sg",  &countSg);
             char* fileListSc  = zipGetFileList(filename, ".sc",  &countSc);
-            int count = countRom + countRi + countMx1 + countMx2 + countSms + countCol + countSg + countSc;
+			char* fileListNul = zipGetFileList(filename, ".",  &countNul);
+            int count = countRom + countRi + countMx1 + countMx2 + countSms + countCol + countSg + countSc + countNul;
             int sizeRom = 0;
             int sizeRi  = 0;
             int sizeMx1 = 0;
@@ -111,6 +113,7 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
             int sizeCol = 0;
             int sizeSg = 0;
             int sizeSc = 0;
+			int sizeNul = 0;
 
             for (i = 0; i < countRom; i++) {
                 sizeRom += strlen(fileListRom + sizeRom) + 1;
@@ -136,8 +139,11 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
             for (i = 0; i < countSc; i++) {
                 sizeSc += strlen(fileListSc + sizeSc) + 1;
             }
+			for (i = 0; i < countNul; i++) {
+                sizeNul += strlen(fileListNul + sizeNul) + 1;
+            }
 
-            fileList = malloc(sizeRom + sizeMx1 + sizeMx2 + sizeSms + sizeCol + sizeRi + sizeSg);
+            fileList = malloc(sizeRom + sizeMx1 + sizeMx2 + sizeSms + sizeCol + sizeRi + sizeSg + sizeNul);
             memcpy(fileList, fileListRom, sizeRom);
             memcpy(fileList + sizeRom, fileListMx1, sizeMx1);
             memcpy(fileList + sizeRom + sizeMx1, fileListMx2, sizeMx2);
@@ -146,6 +152,7 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
             memcpy(fileList + sizeRom + sizeMx1 + sizeMx2 + sizeSms + sizeCol, fileListRi, sizeRi);
             memcpy(fileList + sizeRom + sizeMx1 + sizeMx2 + sizeSms + sizeCol + sizeRi, fileListSg, sizeSg);
             memcpy(fileList + sizeRom + sizeMx1 + sizeMx2 + sizeSms + sizeCol + sizeRi + sizeSg, fileListSc, sizeSc);
+            memcpy(fileList + sizeRom + sizeMx1 + sizeMx2 + sizeSms + sizeCol + sizeRi + sizeSg + sizeSc, fileListNul, sizeNul);
 
             if (count == 0) {
                 archShowNoRomInZipDialog();
@@ -172,6 +179,7 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
             if(fileListCol) free(fileListCol);
             if(fileListSg)  free(fileListSg);
             if(fileListSc)  free(fileListSc);
+            if(fileListNul) free(fileListNul);
             free(fileList);
         }
     }
