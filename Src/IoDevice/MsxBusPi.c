@@ -554,6 +554,7 @@ int setup_io()
 	for(int i=0; i < 27; i++)
 	{
 		bcm2835_gpio_fsel(i, 1);    
+		bcm2835_gpio_set_pud(i, BCM2835_GPIO_PUD_UP);
 	}
 
 	gpio10 = gpio+10;
