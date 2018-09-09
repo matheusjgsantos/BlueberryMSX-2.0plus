@@ -111,15 +111,17 @@ int ioPortCheckSub(int subport)
 
 UInt8 ioPortRead(void* ref, UInt16 port)
 {
+	int value = 0xff;
     port &= 0xff;
 	
     if (boardGetType() == BOARD_MSX && port >= 0x40 && port < 0x50) {
         if (ioSubTable[currentSubport].read == NULL) {
             return 0xff;
         }
-		if (ioMonTable[currentSubport].read != NULL)
+		if (ioMonTable[currentSubport].read != NULL) {
+//			printf("ioMonread:%d->%d\n", port, value);
 			ioMonTable[currentSubport].read(ioMonTable[currentSubport].ref, port);
-		
+		}
         return ioSubTable[currentSubport].read(ioSubTable[currentSubport].ref, port);
     }
 
@@ -130,11 +132,12 @@ UInt8 ioPortRead(void* ref, UInt16 port)
         if (ioUnused[1].read != NULL) {
             return ioUnused[1].read(ioUnused[1].ref, port);
         }
+		if (ioMonTable[port].read != NULL) {
+			value = ioMonTable[port].read(ioMonTable[port].ref, port);
+//			printf("ioMonread:%d->%d\n", port, value);
+		}
         return 0xff;
     }
-	
-	if (ioMonTable[port].read != NULL)
-		ioMonTable[port].read(ioMonTable[port].ref, port);
 
     return ioTable[port].read(ioTable[port].ref, port);
 }
@@ -148,8 +151,10 @@ void  ioPortWrite(void* ref, UInt16 port, UInt8 value)
             currentSubport = value;
             return;
         }
-		if (ioMonTable[currentSubport].write != NULL)
+		if (ioMonTable[currentSubport].write != NULL) {
+			printf("ioMonwrite:%d<-%d\n", port, value);
 			ioMonTable[currentSubport].write(ioMonTable[currentSubport].ref, port, value); 
+		}
         if (ioSubTable[currentSubport].write != NULL) {
             ioSubTable[currentSubport].write(ioSubTable[currentSubport].ref, port, value);
         }
@@ -162,9 +167,11 @@ void  ioPortWrite(void* ref, UInt16 port, UInt8 value)
 		else if (ioUnused[1].write != NULL) {
 			ioUnused[1].write(ioUnused[1].ref, port, value);
 		}
-		if (ioMonTable[port].write != NULL)
-			ioMonTable[port].write(ioMonTable[port].ref, port, value); 
 		return;
+	}
+	else if (ioMonTable[port].write != NULL) {
+//		printf("ioMonwrite:%d<-%d\n", port, value);
+		ioMonTable[port].write(ioMonTable[port].ref, port, value); 
 	}
     ioTable[port].write(ioTable[port].ref, port, value);
 }
@@ -178,6 +185,7 @@ void ioMonPortRegister(int port, IoPortRead read, IoPortWrite write, void* ref)
         ioMonTable[port].read  = read;
         ioMonTable[port].write = write;
         ioMonTable[port].ref   = ref;
+//		printf("ioMonRegistered:%d\n", port);
     }
 }
 

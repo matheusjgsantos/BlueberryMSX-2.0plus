@@ -365,9 +365,11 @@ int videoRender(Video* pVideo, FrameBuffer* frame, int bitDepth, int zoom,
         return zoom;
     }
 
+	/*
     if (frame->interlace != INTERLACE_NONE && pVideo->deInterlace) {
         frame = frameBufferDeinterlace(frame);
     }
+	*/
 
     if (frame->lines <= 240) {
         zoom = videoRender240(pVideo, frame, bitDepth, zoom, pDst, dstOffset, dstPitch, canChangeZoom);

@@ -366,6 +366,8 @@ void piDestroyVideo()
 }
 
 int width = -1;
+int lines = -1;
+int interlace = -1;
 
 void piUpdateEmuDisplay()
 {
@@ -394,11 +396,12 @@ void piUpdateEmuDisplay()
 	if (frameBufferGetDoubleWidth(frameBuffer, 0) != width)
 	{
 		width = frameBufferGetDoubleWidth(frameBuffer, 0);
+		lines = frameBuffer->lines;
 		msxScreenPitch = (256+16)*(width+1);
 		height = frameBuffer->lines;
 		float sx = 1.0f;
 		float sy = 1.0f;
-		//printf("screen = %x, width = %d, height = %d, double = %d", msxScreen, msxScreenPitch, frameBuffer->lines, width);
+		printf("screen = %x, width = %d, height = %d, double = %d, interfaced = %d, ", msxScreen, msxScreenPitch, frameBuffer->lines, width, interlace);
 		sx = sx * msxScreenPitch/WIDTH;
 		printf("sx=%f,sy=%f\n", sx, sy);
 		setOrtho(projection, -sx/2, sx/2, sy/2, -sy/2, -0.5f, +0.5f,1,1);		

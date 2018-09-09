@@ -43,7 +43,7 @@
 #define UPDATE_TABLE_10() if ((++scroll & 0xff) == 0) charTable += jump[page ^= 1];
 #define UPDATE_TABLE_12() if ((++scroll & 0xff) == 0) charTable += jump[page ^= 1];
 
-
+#undef MAX_VIDEO_WIDTH_320
 #ifdef MAX_VIDEO_WIDTH_320
 
 static UInt32 ca;

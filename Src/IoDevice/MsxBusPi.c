@@ -87,9 +87,9 @@ volatile unsigned *gclk_base;
 #define RC27	27
 
 #define MD00_PIN 	0
-#define SLTSL3_PIN	RC26
+#define SLTSL3_PIN	RA9
 #define SLTSL1_PIN 	RA8
-#define CS12_PIN 	RA9
+//#define CS12_PIN 	RA9
 #define CS1_PIN		RA10
 #define CS2_PIN 	RA11
 #define RD_PIN		RA12
@@ -110,7 +110,7 @@ volatile unsigned *gclk_base;
 #define MSX_SLTSL3 (1 << SLTSL3_PIN)
 #define MSX_CS1	(1 << CS1_PIN)
 #define MSX_CS2 (1 << CS2_PIN)
-#define MSX_CS12 (1 << CS12_PIN)
+//#define MSX_CS12 (1 << CS12_PIN)
 #define MSX_RD	(1 << RD_PIN)
 #define MSX_WR  (1 << WR_PIN)
 #define MSX_IORQ  (1 << IORQ_PIN)
@@ -125,7 +125,7 @@ volatile unsigned *gclk_base;
 #define SW1 	(1 << SW1_PIN)
 #define DAT_DIR (1 << RC21)
 
-#define MSX_CTRL_FLAG (MSX_SLTSL1 | MSX_SLTSL3 | MSX_CS1 | MSX_CS2 | MSX_CS12 | MSX_RD | MSX_WR | MSX_IORQ | MSX_MREQ | DAT_DIR)
+#define MSX_CTRL_FLAG (MSX_SLTSL1 | MSX_SLTSL3 | MSX_CS1 | MSX_CS2 | MSX_RD | MSX_WR | MSX_IORQ | MSX_MREQ | DAT_DIR)
 
 #else
 // MSX slot access macro
@@ -494,12 +494,12 @@ unsigned char GetData(int flag, int delay)
 	int cs1, cs2, cs12;
 	cs1 = (addr & 0xc000) == 0x4000 ? MSX_CS1: 0;
 	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2: 0;
-	cs12 = (cs1 | cs2 ? MSX_CS12 : 0);
+	//cs12 = (cs1 | cs2 ? MSX_CS12 : 0);
 	if (GPIO & SW1)
 		return 0xff;
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
-	byte = GetData((slot == 1 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_RD | cs1 | cs2 | cs12, 25);
+	byte = GetData((slot == 1 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_RD | cs1 | cs2 /*| cs12 */, 25);
 	pthread_mutex_unlock(&mutex);	
 	return byte;	 
  }
@@ -518,7 +518,7 @@ unsigned char GetData(int flag, int delay)
 	unsigned char byte;
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
-	byte = GetData(MSX_IORQ | MSX_RD, 35);
+	byte = GetData(MSX_IORQ | MSX_RD, 45);
 	pthread_mutex_unlock(&mutex);	
 	return byte;	 
  }
@@ -527,7 +527,7 @@ unsigned char GetData(int flag, int delay)
    {
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
-	SetData(MSX_IORQ, 45, byte);
+	SetData(MSX_IORQ, 55, byte);
 	pthread_mutex_unlock(&mutex);		
 	return;
  }

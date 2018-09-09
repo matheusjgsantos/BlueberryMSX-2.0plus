@@ -45,10 +45,10 @@ SdlSound sdlSound;
 int oldLen = 0;
 void soundCallback(void* userdata, Uint8* stream, int length)
 {
-    UInt32 avail = (sdlSound.readPtr - sdlSound.writePtr) & sdlSound.bufferMask;
+    UInt32 avail = (sdlSound.readPtr - sdlSound.writePtr);// & sdlSound.bufferMask;
 oldLen = length;
     if ((UInt32)length > avail) {
-//        sdlSound.readPtr = (sdlSound.readPtr - sdlSound.bufferSize / 2) & sdlSound.bufferMask;
+        sdlSound.readPtr = (sdlSound.readPtr - sdlSound.bufferSize / 2) & sdlSound.bufferMask;
         memset((UInt8*)stream + avail, 0, length - avail);
         length = avail;
     }
@@ -127,13 +127,34 @@ void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 c
         return;
     }
 
+	char driver_name[1024];
+	SDL_AudioDriverName(driver_name, 1024);
+	printf("Audio driver: %s\n", driver_name);
+/*	
+	int i;
+	for (i = 0; i < SDL_GetNumAudioDrivers(); ++i) {
+		const char* driver_name = SDL_GetAudioDriver(i);
+		if (SDL_AudioInit(driver_name)) {
+			printf("Audio driver failed to initialize: %s\n", driver_name);
+			continue;
+		}
+    }
+*/
 	if (SDL_OpenAudio(&desired, &audioSpec) != 0) {
 		SDL_QuitSubSystem(SDL_INIT_AUDIO);
         return;
     }
-
+	
+	printf ("freq:%d(%d)\n", desired.freq, audioSpec.freq);
+	printf ("samples:%d(%d)\n", desired.samples, audioSpec.samples);
+	printf ("channels:%d(%d)\n", desired.channels, audioSpec.channels);
+	printf ("format:%d(%d)\n", desired.format, audioSpec.format);
+	printf ("size:%d(%d)\n", desired.size, audioSpec.size);
+	
     sdlSound.bufferSize = 5;
     while (sdlSound.bufferSize < 4 * audioSpec.size) sdlSound.bufferSize *= 2;
+	sdlSound.bufferSize = audioSpec.size * 4;
+	printf ("size:%d\n", sdlSound.bufferSize);
     sdlSound.bufferMask = sdlSound.bufferSize - 1;
     sdlSound.buffer = (UInt8*)calloc(1, sdlSound.bufferSize);
     sdlSound.started = 1;

@@ -75,11 +75,15 @@ static void destroy(RomMapperMsxBus* rm)
 
 static UInt8 readIo(RomMapperMsxBus* rm, UInt16 port)
 {
-    return msxBusReadIo(rm->msxBus, port);
+	UInt8 value = msxBusReadIo(rm->msxBus, port);
+//	printf("readIO:%02x,%02x\n", port, value);
+    return value;
 }
 
 static void writeIo(RomMapperMsxBus* rm, UInt16 port, UInt8 value)
 {
+//	if (port >= 0x7c && port <= 0xa3)
+//		printf("writeIO:%02x,%02x\n", port, value);
     msxBusWriteIo(rm->msxBus, port, value);
 }
 
@@ -113,14 +117,15 @@ int romMapperMsxBusCreate(int cartSlot, int slot, int sslot)
 	//printf("MSXBus created. msxBus=%d slot=%d sslot=%d\n", rm->msxBus, slot, sslot);
 
     if (rm->msxBus != NULL && cartSlot == 0) {
-        ioPortRegisterUnused(cartSlot, readIo, writeIo, rm);
+		for(i = 1; i < 255; i++)
+			ioPortRegisterUnused(i, readIo, writeIo, rm);
         slotRegister(slot, sslot, 0, 8, read, read, write, destroy, rm);
         for (i = 0; i < 8; i++) {   
             slotMapPage(rm->slot, rm->sslot, i, NULL, 0, 0);
         }
 		printf("MSXBus created. cartSlot=%d slot=%d sslot=%d\n", cartSlot, slot, sslot);
-		for(i = 0; mon_ports[i] != 0; i++)
-			ioMonPortRegister(mon_ports[i], readIo, writeIo, rm);
+		for(i = 0; mon_ports[i] > 0; i++)
+			ioMonPortRegister(mon_ports[i], NULL, writeIo, rm);
     }
 
     return 1;
