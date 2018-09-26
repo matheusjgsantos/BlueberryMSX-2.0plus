@@ -289,7 +289,7 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
     RomType romType2  = ROM_UNKNOWN;
     char    machineName[64] = "";
     char    diskA[512] = "/dev/sda";
-    char    diskB[512] = "";
+    char    diskB[512] = "/dev/sdb";
     char    diskAzip[256] = "";
     char    diskBzip[256] = "";
     char    ide1p[256] = "";
@@ -400,7 +400,7 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
         }
         if (checkArg(argument, "diskB")) {
             argument = extractTokenEx(cmdLine, ++i, gamedir);
-            if (argument == NULL || !isDskFileType(argument, diskBzip)) return 0; // Invaid argument
+//            if (argument == NULL || !isDskFileType(argument, diskBzip)) return 0; // Invaid argument
             strcpy(diskB, argument);
             startEmu = 1;
         }

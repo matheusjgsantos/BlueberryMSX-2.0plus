@@ -33,10 +33,13 @@ if [ -z $choice ]; then
 fi
 a=`sed -n ${choice}p < menu`
 echo $choice > ./item
-echo ./bluemsx-pi /machine \"${a}\" /romtype1 msxbus /romtype2 msxbus > xx
 if [[ -z $MSXBUS1 ]]; then 
-	sudo ./bluemsx-pi /machine "$a" /romtype2 msxbus $2 $3
+	echo ./bluemsx-pi /machine \"${a}\" /romtype2 msxbus $2 $3 $4 $5 $6 $7 > xx
+	sudo ./xx
+	#sudo ./bluemsx-pi /machine "$a" /romtype2 msxbus $2 $3 $4 $5 $6 $7
 else
-	sudo ./bluemsx-pi /machine "$a" /romtype1 msxbus /romtype2 msxbus $2 $3
+	echo ./bluemsx-pi /machine \"${a}\" /romtype1 msxbus /romtype2 msxbus $2 $3 $4 $5 $6 $7 > xx
+	sudo ./xx
+	#sudo ./bluemsx-pi /machine "$a" /romtype1 msxbus /romtype2 msxbus $2 $3
 fi
 
