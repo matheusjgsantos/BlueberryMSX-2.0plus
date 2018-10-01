@@ -177,8 +177,10 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
     hotkey->key  = 0;
 
     if (!iniFileGetString(iniFile, "Shortcuts", name, "", buffer, sizeof(buffer))) {
+//		printf("shortcut:%s - not assigned\n", name);
         return;
     }
+	printf("shortcut:%s - assigned\n", name);
 
     token = strtok(buffer, "|");
     if (token == NULL) {
@@ -257,15 +259,12 @@ Shortcuts* shortcutsCreate()
 		LOAD_SHORTCUT(scanlinesToggle);
 		LOAD_SHORTCUT(aspectRatioToggle);
 	}
-	else
-	{
-		printf("Reset Hard\n");
-		shortcuts->resetSoft = resetHard;
-		shortcuts->captureScreenshot = screenShot;
-		shortcuts->scanlinesToggle = toggleScanline;
-		shortcuts->aspectRatioToggle = toggleAspectRatio;
-	}
 	iniFileClose(iniFile);
+	shortcuts->resetSoft = resetHard;
+	shortcuts->captureScreenshot = screenShot;
+	shortcuts->scanlinesToggle = toggleScanline;
+	shortcuts->aspectRatioToggle = toggleAspectRatio;
+	
     return shortcuts;
 }
 
@@ -301,15 +300,14 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
         properties->video.frameSkip = 0;
     }
     if (HOTKEY_EQ(key, lowFrameskipHotKey)) {
-        properties->video.frameSkip = 1;
+//        properties->video.frameSkip = 1;
     }
     if (HOTKEY_EQ(key, mediumFrameskipHotKey)) {
-        properties->video.frameSkip = 2;
+//       properties->video.frameSkip = 2;
     }
     if (HOTKEY_EQ(key, highFrameskipHotKey)) {
-        properties->video.frameSkip = 3;
+//        properties->video.frameSkip = 3;
     }
-
     if (HOTKEY_EQ(key, s->quit))                         actionQuit();
     if (HOTKEY_EQ(key, s->fdcTiming))                    actionToggleFdcTiming();
     if (HOTKEY_EQ(key, s->spritesEnable))                actionToggleSpriteEnable();

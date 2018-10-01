@@ -1,0 +1,16 @@
+#!/bin/bash
+ROM=`cat ./romfile`
+choice=$(./rom $ROM)
+if [ -z $choice ]; then 
+	tput cvvis
+	exit
+fi
+echo $choice > ./romfile
+ROM=`ls */*$choice.* | sed -n 1p`
+if [ -z $ROM ]; then
+	./r
+	exit
+else
+	echo ./r \"\" /rom1 $ROM > xy
+	./r "" /rom1 $ROM
+fi

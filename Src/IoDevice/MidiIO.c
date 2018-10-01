@@ -57,12 +57,14 @@ MidiIO* theYkIO = NULL;
 
 static void setOutType(int device, MidiIO* midiIo)
 {
+	printf("setOutType:%s,%s\n", (midiIo->outType == MIDI_HOST ? "MIDI_HOST" : "MIDI_FILE"), theOutFileName);
     switch (midiIo->outType) {
     case MIDI_HOST:
         midiIo->outHost = archMidiOutCreate(device);
         break;
     case MIDI_FILE:
         midiIo->outFile = fopen(theOutFileName, "w+");
+		printf("%s: %d\n", theOutFileName, midiIo->outFile);
         break;
     }
 }

@@ -437,6 +437,8 @@ int MSXMidiCreate(int isExternal)
     else {
         registerIoPorts(msxMidi, 0xe8);
     }
+	
+	printf("MSXMidiCreate - %d\n", isExternal);
 
     msxMidi->midiIo = midiIoCreate(midiInCallback, msxMidi);
 

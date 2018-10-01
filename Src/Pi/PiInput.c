@@ -239,7 +239,12 @@ void keyboardUpdate(SDL_KeyboardEvent *event)
 {
 	int i;
 	for (i = inputTypeScanStart; i <= inputTypeScanEnd; i++) {
-		if (event->type == SDL_KEYUP) {
+		if (event->keysym.scancode == 0x7A) {
+			if (event->type == SDL_KEYUP) 
+				inputEventUnset(kbdTable[i][SDLK_RALT]);
+			else if (event->type == SDL_KEYDOWN)
+				inputEventSet(kbdTable[i][SDLK_RALT]);
+		} else if (event->type == SDL_KEYUP) {
 			inputEventUnset(kbdTable[i][event->keysym.sym]);
 		} else if (event->type == SDL_KEYDOWN) {
 			inputEventSet(kbdTable[i][event->keysym.sym]);
