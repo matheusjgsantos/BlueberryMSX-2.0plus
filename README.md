@@ -11,6 +11,10 @@ Shortcuts:
 * Press **F12** to quit
 * Press **F11** to disable frame skipping
 * Press **F10**, **F9**, **F8** to set frame skipping to 1, 2, 3, respectively
+* Press **ALT+F10** to toggle scanline
+* Press **CTRL+F10** to toggle 4:3 forced for 16:9 or more resolution.
+* Press **F6** to soft reset
+* Press **F7** to take a screen shot.
 
 Current Status
 --------------
