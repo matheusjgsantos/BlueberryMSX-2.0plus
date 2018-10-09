@@ -366,7 +366,7 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->sound.MidiIn.desc[0]          = 0;
     properties->sound.MidiOut.type            = P_MIDI_FILE;
     properties->sound.MidiOut.name[0]         = 0;
-    strcpy(properties->sound.MidiOut.fileName, "/dev/midi");
+    strcpy(properties->sound.MidiOut.fileName, "/dev/snd/midiC1D0");
     properties->sound.MidiOut.desc[0]         = 0;
     properties->sound.MidiOut.mt32ToGm        = 0;
     
@@ -559,7 +559,7 @@ static void propLoad(Properties* properties)
 #endif
     IniFile *propFile = iniFileOpen(settFilename);
     int i;
-
+	printf("iniFile:%s\n", settFilename);
     GET_STR_VALUE_2(propFile, settings, language);
     i = langFromName(properties->settings.language, 0);
     if (i != EMU_LANG_UNKNOWN) properties->language = i;
@@ -662,6 +662,7 @@ static void propLoad(Properties* properties)
     GET_ENUM_VALUE_3(propFile, sound, MidiOut, type, MidiTypePair);
     GET_STR_VALUE_3(propFile, sound, MidiOut, name);
     GET_STR_VALUE_3(propFile, sound, MidiOut, fileName);
+	printf("sound.MidiOut.fileName:%s\n", properties->sound.MidiOut.fileName);
     GET_STR_VALUE_3(propFile, sound, MidiOut, desc);
     GET_ENUM_VALUE_3(propFile, sound, MidiOut, mt32ToGm, BoolPair);
     GET_ENUM_VALUE_2s1(propFile, sound, mixerChannel, MIXER_CHANNEL_PSG, enable, BoolPair);

@@ -580,7 +580,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
         return 1;
     }
 
-	if (fileName[0] != '/')
+	if (fileName[0] != '/' && !fileInZipFile)
 	{
 		rv = stat(fileName, &s);
 		printf("directory as disk:%s,%d, %d, %d\n", fileName, s.st_mode, S_IFDIR, rv);
@@ -612,7 +612,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
             }
             free(fname);
         }
-
+		printf("diskChange:%d, %s, %s\n", driveId, fileName, fileInZipFile);
         diskUpdateInfo(driveId);
         return ramImageBuffer[driveId] != NULL;
     }

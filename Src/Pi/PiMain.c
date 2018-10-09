@@ -253,7 +253,9 @@ int main(int argc, char **argv)
 	resetProperties = emuCheckResetArgument(szLine);
 	strcat(path, archGetCurrentDirectory());
 	strcat(path, DIR_SEPARATOR "bluemsx.ini");
-
+	
+	printf("ResetProperties:%d,%s\n", resetProperties, path);
+	
 	properties = propCreate(resetProperties, 0, P_KBD_EUROPEAN, 0, "");
 
 	if (resetProperties == 2) {

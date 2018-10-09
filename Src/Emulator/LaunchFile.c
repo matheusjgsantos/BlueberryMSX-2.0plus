@@ -329,12 +329,14 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
             int count720;
             int countSf7;
             char* fileListDsk = zipGetFileList(filename, ".dsk", &countDsk);
+			printf("fileListDsk:%s, cnt=%d\n", fileListDsk, countDsk);
             char* fileListDi1 = zipGetFileList(filename, ".di1", &countDi1);
             char* fileListDi2 = zipGetFileList(filename, ".di2", &countDi2);
             char* fileList360 = zipGetFileList(filename, ".360", &count360);
             char* fileList720 = zipGetFileList(filename, ".720", &count720);
             char* fileListSf7 = zipGetFileList(filename, ".Sf7", &countSf7);
             int count = countDsk + countDi1 + countDi2 + count360 + count720 + countSf7;
+			printf("dsk=%d, di1=%d, di2=%d, 360=%d, 720=%d, sf7=%d\n", countDsk, countDi1, countDi2, count360, count720, countSf7);
             int sizeDsk = 0;
             int sizeDi1 = 0;
             int sizeDi2 = 0;
@@ -378,7 +380,9 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
                 strcpy(diskName, fileList);
             }
             else {
+				printf("count=%d\n", count);
                 char* filename = archFilenameGetOpenDiskZip(properties, drive, fname, fileList, count, &autostart);
+				printf("filename=%s\n", filename);
                 if (filename == NULL) {
                     free(fileList);
                     return 0;
@@ -401,7 +405,7 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
 		printf("file not exists: %s\n", filename);
 		return 1;
 	}
-	printf("file exists: disk=%d, %s\n", drive, filename);
+	printf("file exists: disk=%d, %s, %s\n", drive, filename, diskName);
 
     strcpy(properties->media.disks[drive].fileName, filename);
     strcpy(properties->media.disks[drive].fileNameInZip, diskName);
@@ -414,13 +418,13 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
 
     if (autostart && !noautostart) {
         emulatorStop();
-		printf("boardChangeDiskette\n");
+		printf("insertDiskette::boardChangeDiskette\n");
         boardChangeDiskette(drive, filename, isZip ? diskName : NULL);
         emulatorStart(NULL);
     }
     else if (emulatorGetState() != EMU_STOPPED) {
         emulatorSuspend();
-		printf("boardChangeDiskette\n");
+		printf("insertDiskette::boardChangeDiskette\n");
         boardChangeDiskette(drive, filename, isZip ? diskName : NULL);
         emulatorResume();
     }

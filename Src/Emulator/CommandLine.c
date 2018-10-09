@@ -122,6 +122,13 @@ static int isRomFileType(char* filename, char* inZip) {
             free(fileList);
             return 1;
         }
+		
+        fileList = zipGetFileList(filename, "", &count);
+        if (fileList) {
+            strcpy(inZip, fileList);
+            free(fileList);
+            return 1;
+        }		
 
         return 0;
     }
@@ -397,6 +404,7 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
             argument = extractToken(cmdLine, ++i);
             if (argument == NULL) return 0;
             strcpy(diskAzip, argument);
+			diskA[0] = 0;
         }
         if (checkArg(argument, "diskB")) {
             argument = extractTokenEx(cmdLine, ++i, gamedir);
@@ -408,6 +416,7 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
             argument = extractToken(cmdLine, ++i);
             if (argument == NULL) return 0;
             strcpy(diskBzip, argument);
+			diskB[0] = 0;
         }
         if (checkArg(argument, "cas")) {
             argument = extractTokenEx(cmdLine, ++i, gamedir);

@@ -99,7 +99,7 @@ struct Shortcuts {
     ShortcutHotkey cartRemove[2];
     ShortcutHotkey cartAutoReset;
 
-    ShortcutHotkey diskQuickChange;
+    ShortcutHotkey diskChange[0];
     ShortcutHotkey diskRemove[2];
     ShortcutHotkey diskAutoReset;
 
@@ -169,7 +169,7 @@ static int stringToMod(const char* name)
 static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 {
     char buffer[512];
-    char* token;
+    char* token, *value;
     int key;
     
     hotkey->type = HOTKEY_TYPE_NONE;
@@ -180,8 +180,7 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 //		printf("shortcut:%s - not assigned\n", name);
         return;
     }
-	printf("shortcut:%s - assigned\n", name);
-
+#if 0
     token = strtok(buffer, "|");
     if (token == NULL) {
         return;
@@ -195,6 +194,10 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
     while (token = strtok(NULL, "|")) {
         hotkey->mods |= stringToMod(token);
     }
+#else
+	sscanf(strtok(buffer, "="), "%"SCNx32, hotkey);	
+#endif	
+	printf("shortcut:%s - %08x, assigned\n", name, *hotkey);
 }
 
 void shortcutsSetDirectory(char* directory)
@@ -210,6 +213,8 @@ Shortcuts* shortcutsCreate()
     sprintf(filename, "%s/blueMSX.shortcuts", shortcutsDir);
 
     IniFile *iniFile = iniFileOpen(filename);
+	
+	printf("shortcut file:%s, %d\n", filename, iniFile);
 
 	if (iniFile->iniBuffer) {
 		LOAD_SHORTCUT(switchMsxAudio);
@@ -229,7 +234,7 @@ Shortcuts* shortcutsCreate()
 		
 		LOAD_SHORTCUT(diskRemove[0]);
 		LOAD_SHORTCUT(diskRemove[1]);
-		LOAD_SHORTCUT(diskQuickChange);
+		LOAD_SHORTCUT(diskChange[0]);
 		LOAD_SHORTCUT(diskAutoReset);
 
 		LOAD_SHORTCUT(casRewind);
@@ -288,7 +293,7 @@ void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym)
 void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
 {
     ShortcutHotkey key = { type, mods, keySym };
-
+	//printf("key=%08x,%08x\n", key, s->diskChange[0]);
     if (s->state.maxSpeedIsSet) {
         actionMaxSpeedRelease();
         s->state.maxSpeedIsSet = 0;
@@ -323,8 +328,8 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
     if (HOTKEY_EQ(key, s->cartRemove[1]))                actionCartRemove2();
     if (HOTKEY_EQ(key, s->cartAutoReset))                actionToggleCartAutoReset();
 
-    if (HOTKEY_EQ(key, s->diskQuickChange))              actionDiskQuickChange();
-    if (HOTKEY_EQ(key, s->diskRemove[0]))                actionDiskRemoveA();
+    if (HOTKEY_EQ(key, s->diskChange[0]))              	 actionDiskQuickChange();
+    //if (HOTKEY_EQ(key, s->diskRemove[0]))                actionDiskRemoveA();
     if (HOTKEY_EQ(key, s->diskRemove[1]))                actionDiskRemoveB();
     if (HOTKEY_EQ(key, s->diskAutoReset))                actionToggleDiskAutoReset();
 

@@ -1245,7 +1245,7 @@ void boardChangeDiskette(int driveId, char* fileName, const char* fileInZipFile)
             strcpy(boardDeviceInfo->disks[driveId].inZipName, fileInZipFile ? fileInZipFile : "");
         }
     }
-
+	printf("boardChangeDiskette:%d,%s,%s\n", driveId, fileName, fileInZipFile);
     diskChange(driveId ,fileName, fileInZipFile);
 }
 

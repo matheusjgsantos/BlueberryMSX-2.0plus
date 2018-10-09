@@ -572,6 +572,7 @@ void actionStopPlayReverse()
 }
 
 void actionDiskQuickChange() {
+	printf("disk:%s,%s\n", state.properties->media.disks[0].fileName, state.properties->media.disks[0].fileNameInZip);
     if (*state.properties->media.disks[0].fileName) {
         if (*state.properties->media.disks[0].fileNameInZip) {
             strcpy(state.properties->media.disks[0].fileNameInZip, fileGetNext(state.properties->media.disks[0].fileNameInZip, state.properties->media.disks[0].fileName));
@@ -579,7 +580,7 @@ void actionDiskQuickChange() {
             archDiskQuickChangeNotify(0, state.properties->media.disks[0].fileName, state.properties->media.disks[0].fileNameInZip);
 #endif
             boardChangeDiskette(0, state.properties->media.disks[0].fileName, state.properties->media.disks[0].fileNameInZip);
-            updateExtendedDiskName(0, state.properties->media.disks[0].fileName, state.properties->media.disks[0].fileNameInZip);
+            //updateExtendedDiskName(0, state.properties->media.disks[0].fileName, state.properties->media.disks[0].fileNameInZip);
         }
         else {
             strcpy(state.properties->media.disks[0].fileName, fileGetNext(state.properties->media.disks[0].fileName, NULL));
@@ -587,12 +588,13 @@ void actionDiskQuickChange() {
             archDiskQuickChangeNotify(0, state.properties->media.disks[0].fileName, state.properties->media.disks[0].fileNameInZip);
 #endif
             boardChangeDiskette(0, state.properties->media.disks[0].fileName, NULL);
-            updateExtendedDiskName(0, state.properties->media.disks[0].fileName, state.properties->media.disks[0].fileNameInZip);
+            //updateExtendedDiskName(0, state.properties->media.disks[0].fileName, state.properties->media.disks[0].fileNameInZip);
         }
 #ifndef WII
         archDiskQuickChangeNotify();
 #endif
     }
+	printf("actionDiskQuickChange completed\n");
     archUpdateMenu(0);
 }
 
@@ -801,6 +803,7 @@ void actionCasRemove() {
 }
 
 void actionDiskRemoveA() {
+	printf("actionDiskRemoveA\n");
     actionDiskRemove(0);
 }
 
