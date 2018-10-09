@@ -28,6 +28,7 @@
 #include "ArchFile.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef WINDOWS_HOST
 
@@ -97,6 +98,16 @@ int archFileDelete(const char* fileName)
 }
 
 #endif
+#define n_array sizeof(array)/sizeof(const char *)
+/* Compare the strings. */
+
+static int compare (const void * a, const void * b)
+{
+    /* The pointers point to offsets into "array", so we need to
+       dereference them to get at the strings. */
+
+    return strcmp (*(const char **) a, *(const char **) b);
+}
 
 /* File dialogs: */
 char* archFilenameGetOpenRom(Properties* properties, int cartSlot, RomType* romType) { return NULL; }
@@ -109,7 +120,21 @@ char* archFilenameGetOpenCapture(Properties* properties) { return NULL; }
 char* archFilenameGetSaveState(Properties* properties) { return NULL; }
 char* archDirnameGetOpenDisk(Properties* properties, int drive) { return NULL; }
 char* archFilenameGetOpenRomZip(Properties* properties, int cartSlot, const char* fname, const char* fileList, int count, int* autostart, int* romType) { return NULL; }
-char* archFilenameGetOpenDiskZip(Properties* properties, int drive, const char* fname, const char* fileList, int count, int* autostart) { return NULL; }
+char* archFilenameGetOpenDiskZip(Properties* properties, int drive, const char* fname, const char* fileList, int count, int* autostart) 
+{
+	char *array[100];
+	char *str = fileList;
+	for(int i = 0; i < count; i++)
+	{
+		array[i] = str;
+		printf("%d/%d. %s\n", count, i+1, str);
+		while(*str)str++;
+		str++;
+	}
+	qsort (array, count, sizeof (const char *), compare);
+	printf("1st File:%s\n", array[0]);
+	return array[0]; 
+}
 char* archFilenameGetOpenCasZip(Properties* properties, const char* fname, const char* fileList, int count, int* autostart) { return NULL; }
 char* archFilenameGetOpenAnyZip(Properties* properties, const char* fname, const char* fileList, int count, int* autostart, int* romType) { return NULL; }
 
