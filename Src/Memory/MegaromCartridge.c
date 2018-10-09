@@ -214,11 +214,11 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
     case ROM_GAMEREADER:
         success &= romMapperGameReaderCreate(cartNo, slot, sslot);
         break;
-#endif
-
+#else
 	case ROM_MSXBUS:
 		success &= romMapperMsxBusCreate(cartNo, slot, sslot);
 		break;
+#endif
 
     case ROM_JOYREXPSG:
         success &= romMapperJoyrexPsgCreate();
