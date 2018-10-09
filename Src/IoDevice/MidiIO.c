@@ -27,6 +27,7 @@
 */
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "MidiIO.h"
 #include "ArchUart.h"
 #include "DAC.h"
@@ -57,14 +58,20 @@ MidiIO* theYkIO = NULL;
 
 static void setOutType(int device, MidiIO* midiIo)
 {
-	printf("setOutType:%s,%s\n", (midiIo->outType == MIDI_HOST ? "MIDI_HOST" : "MIDI_FILE"), theOutFileName);
+	printf("setOutType(%d,%d):%s,%s\n", device, midiIo, (midiIo->outType == MIDI_HOST ? "MIDI_HOST" : "MIDI_FILE"), theOutFileName);
     switch (midiIo->outType) {
     case MIDI_HOST:
         midiIo->outHost = archMidiOutCreate(device);
         break;
     case MIDI_FILE:
-        midiIo->outFile = fopen(theOutFileName, "w+");
-		printf("%s: %d\n", theOutFileName, midiIo->outFile);
+		if (access(theOutFileName, F_OK) != -1) 
+		{
+			midiIo->outFile = fopen(theOutFileName, "w+");
+			setbuf(midiIo->outFile, NULL);
+			printf("%s: %d\n", theOutFileName, midiIo->outFile);
+		}
+		else
+			printf("%s: not exist.\n", theOutFileName);
         break;
     }
 }
@@ -84,6 +91,7 @@ static void setInType(int device, MidiIO* midiIo)
         break;
     case MIDI_FILE:
         midiIo->inFile = fopen(theInFileName, "w+");
+		setbuf(midiIo->inFile, NULL);
         break;
     }
 }
@@ -118,6 +126,113 @@ static void removeInType(MidiIO* midiIo)
     }
 }
 
+#define MAX_MIDI_SYSMES_LENGTH (1024+2)
+
+typedef struct {
+	int count;
+	int remain;
+	int runningStatus;
+	UInt8 data[MAX_MIDI_SYSMES_LENGTH + 1];
+} buffer;
+
+static int midi_pos, midi_len;
+static UInt8 midi_command[1024+2];
+static int midi_lengths[8] = {3, 3, 3, 3, 2, 2, 3, 1};
+static int midi_insysex;
+static int runningStatus;
+static UInt8 midi_sysex_data[MAX_MIDI_SYSMES_LENGTH];
+
+#define pclog printf
+
+void midi_write(MidiIO* midiIo, UInt8 value)
+{
+	pclog("Write MIDI %02x\n", value);
+
+	if (midi_pos == 0)
+	{
+		UInt8 status;
+        if ((value & 0x080) != 0x00) {
+            status = value;
+        } else {
+            // running status
+            status = midi_command[0];
+            midi_pos++;
+            runningStatus = 1;
+        }		
+		midi_command[1] = 0;
+		midi_command[2] = 0;
+		
+		switch(status & 0x0f0)
+		{
+			case 0x090:	// Note On
+			case 0x080:	// Note Off
+			case 0x0a0:	// Key Pressure
+			case 0x0b0:	// Control Change
+			case 0x0e0:	// Pitch Wheel
+				midi_len = 3;
+				break;
+			case 0x0c0:	// Program Change
+			case 0x0d0:	// After Touch
+				midi_len = 2;
+				break;
+			case 0x0f0:	// SYSTEM MESSAGE
+				switch (value & 0x0f) {
+				case 0x00:  // Exclusive
+					midi_len = 0;
+					break;
+				case 0x02:	// Song Position Pointer
+					midi_len = 3;
+					break;
+				case 0x01:	// Time Code
+				case 0x03:	// Song Select
+					midi_len = 2;
+					break;
+				default:
+					midi_len = 1;
+					break;
+				}
+				break;
+			default:
+				midi_len = 1;
+				break;
+		}
+		if (runningStatus) {
+			midi_len--;
+		}	
+	}
+	
+	midi_command[midi_pos] = value;
+	
+    if (midi_pos < MAX_MIDI_SYSMES_LENGTH) {
+        midi_pos++;
+    }
+	midi_len--;	
+	
+	if (midi_len == 0)
+	{
+		pclog("MIDI send data %i: ", midi_pos); for(int i = 0; i < midi_pos; i++) pclog("%02x ", midi_command[i]);
+		if (midi_command[0] & 0xf0 == 0xc0)
+		{
+//			midi_command[1] = 0x80 | MT32toGM[0x7f & midi_command[1]];
+			pclog("--> "); for(int i = 0; i < midi_pos; i++) pclog("%02x ", midi_command[i]);
+		}
+		pclog("\n");
+		fwrite(midi_command, midi_pos, 1, midiIo->outFile);
+		midi_pos = 0;
+	}
+	
+	if (midi_len < 0 && value == 0xf7)
+	{
+		if (midi_pos < 2048)
+		{
+			pclog("MIDI send sysex %i: ", midi_pos); for (int i = 0; i < midi_pos; i++) pclog("%02x ", midi_command[i]); pclog("\n");
+			fwrite(midi_command, midi_pos, 1, midiIo->outFile);
+		}
+		midi_pos = 0;
+	}
+		
+}
+
 void midiIoTransmit(MidiIO* midiIo, UInt8 value)
 {
     switch (midiIo->outType) {
@@ -127,7 +242,11 @@ void midiIoTransmit(MidiIO* midiIo, UInt8 value)
         }
         break;
     case MIDI_FILE:
+#if 1
         fwrite(&value, 1, 1, midiIo->outFile);
+#else
+		midi_write(midiIo, value);
+#endif
         break;
     }
 }
