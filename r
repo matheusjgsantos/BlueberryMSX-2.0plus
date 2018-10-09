@@ -4,30 +4,23 @@ FILE2="./menu"
 ITEM=`cat ./item`
 MSXBUS1='/romtype1 msxbus'
 #amixer cset numid=1 100 > /dev/null
-# num=1
-# echo "#!/bin/bash"> msx
-# echo -n "whiptail --title \"RPMC - Raspberry Pi MSX Clone\" --menu \"Choose a Machine\" 25 78 16 " >> msx
-# echo -n "" > menu
-# while machine='' read -r line || [[ -n "$line" ]]; do
-	# i=0
-	# mach=$(echo $line | tr "/" "\n")
-	# IFS=$'/'
-	# for l in $line; do
-		# i=$((i + 1))
-		# if [[ $i -eq "2" && $l =~ .*$1.* ]]; then
-			# echo $l >> menu
-			# echo -n "\"$num\" \"$l\" " >> msx
-			# num=$((num + 1))
-		# fi
-	# done
-	# IFS=''
-# done < m
+num=1
+echo "#!/bin/bash"> msx
+echo -n "whiptail --title \"RPMC - Raspberry Pi MSX Clone\" --menu \"Choose a Machine\" 25 78 16 " >> msx
+echo -n "" > menu
+while machine='' read -r line || [[ -n "$line" ]]; do
+	if [[ $line =~ .*$1.* ]]; then
+		echo $line >> menu
+		echo -n "\"$num\" \"$line\" " >> msx
+		num=$((num + 1))
+	fi
+done < msxmachines
 
-# echo -n "--default-item \"\$1\" " >> msx
-# echo "3>&2 2>&1 1>&3" >> msx 
-# if [[ $@ =~ .*/rom1.* ]]; then
-	# MSXBUS1=""
-# fi
+echo -n "--default-item \"\$1\" " >> msx
+echo "3>&2 2>&1 1>&3" >> msx 
+if [[ $@ =~ .*/rom1.* ]]; then
+	MSXBUS1=""
+fi
 while true;
 do
 ITEM=`cat ./item`

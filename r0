@@ -1,6 +1,6 @@
 #!/bin/bash
 ROM=`cat ./romfile`
-choice=$(./rom $ROM)
+choice=$(./msxrom $ROM)
 if [ -z $choice ]; then 
 	tput cvvis
 	exit
@@ -11,6 +11,11 @@ if [ -z $ROM ]; then
 	./r
 	exit
 else
-	echo ./r \"\" /rom1 $ROM > xy
-	./r "" /rom1 $ROM
+	if [[ $ROM == *"msx2"* ]]; then
+		msx="MSX2"
+	else
+		msx=""
+	fi	
+	echo ./r \"$msx\" /rom1 $ROM > xy
+	./r "$msx" /rom1 $ROM
 fi
