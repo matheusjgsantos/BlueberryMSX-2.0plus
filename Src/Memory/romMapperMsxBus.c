@@ -21,7 +21,7 @@
 **
 ** You should have received a copy of the GNU General Public License
 ** along with this program; if not, write to the Free Software
-** Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+* Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 **
 ******************************************************************************
 */
@@ -113,8 +113,8 @@ int romMapperMsxBusCreate(int cartSlot, int slot, int sslot)
     rm->sslot    = sslot;
     rm->cartSlot = cartSlot;
 
-    rm->msxBus = msxBusCreate(cartSlot+1);
-	//printf("MSXBus created. msxBus=%d slot=%d sslot=%d\n", rm->msxBus, slot, sslot);
+    rm->msxBus = msxBusCreate(cartSlot, slot);
+    printf("MSXBus created. msxBus=%d cartSlot=%d slot=%d sslot=%d\n", rm->msxBus, cartSlot, slot, sslot);
 
     if (rm->msxBus != NULL && cartSlot == 0) {
 		for(i = 1; i < 255; i++)
@@ -123,7 +123,7 @@ int romMapperMsxBusCreate(int cartSlot, int slot, int sslot)
         for (i = 0; i < 8; i++) {   
             slotMapPage(rm->slot, rm->sslot, i, NULL, 0, 0);
         }
-		printf("MSXBus created. cartSlot=%d slot=%d sslot=%d\n", cartSlot, slot, sslot);
+		//printf("MSXBus created. cartSlot=%d slot=%d sslot=%d\n", cartSlot, slot, sslot);
 		for(i = 0; mon_ports[i] > 0; i++)
 			ioMonPortRegister(mon_ports[i], NULL, writeIo, rm);
     }

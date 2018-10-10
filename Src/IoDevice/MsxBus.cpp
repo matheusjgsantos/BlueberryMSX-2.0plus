@@ -40,7 +40,7 @@ extern "C" {
 class CMSXBUS
 {
 	public:
-		CMSXBUS() {};
+		CMSXBUS(int slot) {this.slot = slot;};
 		~CMSXBUS() {};
 
     inline int readMemory(UInt16 address) { return 0xff };
@@ -188,12 +188,11 @@ static void DeinitializeMSXBUSs()
 //
 // Public C interface
 
-extern "C" MbHandle* msxBusCreate(int slot)
+extern "C" MbHandle* msxBusCreate(int cartSlot, int slot)
 {
 	InitializeMSXBUSs();
-	printf("msxBusCreate %d\n", slot);
-	if (slot == 1 || slot == 2)
-		return (MbHandle*)MSXBUSs[slot-1];
+	printf("msxBusCreate %d\n", cartSlot, slot);
+	return (MbHandle*)MSXBUSs[cartSlot];
 	return 0;
 }
 

@@ -34,7 +34,7 @@ typedef void* MbHandle;
 
 int msxBusSupported();
 
-MbHandle* msxBusCreate(int slot);
+MbHandle* msxBusCreate(int cartSlot,int slot);
 void msxBusDestroy(MbHandle* mbHandle);
 
 int msxBusRead(MbHandle* mbHandle, UInt16 address);
