@@ -163,12 +163,12 @@ static CMSXBUS* MSXBUSs[2] = { NULL, NULL };
 static void InitializeMSXBUSs()
 {
     if (MSXBUSs[0] == NULL) {
-        MSXBUSs[0] = new CMSXBUS(1);
-		printf("MSXBUSs[0]=%d\n", MSXBUSs[0]);
-		MSXBUSs[1] = new CMSXBUS(2);
-//		printf("MSXBUSs[0]=%d\n", MSXBUSs[0]);
+        MSXBUSs[0] = new CMSXBUS(0);
+	printf("MSXBUSs[0]=%d\n", MSXBUSs[0]);
+	MSXBUSs[1] = new CMSXBUS(1);
+	printf("MSXBUSs[1]=%d\n", MSXBUSs[1]);
     }
-	msxinit();
+    msxinit();
 }
 
 static void DeinitializeMSXBUSs()
