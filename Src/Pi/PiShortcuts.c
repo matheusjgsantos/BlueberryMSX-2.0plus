@@ -922,7 +922,7 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
     if (HOTKEY_EQ(key, s->emuSpeedDec))                  actionEmuSpeedDecrease();
     if (HOTKEY_EQ(key, s->emuSpeedToggle))               actionMaxSpeedToggle();
     if (HOTKEY_EQ(key, s->resetSoft))                    actionEmuResetSoft();
-    if (HOTKEY_EQ(key, s->resetHard))                    actionEmuResetHard();
+//  if (HOTKEY_EQ(key, s->resetHard))                    actionEmuResetHard();
     if (HOTKEY_EQ(key, s->resetClean))                   actionEmuResetClean();
     if (HOTKEY_EQ(key, s->volumeIncrease))               actionVolumeIncrease();
     if (HOTKEY_EQ(key, s->volumeDecrease))               actionVolumeDecrease();
