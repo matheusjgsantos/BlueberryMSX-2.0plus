@@ -27,17 +27,536 @@
 
 #include "PiShortcuts.h"
 #include <SDL.h>
+#include <SDL_keysym.h>
 #include "IniFileParser.h"
 #include "StrcmpNoCase.h"
 #include "Actions.h"
+
+static int sdlkeys[256] = {
+    0,
+    0, //"LBUTTON", 
+    0, //"RBUTTON",
+    0,
+    0, //"MBUTTON",
+    0, //"XBUTTON1",
+    0, //"XBUTTON2",
+    0,
+    SDLK_BACKSPACE ,
+    SDLK_TAB,
+    0,
+    0,
+    SDLK_CLEAR,
+    SDLK_RETURN,
+    0,
+    0,
+    0, // SHIFT
+    0, // CTRL
+    0, // ALT
+    SDLK_PAUSE ,
+    SDLK_CAPSLOCK ,
+    0,//"Kana",
+    0,
+    0,//"Junja",
+    0,//"Final",
+    0,//"Kanji",
+    0,
+    SDLK_ESCAPE,
+    0,//"Conv",
+    0,//"NoConv",
+    0,//"Accept",
+    SDLK_MODE,
+    SDLK_SPACE ,
+    SDLK_PAGEUP,
+    SDLK_PAGEDOWN ,
+    SDLK_END,
+    SDLK_HOME,
+    SDLK_LEFT,
+    SDLK_UP,
+    SDLK_RIGHT,
+    SDLK_DOWN,
+    0,//SDLK_SELECT,
+    SDLK_PRINT,
+    0,//SDLK_EXECUTE,
+    SDLK_PRINT,
+    SDLK_INSERT,
+    SDLK_DELETE,
+    SDLK_HELP,
+    '0',
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    'A',
+    'B',
+    'C',
+    'D',
+    'E',
+    'F',
+    'G',
+    'H',
+    'I',
+    'J',
+    'K',
+    'L',
+    'M',
+    'N',
+    'O',
+    'P',
+    'Q',
+    'R',
+    'S',
+    'T',
+    'U',
+    'V',
+    'W',
+    'X',
+    'Y',
+    'Z',
+    SDLK_LMETA ,
+    SDLK_RMETA ,
+    0,//SDLK_APPLICATION ,
+    0,
+    0,//SDLK_SLEEP,
+    SDLK_KP0,
+    SDLK_KP1,
+    SDLK_KP2,
+    SDLK_KP3,
+    SDLK_KP4,
+    SDLK_KP5,
+    SDLK_KP6,
+    SDLK_KP7,
+    SDLK_KP8,
+    SDLK_KP9,
+    SDLK_KP_MULTIPLY ,
+    SDLK_KP_PLUS,
+    0,
+    SDLK_KP_MINUS ,
+    SDLK_KP_PERIOD,
+    SDLK_KP_DIVIDE,
+    SDLK_F1 ,
+    SDLK_F2,
+    SDLK_F3,
+    SDLK_F4,
+    SDLK_F5,
+    SDLK_F6,
+    SDLK_F7,
+    SDLK_F8,
+    SDLK_F9,
+    SDLK_F10,
+    SDLK_F11,
+    SDLK_F12,
+    SDLK_F13,
+    SDLK_F14,
+    SDLK_F15,
+    0,//SDLK_F16,
+    0,//SDLK_F17,
+    0,//SDLK_F18,
+    0,//SDLK_F19,
+    0,//SDLK_F20,
+    0,//SDLK_F21,
+    0,//SDLK_F22,
+    0,//SDLK_F23,
+    0,//SDLK_F24,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,//SDLK_NUMLOCKCLEAR ,
+    0,//SDLK_SCROLLLOCK ,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    SDLK_LSHIFT ,
+    SDLK_RSHIFT ,
+    SDLK_LCTRL,
+    SDLK_RCTRL,
+    SDLK_LALT,
+    SDLK_RALT,
+    0,//SDLK_AC_BACK ,
+    0,//SDLK_AC_FORWARD,
+    0,//SDLK_AC_REFRESH,
+    0,//SDLK_AC_STOP ,
+    0,//SDLK_AC_SEARCH,
+    0,//SDLK_AC_BOOKMARKS,
+    0,//SDLK_AC_HOME,
+    0,//SDLK_MUTE,
+    0,//SDLK_VOLUMEDOWN ,
+    0,//SDLK_VOLUMEUP,
+    0,//SDLK_AUDIONEXT ,
+    0,//SDLK_AUDIOPREV ,
+    0,//SDLK_AUDIOSTOP ,
+    0,//SDLK_AUDIOPLAY ,
+    0,//SDLK_MAIL ,
+    0,//SDLK_MEDIASELECT ,
+    0,//SDLK_APPLICATION ,
+    0,//SDLK_APPLICATION ,
+    0,
+    0,
+    ';',
+    '+',
+    ',',
+    '-',
+    '.',
+    '?',
+    '~',
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    '[',
+    '\\',
+    ']',
+    '\"',
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    SDLK_CLEAR ,
+    0
+};
+
+static char virtualKeys[256][32] = {
+    "",
+    "", //"LBUTTON", 
+    "", //"RBUTTON",
+    "Cancel",
+    "", //"MBUTTON",
+    "", //"XBUTTON1",
+    "", //"XBUTTON2",
+    "",
+    "Backspace",
+    "Tab",
+    "",
+    "",
+    "Clear",
+    "Enter",
+    "",
+    "",
+    "", // SHIFT
+    "", // CTRL
+    "", // ALT
+    "Pause",
+    "CapsLk",
+    "Kana",
+    "",
+    "Junja",
+    "Final",
+    "Kanji",
+    "",
+    "esc",
+    "Conv",
+    "NoConv",
+    "Accept",
+    "ModeCh",
+    "Space",
+    "PgUp",
+    "PgDown",
+    "End",
+    "Home",
+    "Left",
+    "Up",
+    "Right",
+    "Down",
+    "Select",
+    "Print",
+    "Exec",
+    "PrScr",
+    "Ins",
+    "Del",
+    "Help",
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+    "LWIN",
+    "RWIN",
+    "APPS",
+    "",
+    "Sleep",
+    "Num0",
+    "Num1",
+    "Num2",
+    "Num3",
+    "Num4",
+    "Num5",
+    "Num6",
+    "Num7",
+    "Num8",
+    "Num9",
+    "Num*",
+    "Num+",
+    "Num,",
+    "Num-",
+    "Num.",
+    "Num/",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8",
+    "F9",
+    "F10",
+    "F11",
+    "F12",
+    "F13",
+    "F14",
+    "F15",
+    "F16",
+    "F17",
+    "F18",
+    "F19",
+    "F20",
+    "F21",
+    "F22",
+    "F23",
+    "F24",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "NumLk",
+    "ScrLk",
+    "Oem1",
+    "Oem2",
+    "Oem3",
+    "Oem4",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "LShift",
+    "RShift",
+    "LCTRL",
+    "RCONTROL",
+    "LALT",
+    "RALT",
+    "BrBack",
+    "BrForward",
+    "BrRefresh",
+    "BrStop",
+    "BrSearch",
+    "BrFavorites",
+    "BrHome",
+    "VolMute",
+    "VolDown",
+    "VolUp",
+    "NextTrk",
+    "PrevTrk",
+    "MdStop",
+    "MdPlay",
+    "Mail",
+    "MdSelect",
+    "App1",
+    "App2",
+    "",
+    "",
+    ";",
+    "+",
+    ",",
+    "-",
+    ".",
+    "?",
+    "~",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "[",
+    "\\",
+    "]",
+    "\"",
+    "Oem5",
+    "",
+    "Oem6",
+    "Oem7",
+    "Oem8",
+    "Oem9",
+    "Process",
+    "Oem10",
+    "",
+    "",
+    "Oem11",
+    "Oem12",
+    "Oem13",
+    "Oem14",
+    "Oem15",
+    "Oem16",
+    "Oem17",
+    "Oem18",
+    "Oem19",
+    "Oem20",
+    "Oem21",
+    "Oem22",
+    "Oem23",
+    "Addn",
+    "CrSel",
+    "ExSel",
+    "Ereof",
+    "Play",
+    "Zoom",
+    "",
+    "PA1",
+    "Clear",
+    ""
+};
 
 static char shortcutsDir[512];
 
 extern Properties *properties;
 
 typedef struct {
-    unsigned type : 4;
-    unsigned mods : 12;
+    unsigned type : 8;
+    unsigned mods : 8;
     unsigned key  : 16;
 } ShortcutHotkey;
 
@@ -138,6 +657,56 @@ struct Shortcuts {
 
 #define HOTKEY_EQ(hotkey1, hotkey2) (*(UInt32*)&hotkey1 == *(UInt32*)&hotkey2)
 
+ShortcutHotkey toSDLhotkey(ShortcutHotkey hotkey)
+{
+	int sdlmod = 0;
+	int key = 0;
+	switch (hotkey.type)
+	{
+		case HOTKEY_TYPE_KEYBOARD:
+			if (hotkey.mods & KBD_LCTRL)   sdlmod |= KMOD_LCTRL;
+			if (hotkey.mods & KBD_RCTRL)   sdlmod |= KMOD_RCTRL;
+			if (hotkey.mods & KBD_LSHIFT)  sdlmod |= KMOD_LSHIFT;
+			if (hotkey.mods & KBD_RSHIFT)  sdlmod |= KMOD_RSHIFT;
+			if (hotkey.mods & KBD_LALT)    sdlmod |= KMOD_LALT;
+			if (hotkey.mods & KBD_RALT)    sdlmod |= KMOD_RALT;
+			if (hotkey.mods & KBD_LWIN)    sdlmod |= KMOD_LMETA;
+			if (hotkey.mods & KBD_RWIN)    sdlmod |= KMOD_RMETA; 
+			key = sdlkeys[hotkey.key];
+			break;
+		case HOTKEY_TYPE_JOYSTICK:
+			break;
+	}
+	hotkey.mods = sdlmod;
+	hotkey.key = key;
+	return hotkey;
+}
+
+char* shortcutsToString(ShortcutHotkey hotkey) 
+{
+    static char buf[64];
+        
+    buf[0] = 0;
+
+    switch (hotkey.type) {
+    case HOTKEY_TYPE_KEYBOARD:
+        if (hotkey.mods & KBD_LCTRL)    { strcat(buf, *buf ? "+" : ""); strcat(buf, "LCtrl"); }
+        if (hotkey.mods & KBD_RCTRL)    { strcat(buf, *buf ? "+" : ""); strcat(buf, "RCtrl"); }
+        if (hotkey.mods & KBD_LSHIFT)   { strcat(buf, *buf ? "+" : ""); strcat(buf, "LShift"); }
+        if (hotkey.mods & KBD_RSHIFT)   { strcat(buf, *buf ? "+" : ""); strcat(buf, "RShift"); }
+        if (hotkey.mods & KBD_LALT)     { strcat(buf, *buf ? "+" : ""); strcat(buf, "LAlt"); }
+        if (hotkey.mods & KBD_RALT)     { strcat(buf, *buf ? "+" : ""); strcat(buf, "RAlt"); }
+        if (hotkey.mods & KBD_LWIN)     { strcat(buf, *buf ? "+" : ""); strcat(buf, "LWin"); }
+        if (hotkey.mods & KBD_RWIN)     { strcat(buf, *buf ? "+" : ""); strcat(buf, "RWin"); }
+        if (virtualKeys[hotkey.key][0]) { strcat(buf, *buf ? "+" : ""); strcat(buf, virtualKeys[hotkey.key]); }
+        break;
+    case HOTKEY_TYPE_JOYSTICK:
+        sprintf(buf, "%s %d", "JoyBt", hotkey.key);
+        break;
+    }
+
+    return buf;
+}
 
 static int stringToHotkey(const char* name)
 {
@@ -166,6 +735,10 @@ static int stringToMod(const char* name)
     return 0;
 }
 
+static ShortcutHotkey int2hotkey(int* hotkey) {
+    return *(ShortcutHotkey*)hotkey;
+}
+
 static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 {
     char buffer[512];
@@ -180,24 +753,27 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 //		printf("shortcut:%s - not assigned\n", name);
         return;
     }
-#if 0
-    token = strtok(buffer, "|");
-    if (token == NULL) {
-        return;
-    }
-    key = stringToHotkey(token);
-    if (key >= 0) {
-        hotkey->key  = key;
-        hotkey->type = HOTKEY_TYPE_KEYBOARD;
-    }
+// #if 0
+    // token = strtok(buffer, "|");
+    // if (token == NULL) {
+        // return;
+    // }
+    // key = stringToHotkey(token);
+    // if (key >= 0) {
+        // hotkey->key  = key;
+        // hotkey->type = HOTKEY_TYPE_KEYBOARD;
+    // }
     
-    while (token = strtok(NULL, "|")) {
-        hotkey->mods |= stringToMod(token);
-    }
-#else
-	sscanf(strtok(buffer, "="), "%"SCNx32, hotkey);	
-#endif	
-	printf("shortcut:%s - %08x, assigned\n", name, *hotkey);
+    // while (token = strtok(NULL, "|")) {
+        // hotkey->mods |= stringToMod(token);
+    // }
+// #else
+//	sscanf(strtok(buffer, "="), "%"SCNx32, hotkey);	
+    sscanf(buffer, "%X", hotkey);
+	toSDLhotkey(*hotkey);
+//#endifma	
+	printf("shortcut:%s - %s,%08x -> %08x\n", name, shortcutsToString(*hotkey), *hotkey, toSDLhotkey(*hotkey));
+	*hotkey = toSDLhotkey(*hotkey);
 }
 
 void shortcutsSetDirectory(char* directory)
@@ -293,7 +869,7 @@ void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym)
 void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
 {
     ShortcutHotkey key = { type, mods, keySym };
-	//printf("key=%08x,%08x\n", key, s->diskChange[0]);
+	printf("key=%08x\n", key);
     if (s->state.maxSpeedIsSet) {
         actionMaxSpeedRelease();
         s->state.maxSpeedIsSet = 0;
@@ -329,7 +905,7 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
     if (HOTKEY_EQ(key, s->cartAutoReset))                actionToggleCartAutoReset();
 
     if (HOTKEY_EQ(key, s->diskChange[0]))              	 actionDiskQuickChange();
-    //if (HOTKEY_EQ(key, s->diskRemove[0]))                actionDiskRemoveA();
+    if (HOTKEY_EQ(key, s->diskRemove[0]))                actionDiskRemoveA();
     if (HOTKEY_EQ(key, s->diskRemove[1]))                actionDiskRemoveB();
     if (HOTKEY_EQ(key, s->diskAutoReset))                actionToggleDiskAutoReset();
 

@@ -28,6 +28,14 @@
 #ifndef PI_SHORTCUTS_H
 #define PI_SHORTCUTS_H
 
+#define KBD_LSHIFT 0x01
+#define KBD_RSHIFT 0x02
+#define KBD_LCTRL  0x04
+#define KBD_RCTRL  0x08
+#define KBD_LALT   0x10
+#define KBD_RALT   0x20
+#define KBD_LWIN   0x40
+#define KBD_RWIN   0x80
 
 #define HOTKEY_TYPE_NONE     0
 #define HOTKEY_TYPE_KEYBOARD 1
