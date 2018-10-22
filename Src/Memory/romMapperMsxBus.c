@@ -32,6 +32,7 @@
 #include "SaveState.h"
 #include "IoPort.h"
 #include "MsxBus.h"
+#include "SCC.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -43,6 +44,9 @@ typedef struct {
     int slot;
     int sslot;
     int cartSlot;
+//    SccType sccType;
+    SccMode sccMode;
+    SCC* scc;
 } RomMapperMsxBus;
 
 static void saveState(RomMapperMsxBus* rm)
@@ -89,11 +93,17 @@ static void writeIo(RomMapperMsxBus* rm, UInt16 port, UInt8 value)
 
 static UInt8 read(RomMapperMsxBus* rm, UInt16 address) 
 {
+//    if ((address >= 0x9800 && address < 0xa000) || (address >= 0xb800 && address < 0xc000)) {
+//        return sccRead(rm->scc, (UInt8)(address & 0xff));
+//    }
     return msxBusRead(rm->msxBus, address);
 }
 
 static void write(RomMapperMsxBus* rm, UInt16 address, UInt8 value) 
 {
+    if ((address >= 0x9800 && address < 0xa000) || (address >= 0xb800 && address < 0xc000)) {
+        sccWrite(rm->scc, address & 0xff, value);
+    }
 	msxBusWrite(rm->msxBus, address, value);
 }
 
@@ -109,10 +119,13 @@ int romMapperMsxBusCreate(int cartSlot, int slot, int sslot)
 
     rm->deviceHandle = deviceManagerRegister(ROM_MSXBUS, &callbacks, rm);
 
-    rm->slot     = slot;
-    rm->sslot    = sslot;
-    rm->cartSlot = cartSlot;
-
+    rm->slot     	= slot;
+    rm->sslot    	= sslot;
+    rm->cartSlot 	= cartSlot;
+    rm->scc         = sccCreate(boardGetMixer());
+//    rm->sccType     = SCC_MIRRORED;
+    rm->sccMode     = SCC_COMPATIBLE;
+	
     rm->msxBus = msxBusCreate(cartSlot, slot);
     printf("MSXBus created. msxBus=%d cartSlot=%d slot=%d sslot=%d\n", rm->msxBus, cartSlot, slot, sslot);
 

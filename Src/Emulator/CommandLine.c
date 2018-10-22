@@ -391,6 +391,7 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
             argument = extractToken(cmdLine, ++i);
             if (argument == NULL) return 0; // Invaid argument
             romType2 = romNameToType(argument);
+//			printf("romType2: %s, %d\n", argument, romType2);
             startEmu = 1;
         }
         if (checkArg(argument, "diskA")) {
