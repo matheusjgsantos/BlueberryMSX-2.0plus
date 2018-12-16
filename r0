@@ -6,7 +6,7 @@ if [ -z $choice ]; then
 	exit
 fi
 echo $choice > ./romfile
-ROM=`ls */*$choice.* | sed -n 1p`
+ROM=`ls *cart/*$choice.* | sed -n 1p`
 if [ -z $ROM ]; then
 	./r
 	exit

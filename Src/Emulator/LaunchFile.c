@@ -104,6 +104,7 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
             char* fileListSg  = zipGetFileList(filename, ".sg",  &countSg);
             char* fileListSc  = zipGetFileList(filename, ".sc",  &countSc);
 			char* fileListNul = zipGetFileList(filename, ".",  &countNul);
+			printf("null file:%s\n", fileListNul);
             int count = countRom + countRi + countMx1 + countMx2 + countSms + countCol + countSg + countSc + countNul;
             int sizeRom = 0;
             int sizeRi  = 0;
@@ -191,6 +192,7 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
         if (buf != NULL) {
             MediaType* mediaType  = mediaDbGuessRom(buf, size);
             RomType    chkRomType = mediaDbGetRomType(mediaType);
+			printf("media guess:%s (%d), %d\n", romName, size, chkRomType);
             strcpy(prettyRomName, mediaDbGetPrettyString(mediaType));
             free(buf);
             

@@ -165,8 +165,9 @@ volatile unsigned *gclk_base;
 #define SPI_CS		(1<<SPI_CS_PIN)
 #define SPI_SCLK	(1<<SPI_SCLK_PIN)
 #define MSX_SLTSL1  (1<<SLTSL1_PIN)
-
 #endif
+
+#define MSX_CONTROLS	(MSX_SLTSL1 | MSX_SLTSL3 | MSX_MREQ | MSX_IORQ | MSX_RD | MSX_WR | MSX_CS1 | MSX_CS2)
 
 #ifdef RPMC_V5
 #define GET_DATA(x) x = GPIO & 0xff; //(GPIO >> MD00_PIN) & 0xff;
@@ -459,6 +460,7 @@ void SetData(int flag, int delay, unsigned char byte)
 	GPIO_CLR = flag | LE_D | DAT_DIR | 0xff;
 	GPIO_SET = MSX_WR;
 	GPIO_SET = LE_C | byte;
+	while(!(GPIO & MSX_WAIT));
 	for(int i=0; i < 5; i++)
 		GPIO_SET = 0;
 	GPIO_CLR = MSX_WR;
@@ -478,6 +480,7 @@ unsigned char GetData(int flag, int delay)
 	unsigned char byte;
 	GPIO_SET = LE_C | DAT_DIR;
 	GPIO_CLR = MSX_CLK | flag;
+	while(!(GPIO & MSX_WAIT));
 	SetDelay(delay);
 	byte = GPIO;
 	GPIO_SET = LE_D;
@@ -494,13 +497,14 @@ unsigned char GetData(int flag, int delay)
 	int cs1, cs2, cs12;
 	cs1 = (addr & 0xc000) == 0x4000 ? MSX_CS1: 0;
 	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2: 0;
-	//cs12 = (cs1 | cs2 ? MSX_CS12 : 0);
 	if (GPIO & SW1)
 		return 0xff;
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
-	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_RD | cs1 | cs2 /*| cs12 */, 25);
+	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_RD | cs1 | cs2, 25);
+	GPIO_SET = LE_C | MSX_CTRL_FLAG;
 	pthread_mutex_unlock(&mutex);	
+	GPIO_CLR = LE_C;
 	return byte;	 
  }
  
@@ -509,7 +513,9 @@ unsigned char GetData(int flag, int delay)
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
 	SetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, 35, byte);
+	GPIO_SET = LE_C | MSX_CTRL_FLAG;
 	pthread_mutex_unlock(&mutex);	
+	GPIO_CLR = LE_C;
 	return;
  }
  
@@ -519,7 +525,9 @@ unsigned char GetData(int flag, int delay)
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
 	byte = GetData(MSX_IORQ | MSX_RD, 45);
+	GPIO_SET = LE_C | MSX_CTRL_FLAG;
 	pthread_mutex_unlock(&mutex);	
+	GPIO_CLR = LE_C;
 	return byte;	 
  }
  
@@ -528,7 +536,9 @@ unsigned char GetData(int flag, int delay)
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
 	SetData(MSX_IORQ, 55, byte);
+	GPIO_SET = LE_C | MSX_CTRL_FLAG;
 	pthread_mutex_unlock(&mutex);		
+	GPIO_CLR = LE_C;
 	return;
  }
  
@@ -589,8 +599,8 @@ int setup_io()
 		bcm2835_gpio_pudclk(i, 1);
 	bcm2835_gpio_pudclk(27,1);
 	
-//	GPIO_SET = LE_C | MSX_IORQ | MSX_RD | MSX_WR | MSX_MREQ | MSX_CS1 | MSX_CS2 | MSX_CS12 | MSX_SLTSL1 | MSX_SLTSL3;
-//	GPIO_SET = LE_A | LE_D;
+	GPIO_SET = LE_C | MSX_CONTROLS | MSX_WAIT | MSX_INT;
+	GPIO_SET = LE_A | LE_D;
 	GPIO_CLR = 0xffff;
 	GPIO_CLR = MSX_RESET;
 	for(int i=0;i<2000000;i++);
@@ -635,6 +645,11 @@ void msxclose()
 	clear_io();
 }
 
+int msx_pack_check()
+{
+	return !(GPIO & SW1);
+}
+
 
 #ifdef _MAIN
 
@@ -650,6 +665,7 @@ int main(int argc, char **argv)
   double elapsedTime = 0;
   int binary = 0;
   io = 0;
+  int slot = 0;
   if (argc > 1)
   {
 	 if (strcmp(argv[1], "io"))
@@ -694,14 +710,14 @@ int main(int argc, char **argv)
 	  if (addr > 0xbfff)
 	  {
 		 if (!(addr & 0x1fff)) {
-			msxwrite(1, 0x6000, page++);
+			msxwrite(slot, 0x6000, page++);
 			printf("page:%d, address=0x%04x\n", page-1, addr );
 		 }
 		 byte = msxread(1, 0x6000 + (addr & 0x1ffff));
 	  }
 	  else
 	  {
-		  byte = msxread(1, addr);
+		  byte = msxread(slot, addr);
 	  }
 	  if (fp)
 		  fwrite(&byte, 1, 1, fp);
@@ -714,7 +730,7 @@ int main(int argc, char **argv)
 		c = 0;
 		for(i=0;i<10;i++)
 		{
-			byte0 = msxread(1, addr);
+			byte0 = msxread(slot, addr);
 			if (byte != byte0)
 				c = 1;
 		}

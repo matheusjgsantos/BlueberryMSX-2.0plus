@@ -355,13 +355,16 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
 
     // If more than one argument, check arguments,
     // set configuration and then run
-
+	msxinit();
     for (i = 0; (argument = extractToken(cmdLine, i)) != NULL; i++) {
 		printf("argument:%s cmdline:%s\n", argument, cmdLine);
         if (checkArg(argument, "rom1")) {
             argument = extractTokenEx(cmdLine, ++i, gamedir);
             if (argument == NULL || !isRomFileType(argument, rom1zip)) return 0; // Invaid argument
-            strcpy(rom1, argument);
+			if (!msx_pack_check())
+				strcpy(rom1, argument);
+			else
+				romType1 = ROM_MSXBUS;
             startEmu = 1;
         }
         if (checkArg(argument, "rom1zip")) {
@@ -391,7 +394,7 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
             argument = extractToken(cmdLine, ++i);
             if (argument == NULL) return 0; // Invaid argument
             romType2 = romNameToType(argument);
-//			printf("romType2: %s, %d\n", argument, romType2);
+			printf("romType2: %s, %d\n", argument, romType2);
             startEmu = 1;
         }
         if (checkArg(argument, "diskA")) {
