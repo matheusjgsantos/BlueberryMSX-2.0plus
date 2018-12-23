@@ -771,9 +771,9 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 //	sscanf(strtok(buffer, "="), "%"SCNx32, hotkey);	
     sscanf(buffer, "%X", hotkey);
 	toSDLhotkey(*hotkey);
-//#endifma	
+//#endif
 	printf("shortcut:%s - %s,%08x -> %08x\n", name, shortcutsToString(*hotkey), *hotkey, toSDLhotkey(*hotkey));
-	*hotkey = toSDLhotkey(*hotkey);
+	//*hotkey = toSDLhotkey(*hotkey);
 }
 
 void shortcutsSetDirectory(char* directory)
@@ -905,7 +905,7 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
     if (HOTKEY_EQ(key, s->cartAutoReset))                actionToggleCartAutoReset();
 
     if (HOTKEY_EQ(key, s->diskChange[0]))              	 actionDiskQuickChange();
-    if (HOTKEY_EQ(key, s->diskRemove[0]))                actionDiskRemoveA();
+//  if (HOTKEY_EQ(key, s->diskRemove[0]))                actionDiskRemoveA();
     if (HOTKEY_EQ(key, s->diskRemove[1]))                actionDiskRemoveB();
     if (HOTKEY_EQ(key, s->diskAutoReset))                actionToggleDiskAutoReset();
 

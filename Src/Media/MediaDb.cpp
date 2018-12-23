@@ -1233,7 +1233,7 @@ extern "C" MediaType* mediaDbGuessRom(const void *buffer, int size)
     const UInt8* romData = (const UInt8*)buffer;
     int i;
     int mapper;
-    UInt32 counters[6] = { 0, 0, 0, 0, 0, 0 };
+    UInt32 counters[7] = { 0, 0, 0, 0, 0, 0, 0 };
 
     staticMediaType.romType = romdbDefaultType;
 
@@ -1307,7 +1307,7 @@ extern "C" MediaType* mediaDbGuessRom(const void *buffer, int size)
     }
 
     /* Count occurences of characteristic addresses */
-#if 0
+#if 1
     for (i = 0; i < size - 3; i++) {
 		if (romData[i] == 0x32) {
             UInt32 value = (UInt32)romData[i + 1] + ((UInt32)romData[i + 2] << 8);
@@ -1328,6 +1328,7 @@ extern "C" MediaType* mediaDbGuessRom(const void *buffer, int size)
                 counters[3]++;
                 counters[4]++;
                 counters[5]++;
+				counters[6]++;
                 break;
 
             case 0x6800: 
@@ -1339,6 +1340,7 @@ extern "C" MediaType* mediaDbGuessRom(const void *buffer, int size)
                 counters[2]++;
                 counters[4]++;
                 counters[5]++;
+				counters[6]++;
                 break;
             case 0x77ff: 
                 counters[5]++;
@@ -1363,9 +1365,8 @@ extern "C" MediaType* mediaDbGuessRom(const void *buffer, int size)
             }
         }
 	}
-#else
-	int kon4 = 0, kon5 = 0, asc8 = 0, asc16 = 0, b, w, c;
-    for (i = 0; i < 8192; i++) 
+	int kon4 = 0, kon5 = 0, asc8 = 0, asc16 = 0, kor126 = 0, b, w, c;
+    for (i = 0; i < size - 3; i++) 
     {
 		if (romData[i] == 0x32)
 		{
@@ -1378,6 +1379,10 @@ extern "C" MediaType* mediaDbGuessRom(const void *buffer, int size)
                 kon4+=w;
             else if (((b & 0xf8) == 0x68 || (b & 0xf8) == 0x78))
                 asc8+=w;
+			else if ((b == 0x60 || b == 0x70) && w == 0)
+			{
+				counters[6]++;
+			}
             else if (b == 0x60)
             {
                 kon4+=w;
@@ -1394,15 +1399,14 @@ extern "C" MediaType* mediaDbGuessRom(const void *buffer, int size)
                 asc16+=w;
             else
                 c = 1;
-            if (c == 0)
-                printf("0x%08x, 0x%04x, %d, %d, %d, %d\n", i, romData[i+2]*256 + romData[i+1], kon5, kon4, asc8, asc16);
+            //if (c == 0) printf("0x%08x, 0x%04x, %d, %d, %d, %d\n", i, romData[i+2]*256 + romData[i+1], kon5, kon4, asc8, asc16);
 		}
     }
     if (asc8 > 0) asc8--;
-    counters[2] = kon5;
-    counters[3] = kon4;
-    counters[4] = asc8;
-    counters[5] = asc16;
+    counters[2] += kon5;
+    counters[3] += kon4;
+    counters[4] += asc8;
+    counters[5] += asc16;
 #endif	
 
     /* Find which mapper type got more hits */
@@ -1419,8 +1423,11 @@ extern "C" MediaType* mediaDbGuessRom(const void *buffer, int size)
     if (mapper == 5 && counters[0] == counters[5]) {
 		mapper = 0;
 	}
+	
+	if (counters[6] == 12)
+		mapper = 6;
 
-	printf("mapper:%d, [%d],[%d],[%d],[%d],[%d],[%d]\n", mapper, counters[0], counters[1], counters[2], counters[3], counters[4], counters[5]);
+	printf("mapper:%d, [%d],[%d],[%d],[%d],[%d],[%d],[%d]\n", mapper, counters[0], counters[1], counters[2], counters[3], counters[4], counters[5], counters[6]);
     switch (mapper) {
     default:
     case 0: mediaType->romType = ROM_STANDARD; break;
@@ -1429,6 +1436,7 @@ extern "C" MediaType* mediaDbGuessRom(const void *buffer, int size)
     case 3: mediaType->romType = ROM_KONAMI4; break;
     case 4: mediaType->romType = ROM_ASCII8SRAM; break;
     case 5: mediaType->romType = ROM_ASCII16SRAM; break;
+	case 6: mediaType->romType = ROM_KOREAN126; break;
     }
     
     return mediaType;
