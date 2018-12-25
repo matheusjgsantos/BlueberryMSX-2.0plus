@@ -43,7 +43,7 @@ class Game(object):
                 self.rescale(max_size)
         except pygame.error:
             self.image = None
-        self.label = font.render(self.title, 1, grey)
+        self.label = font.render(self.title, 1, (255, 100, 100))
         self.label_size = font.size(self.title)
 
     def __lt__(self, other):
@@ -97,7 +97,7 @@ class Menu(object):
         self.usable_h = self.h
         self.highlight_size = 15
         self.grid_spacing = 25
-        self.highlight_color = (0, 200, 255)
+        self.highlight_color = (0, 0, 255)
         self.name_spacing = 5
         self.rows = 0
         self.cols = 4
@@ -150,7 +150,7 @@ class Menu(object):
             raise RuntimeError("Configuration file not found. Tried: %s" % (", ".join(order)))
 
     def setup(self):
-        self.font = pygame.font.Font(None, 30)
+        self.font = pygame.font.Font("tvN 즐거운이야기 Bold.ttf", 20)
         if self.cfg is not None:
             self.parse_games_cfg(self.cfg)
         else:
@@ -303,7 +303,7 @@ class Menu(object):
                     root = ET.parse(name)
                     for software in root.iter('software'):
                         rom = software.attrib['name'] + '.zip'
-                        if (os.path.exists(extra_image_path[0] + rom) and software[0].text.find("Kor") > 0):
+                        if (os.path.exists(extra_image_path[0] + rom) and software[0].text.find("Kor") > 0 and software[0].text.find("Alt") < 0):
                             game = Game(self.font, rom, emulator, software[0].text, find_image=self.find_image, max_size=self.thumbnail_size, extra_paths=extra_image_path)
                             self.games.append(game)
                             index = index + 1
@@ -488,6 +488,7 @@ class Menu(object):
                         pygame.display.flip()
                         s =  google.search("youtube msx1 " + self.games[game_index].title, 1)
                         pygame.draw.circle(self.screen, (255,0,0), (self.w-10, 10), 10)
+                        pygame.display.flip()
                         if (len(s) > 0):
                             os.system("./youtube " + s[0].link)
                     if konami:
@@ -530,7 +531,7 @@ class Menu(object):
                     r = self.get_highlight_rect(i)
                     # pygame.draw.rect leaves blocky corners with wide lines
                     self.screen.fill(self.highlight_color, r)
-                    s = self.highlight_size
+                    s = self.highlight_size + 50  
                     r = (r[0] + s, r[1] + s, r[2] - s - s, r[3] - s - s)
                     self.screen.fill((0,0,0), r)
                 x, y = self.get_font_pos(i)
