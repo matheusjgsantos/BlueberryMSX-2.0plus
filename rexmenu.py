@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 
 import sys
 import os
@@ -34,7 +34,7 @@ class Game(object):
             self.title = title
         else:
             self.title = rom
-        self.cmdline = emulator + str(next(iter(extra_paths), '')) +rom
+        self.cmdline = emulator + str(next(iter(extra_paths), '')) +rom + "> /dev/null 2>&1"
         #print(self.cmdline)
         try:
             self.image = pygame.image.load(imgpath).convert(24)
@@ -83,6 +83,7 @@ class Game(object):
 
     def run(self):
         print (self.cmdline)
+        os.system('tput civis;clear')
         os.system(self.cmdline)
         #subprocess.call(self.cmdline)
 
@@ -95,9 +96,9 @@ class Menu(object):
         self.w = 1024
         self.h = 768
         self.usable_h = self.h
-        self.highlight_size = 15
-        self.grid_spacing = 25
-        self.highlight_color = (0, 0, 255)
+        self.highlight_size = 5
+        self.grid_spacing = 5
+        self.highlight_color = (50, 50, 255)
         self.name_spacing = 5
         self.rows = 0
         self.cols = 4
@@ -307,7 +308,7 @@ class Menu(object):
                             game = Game(self.font, rom, emulator, software[0].text, find_image=self.find_image, max_size=self.thumbnail_size, extra_paths=extra_image_path)
                             self.games.append(game)
                             index = index + 1
-                            print ("searching... %d\r" % index)
+                            #print ("searching... %d\r" % index)
                 else:
                     game = Game(self.font, rom, emulator, name, find_image=self.find_image, max_size=self.thumbnail_size, extra_paths=extra_image_path)
                     self.games.append(game)
@@ -347,6 +348,7 @@ class Menu(object):
         self.title_height = 10 + self.title_image_rect.height
         w += self.grid_spacing + self.highlight_size 
         h += self.grid_spacing + self.highlight_size + self.font_height + self.name_spacing - 20
+        print (w, h)
         self.usable_h = self.h - self.title_height
         self.cols = int(self.w / w)
         self.rows = int((len(self.games) + self.cols - 1) / self.cols)
@@ -403,6 +405,9 @@ class Menu(object):
             sys.exit(1)
         else:
             self.restart(action)
+    def do_up(self, game_index):
+
+        return game_index
 
     def restart(self, *extra_args):
         python = sys.executable
@@ -411,6 +416,8 @@ class Menu(object):
             args.append(str(arg))
         os.execl(python, python, *args)
 
+     
+            
     def show(self, game_index=0):
         """Main routine to check for user input and drawing the menu
 
@@ -424,7 +431,13 @@ class Menu(object):
             game_index = num_games - 1
         self.reset_konami()
         konami = False
+        joysticks = []
+        for i in range(0, pygame.joystick.get_count()):
+            joysticks.append(pygame.joystick.Joystick(i))
+            joysticks[-1].init()        
         while not done:
+            updateData(pygame.joystick.Joystick(0))
+            doActions()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     done = True
@@ -447,7 +460,6 @@ class Menu(object):
 
                             # only reaches here on an error.
                     elif event.key in self.up_keys:
-                        konami = self.check_konami("up")
                         game_index -= self.cols
                         if game_index < 0:
                             if self.wrap_menu:
@@ -514,13 +526,14 @@ class Menu(object):
             self.screen.blit(self.title_image, self.title_image_rect)
 
         # draw up arrow if the first row isn't on screen
+        size = self.h * 0.05
         if self.first_visible > 0:
-            pygame.draw.polygon(self.screen, self.highlight_color, [(20, 0), (40, 40), (0, 40)])
+            pygame.draw.polygon(self.screen, self.highlight_color, [(size/2, 0), (size, size), (0, size)])
 
         # draw down arrow if the last row isn't on screen
         last_visible = (self.first_visible / self.cols) + self.visible_rows - 1
         if last_visible < self.rows - 1:
-            pygame.draw.polygon(self.screen, self.highlight_color, [(20, self.h), (40, self.h - 40), (0, self.h - 40)])
+            pygame.draw.polygon(self.screen, self.highlight_color, [(self.w-size/2, self.h), (self.w-size, self.h - size), (self.w, self.h - size)])
 
         # draw game thumbnails for those games currently visible
         for i, game in enumerate(self.games):
@@ -539,7 +552,25 @@ class Menu(object):
         pygame.display.flip()
 #        self.clock.tick(5)
 
+controls = [0,0,0,0,0,0,0,0,0,0,0,0]
+old_controls = controls[:]
 
+def updateData(joystick):
+    global old_controls, controls
+    old_controls = controls[:]
+    controls = [joystick.get_axis(1) < 0, joystick.get_axis(1) > 0, joystick.get_axis(0) < 0, joystick.get_axis(0) > 0, 
+        joystick.get_button(3), joystick.get_button(9), joystick.get_button(2), joystick.get_button(3), 
+        joystick.get_button(4), joystick.get_button(5), joystick.get_button(8), joystick.get_button(9)]
+
+actions = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_RETURN, pygame.K_RETURN, pygame.K_RETURN, pygame.K_RETURN, pygame.K_RETURN, pygame.K_RETURN, pygame.K_RETURN]
+ 
+def doActions():
+    for i in range(0,11):
+        if old_controls[i] == 0 and controls[i] > 0:
+            pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=actions[i]))
+
+
+    
 if __name__ == "__main__":
     # argument to the script is an index number for the initial game to be
     # highlighted.
@@ -550,7 +581,7 @@ if __name__ == "__main__":
             game_index = int(sys.argv[1])
         except:
             alternate_config = sys.argv[1]
-
+    pygame.joystick.init()
     # parse menu before initializing pygame so we can check the config file
     menu = Menu(alternate_config=alternate_config)
     if menu.clear_screen:
@@ -559,3 +590,4 @@ if __name__ == "__main__":
     pygame.init()
     menu.show(game_index)
     pygame.quit()
+
