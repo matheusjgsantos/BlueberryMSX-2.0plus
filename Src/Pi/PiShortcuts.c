@@ -555,8 +555,8 @@ static char shortcutsDir[512];
 extern Properties *properties;
 
 typedef struct {
-    unsigned type : 8;
-    unsigned mods : 8;
+    unsigned type : 7;
+    unsigned mods : 9;
     unsigned key  : 16;
 } ShortcutHotkey;
 
@@ -687,7 +687,6 @@ char* shortcutsToString(ShortcutHotkey hotkey)
     static char buf[64];
         
     buf[0] = 0;
-
     switch (hotkey.type) {
     case HOTKEY_TYPE_KEYBOARD:
         if (hotkey.mods & KBD_LCTRL)    { strcat(buf, *buf ? "+" : ""); strcat(buf, "LCtrl"); }
@@ -773,7 +772,7 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 	toSDLhotkey(*hotkey);
 //#endif
 	printf("shortcut:%s - %s,%08x -> %08x\n", name, shortcutsToString(*hotkey), *hotkey, toSDLhotkey(*hotkey));
-	//*hotkey = toSDLhotkey(*hotkey);
+	*hotkey = toSDLhotkey(*hotkey);
 }
 
 void shortcutsSetDirectory(char* directory)
@@ -869,7 +868,7 @@ void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym)
 void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
 {
     ShortcutHotkey key = { type, mods, keySym };
-	printf("key=%08x\n", key);
+	printf("key=%08x,type=%02x,mod=%02x,keySym=%04x\n", key,type, mods, keySym);
     if (s->state.maxSpeedIsSet) {
         actionMaxSpeedRelease();
         s->state.maxSpeedIsSet = 0;

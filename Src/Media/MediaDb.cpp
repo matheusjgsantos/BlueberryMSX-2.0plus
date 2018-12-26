@@ -1226,7 +1226,118 @@ extern "C" void mediaDbSetDefaultRomType(RomType romType)
     romdbDefaultType = romType;
 }
 
-extern "C" MediaType* mediaDbGuessRom(const void *buffer, int size) 
+#define MAXMAPPERS 10
+                            /* ROM mapper types:             */
+#define MAP_GEN8     0      /* Generic switch, 8kB pages     */
+#define MAP_GEN16    1      /* Generic switch, 16kB pages    */
+#define MAP_KONAMI5  2      /* Konami 5000/7000/9000/B000h   */
+#define MAP_KONAMI4  3      /* Konami 4000/6000/8000/A000h   */
+#define MAP_ASCII8   4      /* ASCII 6000/6800/7000/7800h    */
+#define MAP_ASCII16  5      /* ASCII 6000/7000h              */
+#define MAP_GMASTER2 6      /* Konami GameMaster2 cartridge  */
+#define MAP_FMPAC    7      /* Panasonic FMPAC cartridge     */
+
+extern "C" MediaType* mediaDbGuessRom(const void *buf, int Size)
+{
+  int J,I,K,ROMCount[MAXMAPPERS];
+  char S[256];
+  FILE *F;
+  unsigned char *Buf = (unsigned char*) buf;
+  
+  static MediaType staticMediaType(ROM_UNKNOWN, "Unknown MSX rom");   
+  MediaType* mediaType = &staticMediaType;
+#if 0
+  /* Try opening file with CRCs */
+  if((F=fopen("CARTS.CRC","rb")))
+  {
+    /* Compute ROM's CRC */
+    for(J=K=0;J<Size;++J) K+=Buf[J];
+
+    /* Scan file comparing CRCs */
+    while(fgets(S,sizeof(S)-4,F))
+      if(sscanf(S,"%08X %d",&J,&I)==2)
+        if(K==J) { fclose(F);return(I); }
+
+    /* Nothing found */
+    fclose(F);
+  }
+  /* Try opening file with SHA1 sums */
+  if((F=fopen("CARTS.SHA","rb")))
+  {
+    char S1[41],S2[41];
+    SHA1 C;
+
+    /* Compute ROM's SHA1 */
+    ResetSHA1(&C);
+    InputSHA1(&C,Buf,Size);
+    if(ComputeSHA1(&C))
+    {
+      sprintf(S1,"%08x%08x%08x%08x%08x",C.Msg[0],C.Msg[1],C.Msg[2],C.Msg[3],C.Msg[4]);
+
+      /* Search for computed SHA1 in the file */
+      while(fgets(S,sizeof(S)-4,F))
+        if((sscanf(S,"%40s %d",S2,&J)==2) && !strcmp(S1,S2))
+        { fclose(F);return(J); }
+    }
+
+    /* Nothing found */
+    fclose(F);
+  }
+#endif
+
+  /* Clear all counters */
+  for(J=0;J<MAXMAPPERS;++J) ROMCount[J]=1;
+  /* Generic 8kB mapper is default */
+  ROMCount[MAP_GEN8]+=1;
+  /* ASCII 16kB preferred over ASCII 8kB */
+  ROMCount[MAP_ASCII16]-=1;
+
+  /* Count occurences of characteristic addresses */
+  for(J=0;J<Size-2;++J)
+  {
+    I=Buf[J]+((int)Buf[J+1]<<8)+((int)Buf[J+2]<<16);
+    switch(I)
+    {
+      case 0x500032: ROMCount[MAP_KONAMI5]++;break;
+      case 0x900032: ROMCount[MAP_KONAMI5]++;break;
+      case 0xB00032: ROMCount[MAP_KONAMI5]++;break;
+      case 0x400032: ROMCount[MAP_KONAMI4]++;break;
+      case 0x800032: ROMCount[MAP_KONAMI4]++;break;
+      case 0xA00032: ROMCount[MAP_KONAMI4]++;break;
+      case 0x680032: ROMCount[MAP_ASCII8]++;break;
+      case 0x780032: ROMCount[MAP_ASCII8]++;break;
+      case 0x600032: ROMCount[MAP_KONAMI4]++;
+                     ROMCount[MAP_ASCII8]++;
+                     ROMCount[MAP_ASCII16]++;
+                     break;
+      case 0x700032: ROMCount[MAP_KONAMI5]++;
+                     ROMCount[MAP_ASCII8]++;
+                     ROMCount[MAP_ASCII16]++;
+                     break;
+      case 0x77FF32: ROMCount[MAP_ASCII16]++;break;
+    }
+  }
+
+  /* Find which mapper type got more hits */
+  for(I=0,J=0;J<MAXMAPPERS;++J)
+    if(ROMCount[J]>ROMCount[I]) I=J;
+  
+  switch (I) {
+    default:
+    case MAP_GEN8: mediaType->romType = ROM_STANDARD; break;
+//    case 1: mediaType->romType = ROM_MSXDOS2; break;
+    case MAP_KONAMI5: mediaType->romType = ROM_KONAMI5; break;
+    case MAP_KONAMI4: mediaType->romType = ROM_KONAMI4; break;
+    case MAP_ASCII8: mediaType->romType = ROM_ASCII8SRAM; break;
+    case MAP_ASCII16: mediaType->romType = ROM_ASCII16SRAM; break;
+	case MAP_GEN16: mediaType->romType = ROM_KOREAN126; break;
+  }
+    
+    return mediaType;
+  /* Return the most likely mapper type */
+}
+
+extern "C" MediaType* mediaDbGuessRom2(const void *buffer, int size) 
 {
     static MediaType staticMediaType(ROM_UNKNOWN, "Unknown MSX rom");
 

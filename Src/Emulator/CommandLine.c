@@ -361,10 +361,10 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
         if (checkArg(argument, "rom1")) {
             argument = extractTokenEx(cmdLine, ++i, gamedir);
             if (argument == NULL || !isRomFileType(argument, rom1zip)) return 0; // Invaid argument
-			if (!msx_pack_check())
+//			if (!msx_pack_check())
 				strcpy(rom1, argument);
-			else
-				romType1 = ROM_MSXBUS;
+//			else
+//				romType1 = ROM_MSXBUS;
             startEmu = 1;
         }
         if (checkArg(argument, "rom1zip")) {

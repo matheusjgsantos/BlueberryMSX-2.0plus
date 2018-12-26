@@ -282,7 +282,7 @@ unsigned char GetData(int flag, int delay)
 		return 0xff;
 	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
-	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_RD | cs1 | cs2, 25);
+	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_RD | cs1 | cs2, 50);
 	GPIO_SET = LE_C | MSX_CTRL_FLAG;
 	pthread_mutex_unlock(&mutex);	
 	GPIO_CLR = LE_C;
