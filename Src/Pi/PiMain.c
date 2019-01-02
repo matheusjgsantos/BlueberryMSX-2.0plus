@@ -58,6 +58,7 @@
 #include "PiShortcuts.h"
 #include "PiVideo.h"
 #include "PiUdev.h"
+#include "InputEvent.h"
 
 #define EVENT_UPDATE_DISPLAY 2
 
@@ -124,6 +125,7 @@ void archTrap(UInt8 value)
 void archQuit()
 {
 	doQuit = 1;
+    system("aconnect -x");
 }
 
 static int floppy1LedOn = 0;
@@ -171,6 +173,13 @@ static void handleEvent(SDL_Event* event)
 		break;
 	case SDL_JOYBUTTONDOWN:
 	case SDL_JOYBUTTONUP:
+        if (event->type == SDL_JOYBUTTONUP)
+        {
+            if (inputEventGetState(EC_JOY_BUTTONL) * inputEventGetState(EC_JOY_BUTTONR))
+                actionQuit();
+            else if (inputEventGetState(EC_JOY_BUTTONL))
+                actionDiskQuickChange();
+        }
 		joystickButtonUpdate(event);
 		break;
 	case SDL_JOYAXISMOTION:
@@ -255,6 +264,7 @@ int main(int argc, char **argv)
 	strcat(path, DIR_SEPARATOR "bluemsx.ini");
 	
 	printf("ResetProperties:%d,%s\n", resetProperties, path);
+    system("aconnect 20:0 128:0");
 	
 	properties = propCreate(resetProperties, 0, P_KBD_EUROPEAN, 0, "");
 

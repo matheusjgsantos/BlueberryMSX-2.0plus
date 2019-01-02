@@ -662,7 +662,6 @@ static void propLoad(Properties* properties)
     GET_ENUM_VALUE_3(propFile, sound, MidiOut, type, MidiTypePair);
     GET_STR_VALUE_3(propFile, sound, MidiOut, name);
     GET_STR_VALUE_3(propFile, sound, MidiOut, fileName);
-	printf("sound.MidiOut.fileName:%s\n", properties->sound.MidiOut.fileName);
     GET_STR_VALUE_3(propFile, sound, MidiOut, desc);
     GET_ENUM_VALUE_3(propFile, sound, MidiOut, mt32ToGm, BoolPair);
     GET_ENUM_VALUE_2s1(propFile, sound, mixerChannel, MIXER_CHANNEL_PSG, enable, BoolPair);
@@ -801,7 +800,7 @@ static void propLoad(Properties* properties)
         GET_INT_VALUE_2i1(histFile, settings, windowPos, i, top);
         GET_INT_VALUE_2i1(histFile, settings, windowPos, i, width);
         GET_INT_VALUE_2i1(histFile, settings, windowPos, i, height);
-    }
+    }  
     
     iniFileClose(histFile);
 #endif

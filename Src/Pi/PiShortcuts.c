@@ -769,9 +769,9 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 // #else
 //	sscanf(strtok(buffer, "="), "%"SCNx32, hotkey);	
     sscanf(buffer, "%X", hotkey);
-	toSDLhotkey(*hotkey);
+//	toSDLhotkey(*hotkey);
 //#endif
-	printf("shortcut:%s - %s,%08x -> %08x\n", name, shortcutsToString(*hotkey), *hotkey, toSDLhotkey(*hotkey));
+//	printf("shortcut:%s - %s,%08x -> %08x\n", name, shortcutsToString(*hotkey), *hotkey, toSDLhotkey(*hotkey));
 	*hotkey = toSDLhotkey(*hotkey);
 }
 
@@ -868,7 +868,7 @@ void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym)
 void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
 {
     ShortcutHotkey key = { type, mods, keySym };
-	printf("key=%08x,type=%02x,mod=%02x,keySym=%04x\n", key,type, mods, keySym);
+    //printf("key=%08x,type=%02x,mod=%02x,keySym=%04x\n", key,type, mods, keySym);
     if (s->state.maxSpeedIsSet) {
         actionMaxSpeedRelease();
         s->state.maxSpeedIsSet = 0;

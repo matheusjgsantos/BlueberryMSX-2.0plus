@@ -19,6 +19,15 @@ except ImportError:
 white = (255,255,255)
 grey = (100,100,100)
 
+def flush_input():
+    try:
+        import msvcrt
+        while msvcrt.kbhit():
+            msvcrt.getch()
+    except ImportError:
+        import sys, termios
+        termios.tcflush(sys.stdin, termios.TCIOFLUSH)
+
 class Game(object):
     def __init__(self, font, rom="", emulator="advmame", title="", imgpath="", find_image=None, max_size=-1, extra_paths=[]):
         if imgpath:
@@ -34,7 +43,7 @@ class Game(object):
             self.title = title
         else:
             self.title = rom
-        self.cmdline = emulator + str(next(iter(extra_paths), '')) +rom + "> /dev/null 2>&1"
+        self.cmdline = emulator + str(next(iter(extra_paths), '')) + rom 
         #print(self.cmdline)
         try:
             self.image = pygame.image.load(imgpath).convert(24)
@@ -61,14 +70,15 @@ class Game(object):
             if h > max_size:
                 w = int(max_size * ar)
                 h = max_size
-        self.image = pygame.transform.smoothscale(self.image, (w, h))
+        self.image = pygame.transform.smoothscale(self.image, (int(w*0.9), int(h*0.9)))
 #        self.image = pygame.transform.scale(self.image, (w, h))
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect() 
 
     def draw(self, screen, x, y, font_y):
         if self.image is not None:
             self.rect.centerx = x
             self.rect.centery = y
+#            screen.blit(pygame.transform.scale(self.image, (int(self.rect.width*0.9), int(self.rect.height*0.9))), self.rect)
             screen.blit(self.image, self.rect)
         w, h = self.label_size
         r = pygame.Rect((0, font_y, w, h))
@@ -82,9 +92,10 @@ class Game(object):
         return 0, 0
 
     def run(self):
-        print (self.cmdline)
-        os.system('tput civis;clear')
-        os.system(self.cmdline)
+        #print (self.cmdline)
+        os.system('tput civis')
+        os.system(self.cmdline + " /machine zemmix > /dev/null 2> /dev/null")
+        flush_input()
         #subprocess.call(self.cmdline)
 
 
@@ -96,7 +107,7 @@ class Menu(object):
         self.w = 1024
         self.h = 768
         self.usable_h = self.h
-        self.highlight_size = 5
+        self.highlight_size = 10
         self.grid_spacing = 5
         self.highlight_color = (50, 50, 255)
         self.name_spacing = 5
@@ -113,7 +124,7 @@ class Menu(object):
         self.games = []
         self.font = None
         self.mainmenu = mainmenu_name
-        self.thumbnail_size = 200
+        self.thumbnail_size = 220
         self.windowed = False
         self.clear_screen = True
         self.wrap_menu = True
@@ -357,7 +368,8 @@ class Menu(object):
         self.num_visible = self.visible_rows * self.cols
         self.center_offset = (w/2, h/2)
         self.x_offset = (self.w - (w * self.cols)) / 2
-        self.y_offset = self.title_height
+        self.y_offset = self.title_height + (pygame.display.Info().current_h - self.title_height - h * self.visible_rows)/2
+        print (self.y_offset, self.rows, h, pygame.display.Info().current_h)
 
     def get_grid_pos(self, index):
         r, c = divmod(index - self.first_visible, self.cols)
@@ -434,17 +446,25 @@ class Menu(object):
         joysticks = []
         for i in range(0, pygame.joystick.get_count()):
             joysticks.append(pygame.joystick.Joystick(i))
-            joysticks[-1].init()        
+            joysticks[-1].init()
+        run = False
+        j = None 
+        if joysticks != []:
+            j = pygame.joystick.Joystick(0)	
         while not done:
-            updateData(pygame.joystick.Joystick(0))
-            doActions()
+            if j != None:
+                updateData(j)
+                doActions()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     done = True
                 if event.type == pygame.KEYDOWN:
+                    if not event.key in self.run_keys:
+                        run = False
                     if event.key in self.quit_keys:
                         done = True
-                    elif event.key in self.run_keys:
+                        os.system('tput cvvis')
+                    elif event.key in self.run_keys and run != True:
                         if event.key in self.b_keys and self.peek_konami("b"):
                             konami = self.check_konami("b")
                         elif event.key in self.a_keys and self.peek_konami("a"):
@@ -459,6 +479,7 @@ class Menu(object):
                             #self.restart(game_index)
 
                             # only reaches here on an error.
+                        run = True
                     elif event.key in self.up_keys:
                         game_index -= self.cols
                         if game_index < 0:
@@ -559,14 +580,15 @@ def updateData(joystick):
     global old_controls, controls
     old_controls = controls[:]
     controls = [joystick.get_axis(1) < 0, joystick.get_axis(1) > 0, joystick.get_axis(0) < 0, joystick.get_axis(0) > 0, 
-        joystick.get_button(3), joystick.get_button(9), joystick.get_button(2), joystick.get_button(3), 
+        joystick.get_button(3), joystick.get_button(4), joystick.get_button(2), joystick.get_button(3), 
         joystick.get_button(4), joystick.get_button(5), joystick.get_button(8), joystick.get_button(9)]
 
-actions = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_RETURN, pygame.K_RETURN, pygame.K_RETURN, pygame.K_RETURN, pygame.K_RETURN, pygame.K_RETURN, pygame.K_RETURN]
+actions = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_RETURN, pygame.K_RETURN, pygame.K_RETURN, pygame.K_RETURN, None, None, None, pygame.K_RETURN  ]
  
 def doActions():
-    for i in range(0,11):
-        if old_controls[i] == 0 and controls[i] > 0:
+    global controls, old_controls
+    for i in range(0,len(controls)):
+        if old_controls[i] == 0 and controls[i] > 0 and actions[i] != None:
             pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=actions[i]))
 
 
@@ -588,6 +610,7 @@ if __name__ == "__main__":
         subprocess.call('clear', shell=True)
 
     pygame.init()
+    pygame.mouse.set_visible(False)
     menu.show(game_index)
     pygame.quit()
 

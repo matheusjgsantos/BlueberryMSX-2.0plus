@@ -61,7 +61,9 @@ void* archScreenCapture(ScreenCaptureType type, int* bitmapSize, int onlyBmp) {
 
 void archUpdateEmuDisplayConfig() {}
 
-void archDiskQuickChangeNotify() {}
+void archDiskQuickChangeNotify() {
+    system("aplay sound/Toggle.wav");
+}
 
 void archThemeSetNext() {}
 void archThemeUpdate(struct Theme* theme) {}

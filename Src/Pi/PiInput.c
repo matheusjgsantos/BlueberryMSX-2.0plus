@@ -317,12 +317,20 @@ void joystickButtonUpdate(SDL_JoyButtonEvent *event)
 				inputEventSet(EC_JOY1_BUTTON1);
 			} else if (event->button == 1) {
 				inputEventSet(EC_JOY1_BUTTON2);
-			}
+			} else if (event->button == 8) {
+                inputEventSet(EC_JOY_BUTTONL);
+            } else if (event->button == 9) {
+                inputEventSet(EC_JOY_BUTTONR);
+            }
 		} else if (event->which == 1) {
 			if (event->button == 0) {
 				inputEventSet(EC_JOY2_BUTTON1);
 			} else if (event->button == 1) {
 				inputEventSet(EC_JOY2_BUTTON2);
+			} else if (event->button == 8) {
+                inputEventSet(EC_JOY_BUTTONL);
+            } else if (event->button == 9) {
+                inputEventSet(EC_JOY_BUTTONR);
 			}
 		}
 	} else if (event->type == SDL_JOYBUTTONUP) {
@@ -331,12 +339,20 @@ void joystickButtonUpdate(SDL_JoyButtonEvent *event)
 				inputEventUnset(EC_JOY1_BUTTON1);
 			} else if (event->button == 1) {
 				inputEventUnset(EC_JOY1_BUTTON2);
+			} else if (event->button == 8) {
+                inputEventUnset(EC_JOY_BUTTONL);
+            } else if (event->button == 9) {
+                inputEventUnset(EC_JOY_BUTTONR);
 			}
 		} else if (event->which == 1) {
 			if (event->button == 0) {
 				inputEventUnset(EC_JOY2_BUTTON1);
 			} else if (event->button == 1) {
 				inputEventUnset(EC_JOY2_BUTTON2);
+			} else if (event->button == 8) {
+                inputEventUnset(EC_JOY_BUTTONL);
+            } else if (event->button == 9) {
+                inputEventUnset(EC_JOY_BUTTONR);
 			}
 		}
 	}

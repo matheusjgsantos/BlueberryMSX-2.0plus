@@ -1237,7 +1237,7 @@ extern "C" void mediaDbSetDefaultRomType(RomType romType)
 #define MAP_GMASTER2 6      /* Konami GameMaster2 cartridge  */
 #define MAP_FMPAC    7      /* Panasonic FMPAC cartridge     */
 
-extern "C" MediaType* mediaDbGuessRom(const void *buf, int Size)
+extern "C" MediaType* mediaDbGuessRom1(const void *buf, int Size)
 {
   int J,I,K,ROMCount[MAXMAPPERS];
   char S[256];
@@ -1337,7 +1337,7 @@ extern "C" MediaType* mediaDbGuessRom(const void *buf, int Size)
   /* Return the most likely mapper type */
 }
 
-extern "C" MediaType* mediaDbGuessRom2(const void *buffer, int size) 
+extern "C" MediaType* mediaDbGuessRom(const void *buffer, int size) 
 {
     static MediaType staticMediaType(ROM_UNKNOWN, "Unknown MSX rom");
 

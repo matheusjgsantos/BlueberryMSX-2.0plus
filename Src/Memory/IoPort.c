@@ -160,6 +160,21 @@ void  ioPortWrite(void* ref, UInt16 port, UInt8 value)
         }
         return;
     }
+#if 1
+    if (ioTable[port].write != NULL) {
+        ioTable[port].write(ioTable[port].ref, port, value);
+        if (ioMonTable[port].write != NULL) {
+    //		printf("ioMonwrite:%d<-%d\n", port, value);
+            ioMonTable[port].write(ioMonTable[port].ref, port, value); 
+        }        
+    }
+    else if (ioUnused[0].write != NULL) {
+        ioUnused[0].write(ioUnused[0].ref, port, value);
+    }
+    else if (ioUnused[1].write != NULL) {
+        ioUnused[1].write(ioUnused[1].ref, port, value);
+	}
+#else
     if (ioTable[port].write == NULL) {
 		if (ioUnused[0].write != NULL) {
 			ioUnused[0].write(ioUnused[0].ref, port, value);
@@ -174,6 +189,7 @@ void  ioPortWrite(void* ref, UInt16 port, UInt8 value)
 		ioMonTable[port].write(ioMonTable[port].ref, port, value); 
 	}
     ioTable[port].write(ioTable[port].ref, port, value);
+#endif
 }
 
 void ioMonPortRegister(int port, IoPortRead read, IoPortWrite write, void* ref)
