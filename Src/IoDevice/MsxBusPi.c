@@ -1,9 +1,28 @@
-//
-//  How to access GPIO registers from C-code on the Raspberry-Pi
-//  Example program
-//  15-January-2012
-//  Dom and Gert
-//  Revised: 15-Feb-2013
+/*****************************************************************************
+**
+** Msx Slot Access Code for Raspberry Pi 
+** https://github.com/meesokim/msxslot
+**
+** RPMC(Raspberry Pi MSX Clone) core module
+**
+** Copyright (C) 2016 Miso Kim meeso.kim@gmail.com
+**
+** This program is free software; you can redistribute it and/or modify
+** it under the terms of the GNU General Public License as published by
+** the Free Software Foundation; either version 2 of the License, or
+** (at your option) any later version.
+**
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License
+** along with this program; if not, write to the Free Software
+** Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+**
+******************************************************************************
+*/
 
 #define RPMC_V5
 #include <bcm2835.h>
@@ -183,41 +202,14 @@ volatile unsigned *gclk_base;
 pthread_mutex_t mutex;
 
 int setup_io();
+void frontled(unsigned char byte);
 int msxread(int slot, unsigned short addr);
 void msxwrite(int slot, unsigned short addr, unsigned char byte);
 int msxreadio(unsigned short addr);
 void msxwriteio(unsigned short addr, unsigned char byte);
 void clear_io();
-void setDataIn();
-void setDataOut();
-void spi_clear();
-void spi_set(int addr, int rd, int mreq, int slt1);
 void setup_gclk();
 
-void setDataIn()
-{
-#if 0
-	INP_GPIO(MD00_PIN);
-	INP_GPIO(MD01_PIN);
-	INP_GPIO(MD02_PIN);
-	INP_GPIO(MD03_PIN);
-	INP_GPIO(MD04_PIN);
-	INP_GPIO(MD05_PIN);
-	INP_GPIO(MD06_PIN);
-	INP_GPIO(MD07_PIN);
-#else
-	*(gpio+1) &= 0x03f;
-#endif	
-}
-
-/*
-0099 9888 7776 6655 5444 3332 2211 1000
-
-0099 9888 7776 6655 5444 3332 2211 1000
-  00 1001 0010 0100 1001 0010 01xx xxxx
-   0    9    2    4    9    2    7    f
-0099 9888 7776 6655 5444 3332 2211 1000
-*/
 
 void SetAddress(unsigned short addr)
 {
@@ -239,26 +231,30 @@ void SetDelay(int j)
 void SetData(int flag, int delay, unsigned char byte)
 {
 	GPIO_CLR = flag | LE_D | DAT_DIR | 0xff;
+	GPIO_SET = MSX_WR;
 	GPIO_SET = LE_C | byte;
-	while(!(GPIO & MSX_WAIT));
-	for(int i=0; i < 15; i++)
+	for(int i=0; i < 5; i++)
 		GPIO_SET = 0;
 	GPIO_CLR = MSX_WR;
 	for(int i=0; i < delay; i++)
+	{
 		GPIO_SET = byte;
+	}
 	while(!(GPIO & MSX_WAIT));
 	GPIO_SET = MSX_WR;
-	for(int i=0; i < 5; i++)
-		GPIO_SET = byte;
-	GPIO_SET = LE_D | DAT_DIR;   	
-	GPIO_CLR = LE_C | 0xff;
+	byte = GPIO;
+	byte = GPIO;
+	GPIO_SET = MSX_CTRL_FLAG | DAT_DIR | 0xff;   	
+	GPIO_SET = 0;
+	GPIO_SET = LE_D;
+	GPIO_CLR = LE_C;
 }   
 
 unsigned char GetData(int flag, int delay)
 {
 	unsigned char byte;
-	GPIO_CLR = LE_D | flag;
-	GPIO_SET = LE_C | DAT_DIR | 0xff;
+	GPIO_CLR = LE_D | flag | 0xff;
+	GPIO_SET = LE_C | DAT_DIR;
 	while(!(GPIO & MSX_WAIT));
 	SetDelay(delay);
 	byte = GPIO;
@@ -426,6 +422,7 @@ void msxinit()
         printf("GPIO init error\n");
         exit(0);
     }
+    frontled(0x0);
 	printf("MSX BUS initialized\n");
 }
 
@@ -437,6 +434,30 @@ void msxclose()
 int msx_pack_check()
 {
 	return !(GPIO & SW1);
+}
+void frontled(unsigned char byte)
+{
+#define SRCLK (1<<RC22)
+#define RCLK (1<<RC23)
+#define SER (1<<RC26)
+    static unsigned char oldbyte = 0;
+    if (oldbyte != byte)
+    {
+        oldbyte = byte;
+        pthread_mutex_lock(&mutex);
+        GPIO_CLR = SRCLK | RCLK | SER;
+        for (int i = 0; i < 8; i++)
+        {
+            if ((byte >> i) & 1)
+                GPIO_SET = SER;
+            else
+                GPIO_CLR = SER;
+            GPIO_SET = SRCLK;
+            GPIO_CLR = SRCLK;
+        }
+        GPIO_SET = RCLK;
+        pthread_mutex_unlock(&mutex);	    
+    }
 }
 
 
