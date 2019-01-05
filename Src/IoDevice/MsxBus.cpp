@@ -34,6 +34,8 @@ extern "C" {
 #include "MsxBusPi.h"
 #include "MsxBus.h"
 #include "RomLoader.h"
+extern void ledSetSlot1Busy();
+extern void ledSetSlot2Busy();
 };
 //#define FAKE_ROM
 #ifdef WIN32
@@ -104,6 +106,7 @@ int CMSXBUS::readMemory(UInt16 address)
 {
 	int byte = msxread(slot, address);
 	int value = byte;
+	static int time = 0;
 #ifdef FAKE_ROM	
 	int p = -1;
 	if (size > 32768) {
@@ -130,6 +133,14 @@ int CMSXBUS::readMemory(UInt16 address)
 		value = 0xff;
 	byte = value;
 #endif
+	if (time++ > 100)
+	{
+		if (slot)
+			ledSetSlot2Busy();
+		else
+			ledSetSlot1Busy();
+		time = 0;
+	}
     return byte;
 }
 

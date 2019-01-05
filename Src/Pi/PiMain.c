@@ -448,7 +448,7 @@ int main(int argc, char **argv)
 	fprintf(stderr, "Powering on\n");
 
 #ifdef RASPI_GPIO
-	gpioTogglePowerLed(1);
+	 (1);
 #endif
 
 	while (!doQuit) {
@@ -474,7 +474,9 @@ int main(int argc, char **argv)
 	piDestroyVideo();
 	piDestroyUdev();
 	SDL_Quit();
-
+#ifdef RPMC_FRONTLED
+    frontled(0);
+#endif
 	fprintf(stderr, "Powered off\n");
 
 	return 0;

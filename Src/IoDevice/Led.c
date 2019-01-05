@@ -25,6 +25,7 @@
 **
 ******************************************************************************
 */
+#include <time.h>
 #include "Led.h"
 
 static int ledCapslock = 0;
@@ -36,6 +37,8 @@ static int ledFdd1     = 0;
 static int ledFdd2     = 0;
 static int ledHd       = 0;
 static int ledCas      = 0;
+
+static clock_t slot1access = 0, slot2access = 0;
 
 void ledSetAll(int enable) {
     enable = enable ? 1 : 0;
@@ -121,5 +124,25 @@ void ledSetCas(int enable) {
 
 int ledGetCas() {
     return ledCas;
+}
+
+int ledSetSlot1Busy() {
+    slot1access = clock();
+}
+
+int ledGetSlot1Busy() {
+    if ((clock() - slot1access) < 1000)
+        return 1;
+    return 0;
+}
+
+int ledSetSlot2Busy() {
+    slot1access = clock();
+}
+
+int ledGetSlot2Busy() {
+    if ((clock() - slot2access) < 1000)
+        return 1;
+    return 0;
 }
 

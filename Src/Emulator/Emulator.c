@@ -838,7 +838,24 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
     }
 
     emuUsageCurrent += diffTime;
-
+#ifdef RPMC_FRONTLED	
+	static int checktime = 0;
+	if (clock() - checktime > 20000)
+	{
+		unsigned char status = 0x80;
+		status |= ledGetCapslock() << 2;
+		status |= ledGetKana() << 3;
+		status |= ledGetTurboR() << 0;
+		status |= ledGetFdd1() << 1;
+		status |= ledGetFdd2() << 4;
+		if (ledGetSlot1Busy())
+			status |= 1 << 5;
+		if (ledSetSlot2Busy())
+			status |= 1 << 6;
+		frontled(status);
+		checktime = clock();
+	}
+#endif	
     return emuExitFlag ? -99 : diffTime;
 }
 #endif
@@ -904,7 +921,6 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
         busy = 0;
     }
 #endif
-
     return emuExitFlag ? -1 : 10;
 }
 

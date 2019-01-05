@@ -245,9 +245,15 @@ void keyboardUpdate(SDL_KeyboardEvent *event)
 			else if (event->type == SDL_KEYDOWN)
 				inputEventSet(kbdTable[i][SDLK_RALT]);
 		} else if (event->type == SDL_KEYUP) {
-			inputEventUnset(kbdTable[i][event->keysym.sym]);
+			if (event->keysym.sym == 0 && event->keysym.scancode == 58)
+				inputEventUnset(kbdTable[i][SDLK_CAPSLOCK]);
+			else
+				inputEventUnset(kbdTable[i][event->keysym.sym]);
 		} else if (event->type == SDL_KEYDOWN) {
-			inputEventSet(kbdTable[i][event->keysym.sym]);
+			if (event->keysym.sym == 0 && event->keysym.scancode == 58)
+				inputEventSet(kbdTable[i][SDLK_CAPSLOCK]);
+			else
+				inputEventSet(kbdTable[i][event->keysym.sym]);
 		}
 	}
 }
