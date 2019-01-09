@@ -133,6 +133,7 @@ int CMSXBUS::readMemory(UInt16 address)
 		value = 0xff;
 	byte = value;
 #endif
+#ifdef RPMC_FRONTLED
 	if (time++ > 100)
 	{
 		if (slot)
@@ -141,6 +142,7 @@ int CMSXBUS::readMemory(UInt16 address)
 			ledSetSlot1Busy();
 		time = 0;
 	}
+#endif
     return byte;
 }
 

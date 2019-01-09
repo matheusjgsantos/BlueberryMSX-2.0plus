@@ -213,54 +213,43 @@ void setup_gclk();
 
 void SetAddress(unsigned short addr)
 {
-	GPIO_CLR = 0xffff;
-	GPIO_SET = LE_A | addr;
+	
+	GPIO_CLR = LE_C | 0xffff | DAT_DIR;
+	GPIO_SET = LE_A | LE_D | addr;
 	GPIO_SET = LE_A;
-    GPIO_CLR = LE_A;
-	GPIO_SET = LE_C | MSX_CTRL_FLAG;
-    GPIO_SET = LE_C;
-    GPIO_CLR = LE_C | LE_D;
+    GPIO_CLR = LE_A | LE_D;
+	GPIO_SET = LE_C | MSX_CONTROLS;
+	GPIO_CLR = LE_D | 0xff;
+
 }	
 
 void SetDelay(int j)
 {
-	for(int i=0; i<j; i++)
+	for(int i=0; i<j/3; i++)
 		GPIO_SET = 0;
 }
 
-void SetData(int flag, int delay, unsigned char byte)
+void SetData(int ioflag, int flag, int delay, unsigned char byte)
 {
-	GPIO_CLR = flag | LE_D | DAT_DIR | 0xff;
-	GPIO_SET = MSX_WR;
-	GPIO_SET = LE_C | byte;
-	for(int i=0; i < 5; i++)
-		GPIO_SET = 0;
-	GPIO_CLR = MSX_WR;
-	for(int i=0; i < delay; i++)
-	{
-		GPIO_SET = byte;
-	}
+	GPIO_SET = byte;
+	GPIO_CLR = flag;
+	GPIO_SET = MSX_MREQ | MSX_WR;
+	GPIO_CLR = flag;
 	while(!(GPIO & MSX_WAIT));
-	GPIO_SET = MSX_WR;
-	byte = GPIO;
-	byte = GPIO;
-	GPIO_SET = MSX_CTRL_FLAG | DAT_DIR | 0xff;   	
-	GPIO_SET = 0;
-	GPIO_SET = LE_D;
+   	GPIO_SET = MSX_CONTROLS;
+	GPIO_CLR = LE_C;
 	GPIO_CLR = LE_C;
 }   
 
 unsigned char GetData(int flag, int delay)
 {
 	unsigned char byte;
-	GPIO_CLR = LE_D | flag | 0xff;
-	GPIO_SET = LE_C | DAT_DIR;
+	GPIO_CLR = flag;
+	GPIO_SET = DAT_DIR | 0xff;
 	while(!(GPIO & MSX_WAIT));
 	SetDelay(delay);
 	byte = GPIO;
-	byte = GPIO;
-	GPIO_SET = MSX_RD | MSX_MREQ;
-	GPIO_SET = LE_D;
+  	GPIO_SET = LE_D | MSX_CONTROLS;
 	return byte;
 }
 
@@ -270,14 +259,8 @@ unsigned char GetData(int flag, int delay)
 	int cs1, cs2, cs12;
 	cs1 = (addr & 0xc000) == 0x4000 ? MSX_CS1: 0;
 	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2: 0;
-	if (GPIO & SW1)
-		return 0xff;
-	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
 	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_RD | cs1 | cs2, 35);
-	GPIO_SET = LE_C | MSX_CTRL_FLAG;
-	pthread_mutex_unlock(&mutex);	
-	GPIO_CLR = LE_C;
 #ifdef DEBUG    
 	printf("-%04x:%02xr\n", addr, byte);
 #endif
@@ -286,12 +269,8 @@ unsigned char GetData(int flag, int delay)
  
  void msxwrite(int slot, unsigned short addr, unsigned char byte)
  {
-	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
-	SetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, 45, byte);
-	GPIO_SET = LE_C | MSX_CTRL_FLAG;
-	pthread_mutex_unlock(&mutex);	
-	GPIO_CLR = LE_C;
+	SetData(MSX_MREQ, (slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_WR, 45, byte);
 #ifdef DEBUG  
 	printf("-%04x:%02xw\n", addr, byte);
 #endif
@@ -301,12 +280,8 @@ unsigned char GetData(int flag, int delay)
  int msxreadio(unsigned short addr)
  {
 	unsigned char byte;
-	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
 	byte = GetData(MSX_IORQ | MSX_RD, 45);
-	GPIO_SET = LE_C | MSX_CTRL_FLAG;
-	pthread_mutex_unlock(&mutex);	
-	GPIO_CLR = LE_C;
 #ifdef DEBUG      
 	printf("-IO%02x:%02xr\n", addr, byte);
 #endif
@@ -315,12 +290,8 @@ unsigned char GetData(int flag, int delay)
  
  void msxwriteio(unsigned short addr, unsigned char byte)
    {
-	pthread_mutex_lock(&mutex);
 	SetAddress(addr);
-	SetData(MSX_IORQ, 55, byte);
-	GPIO_SET = LE_C | MSX_CTRL_FLAG;
-	pthread_mutex_unlock(&mutex);		
-	GPIO_CLR = LE_C;  
+	SetData(MSX_IORQ, MSX_IORQ, 55, byte);
 #ifdef DEBUG      
 	printf("-IO%02x:%02xw\n", addr, byte);
 #endif
@@ -386,7 +357,8 @@ int setup_io()
 	
 	GPIO_SET = LE_C | MSX_CONTROLS | MSX_WAIT | MSX_INT;
 	GPIO_SET = LE_A | LE_D;
-	GPIO_CLR = 0xffff;
+	GPIO_CLR = LE_C | 0xffff;
+	GPIO_CLR = LE_C;
 	GPIO_CLR = MSX_RESET;
 	for(int i=0;i<2000000;i++);
 	GPIO_SET = MSX_RESET;

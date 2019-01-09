@@ -304,25 +304,8 @@ int piInitVideo()
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_DITHER);
 
-	// float sx = 1.0f;
-	// float sy = 1.0f;
-	// float zoom = (float)ZOOM;
+//	fprintf(stderr, "Setting up screen...\n");
 
-	// // Screen aspect ratio adjustment // ratio
-	// float a = (float)(screenWidth) / screenHeight * (float)(properties->video.screenRatio) / 100;
-	// float a0 = (float)WIDTH / (float)HEIGHT;
-
-	// if (a > a0) {
-		// sx = a0/a;
-	// } else {
-		// sy = a/a0;
-	// }
-
-	// setOrtho(projection, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f, sx * zoom * 1.1, sy * zoom);
-
-	fprintf(stderr, "Setting up screen...\n");
-
-//	msxScreenPitch = WIDTH * BIT_DEPTH / 8;
 	msxScreen = (char*)calloc(1, BIT_DEPTH / 8 * TEX_WIDTH * TEX_HEIGHT);
 	if (!msxScreen) {
 		fprintf(stderr, "Error allocating screen texture\n");

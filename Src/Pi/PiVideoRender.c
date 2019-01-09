@@ -180,7 +180,7 @@ void videoSetColors(Video* pVideo, int saturation, int brightness, int contrast,
     pVideo->brightness = MAX(0, MIN(200, brightness)) - 100.;
     pVideo->contrast   = MAX(0, MIN(200, contrast)) / 100.;
 
-    initRGBTable(pVideo);
+    //initRGBTable(pVideo);
 }
 
 void videoSetColorMode(Video* pVideo, VideoColorMode colorMode) 

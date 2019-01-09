@@ -355,7 +355,6 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
 
     // If more than one argument, check arguments,
     // set configuration and then run
-	msxinit();
     for (i = 0; (argument = extractToken(cmdLine, i)) != NULL; i++) {
 		printf("argument:%s cmdline:%s\n", argument, cmdLine);
         if (checkArg(argument, "rom1")) {
