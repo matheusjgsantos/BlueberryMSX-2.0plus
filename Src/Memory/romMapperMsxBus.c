@@ -47,6 +47,7 @@ typedef struct {
 //    SccType sccType;
     SccMode sccMode;
     SCC* scc;
+	int sccEnable;
 } RomMapperMsxBus;
 
 static void saveState(RomMapperMsxBus* rm)
@@ -93,21 +94,31 @@ static void writeIo(RomMapperMsxBus* rm, UInt16 port, UInt8 value)
 
 static UInt8 read(RomMapperMsxBus* rm, UInt16 address) 
 {
-//    if ((address >= 0x9800 && address < 0xa000) || (address >= 0xb800 && address < 0xc000)) {
-//        return sccRead(rm->scc, (UInt8)(address & 0xff));
-//    }
+#if 0
+    if (rm->sccEnable  && ((address >= 0x9800 && address < 0xa000)) {
+//		printf("rm->sccEnable = %d\n", rm->sccEnable);
+        return sccRead(rm->scc, (UInt8)(address & 0xff));
+    }
+#endif	
     return msxBusRead(rm->msxBus, address);
 }
 
 static void write(RomMapperMsxBus* rm, UInt16 address, UInt8 value) 
 {
-    if ((address >= 0x9800 && address < 0xa000) || (address >= 0xb800 && address < 0xc000)) {
+#if 1	
+	if (((address & 0x97ff) == 0x9000) && ((value & 0x3f) == 0x3f))
+	{
+		rm->sccEnable = 1;
+	}
+    else if (rm->sccEnable && (address >= 0x9800) && (address <= 0x98ff)) {
         sccWrite(rm->scc, address & 0xff, value);
     }
+#endif
+//	printf("mw:%04x-%02x\n", address, value);
 	msxBusWrite(rm->msxBus, address, value);
 }
 
-static const int mon_ports[] = { 0x7c, 0x7d, 0x7e, 0x7f, 0xa0, 0xa1, 0xa2, 0xa3, 0 };
+static const int mon_ports[] = {}; // 0x7c, 0x7d, 0x7e, 0x7f, 0xa0, 0xa1, 0xa2, 0xa3, 0 };
 
 int romMapperMsxBusCreate(int cartSlot, int slot, int sslot) 
 {
@@ -122,12 +133,13 @@ int romMapperMsxBusCreate(int cartSlot, int slot, int sslot)
     rm->slot     	= slot;
     rm->sslot    	= sslot;
     rm->cartSlot 	= cartSlot;
-    rm->scc         = sccCreate(boardGetMixer());
-//    rm->sccType     = SCC_MIRRORED;
+	rm->scc         = sccCreate(boardGetMixer());
     rm->sccMode     = SCC_COMPATIBLE;
+	rm->sccEnable	= 0;
 	
     rm->msxBus = msxBusCreate(cartSlot, slot);
-    printf("MSXBus created. msxBus=%d cartSlot=%d slot=%d sslot=%d\n", rm->msxBus, cartSlot, slot, sslot);
+	if (rm->msxBus)
+		printf("MSXBus created. cartSlot=%d slot=%d sslot=%d\n", cartSlot, slot, sslot);
 
     if (rm->msxBus != NULL && cartSlot == 0) {
 		for(i = 1; i < 255; i++)

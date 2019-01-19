@@ -450,11 +450,11 @@ int main(int argc, char **argv)
 	while (!doQuit) {
 		SDL_WaitEvent(&event);
 		do {
-			if (event.type == SDL_QUIT ) {
-				doQuit = 1;
-			} else {
+//			if (event.type == SDL_QUIT ) {
+//				doQuit = 1;
+//			} else {
 				handleEvent(&event);
-			}
+//			}
 		} while (SDL_PollEvent(&event));
 	}
 
@@ -474,6 +474,7 @@ int main(int argc, char **argv)
     frontled(0);
 #endif
 	fprintf(stderr, "Powered off\n");
-
+	SDL_Init(0);
+	exit(0);
 	return 0;
 }

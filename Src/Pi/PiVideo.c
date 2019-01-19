@@ -316,7 +316,7 @@ int piInitVideo()
 
 	// We're doing our own video rendering - this is just so SDL-based keyboard
 	// can work
-    SDL_VideoInit("DISPMANX", 0);
+//    SDL_VideoInit("DISPMANX", 0);
 	sdlScreen = SDL_SetVideoMode(0, 0, 0, SDL_ASYNCBLIT);
     SDL_ShowCursor(SDL_DISABLE);
 	return 1;
@@ -385,9 +385,9 @@ void piUpdateEmuDisplay()
 		height = frameBuffer->lines;
 		float sx = 1.0f;
 		float sy = 1.0f;
-		printf("screen = %x, width = %d, height = %d, double = %d, interfaced = %d, ", msxScreen, msxScreenPitch, frameBuffer->lines, width, interlace);
+		//printf("screen = %x, width = %d, height = %d, double = %d, interfaced = %d, ", msxScreen, msxScreenPitch, frameBuffer->lines, width, interlace);
 		sx = sx * msxScreenPitch/WIDTH;
-		printf("sx=%f,sy=%f\n", sx, sy);
+		//printf("sx=%f,sy=%f\n", sx, sy);
 		setOrtho(projection, -sx/2, sx/2, sy/2, -sy/2, -0.5f, +0.5f,1,1);		
 		glUniformMatrix4fv(sh->u_vp_matrix, 1, GL_FALSE, &projection[0][0]);
 	}

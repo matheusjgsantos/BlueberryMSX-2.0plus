@@ -213,43 +213,45 @@ void setup_gclk();
 
 void SetAddress(unsigned short addr)
 {
-	
 	GPIO_CLR = LE_C | 0xffff | DAT_DIR;
 	GPIO_SET = LE_A | LE_D | addr;
 	GPIO_SET = LE_A;
-    GPIO_CLR = LE_A | LE_D;
+    GPIO_CLR = LE_A;
 	GPIO_SET = LE_C | MSX_CONTROLS;
 	GPIO_CLR = LE_D | 0xff;
-
 }	
 
 void SetDelay(int j)
 {
-	for(int i=0; i<j/3; i++)
-		GPIO_SET = 0;
+	for(int i=0; i<j; i++)
+	    GPIO_SET = 0;
 }
 
 void SetData(int ioflag, int flag, int delay, unsigned char byte)
 {
 	GPIO_SET = byte;
 	GPIO_CLR = flag;
-	GPIO_SET = MSX_MREQ | MSX_WR;
-	GPIO_CLR = flag;
+    SetDelay(2);
+	GPIO_CLR = MSX_WR;
 	while(!(GPIO & MSX_WAIT));
+    SetDelay(delay);
    	GPIO_SET = MSX_CONTROLS;
 	GPIO_CLR = LE_C;
-	GPIO_CLR = LE_C;
+
 }   
 
-unsigned char GetData(int flag, int delay)
+unsigned char GetData(int flag, int rflag, int delay)
 {
 	unsigned char byte;
-	GPIO_CLR = flag;
 	GPIO_SET = DAT_DIR | 0xff;
+	GPIO_CLR = flag;
+    SetDelay(1);
+	GPIO_CLR = rflag;
 	while(!(GPIO & MSX_WAIT));
 	SetDelay(delay);
 	byte = GPIO;
   	GPIO_SET = LE_D | MSX_CONTROLS;
+	GPIO_CLR = LE_C;
 	return byte;
 }
 
@@ -260,9 +262,9 @@ unsigned char GetData(int flag, int delay)
 	cs1 = (addr & 0xc000) == 0x4000 ? MSX_CS1: 0;
 	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2: 0;
 	SetAddress(addr);
-	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_RD | cs1 | cs2, 35);
+	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, MSX_RD | cs1 | cs2, 30);
 #ifdef DEBUG    
-	printf("-%04x:%02xr\n", addr, byte);
+	printf("+%04x:%02xr\n", addr, byte);
 #endif
 	return byte;	 
  }
@@ -270,9 +272,9 @@ unsigned char GetData(int flag, int delay)
  void msxwrite(int slot, unsigned short addr, unsigned char byte)
  {
 	SetAddress(addr);
-	SetData(MSX_MREQ, (slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | MSX_WR, 45, byte);
+	SetData(MSX_MREQ, (slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, 45, byte);
 #ifdef DEBUG  
-	printf("-%04x:%02xw\n", addr, byte);
+	printf("+%04x:%02xw\n", addr, byte);
 #endif
 	return;
  }
@@ -281,7 +283,7 @@ unsigned char GetData(int flag, int delay)
  {
 	unsigned char byte;
 	SetAddress(addr);
-	byte = GetData(MSX_IORQ | MSX_RD, 45);
+	byte = GetData(MSX_IORQ, MSX_RD, 45);
 #ifdef DEBUG      
 	printf("-IO%02x:%02xr\n", addr, byte);
 #endif
