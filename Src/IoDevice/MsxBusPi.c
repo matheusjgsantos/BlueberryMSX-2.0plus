@@ -230,11 +230,16 @@ void SetDelay(int j)
 void SetData(int ioflag, int flag, int delay, unsigned char byte)
 {
 	GPIO_SET = byte;
+	GPIO_CLR = flag | MSX_WR;
+	GPIO_SET = ioflag | MSX_WR;
+	GPIO_SET = ioflag | MSX_WR;
 	GPIO_CLR = flag;
-    SetDelay(2);
+    SetDelay(5);
 	GPIO_CLR = MSX_WR;
 	while(!(GPIO & MSX_WAIT));
     SetDelay(delay);
+	GPIO_SET = MSX_WR;
+    SetDelay(2);
    	GPIO_SET = MSX_CONTROLS;
 	GPIO_CLR = LE_C;
 

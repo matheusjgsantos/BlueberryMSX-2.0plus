@@ -39,7 +39,7 @@ ECHO  = @echo
 COMMON_FLAGS = -DUSE_EGL -DIS_RPI -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -DRASPI 
 CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer $(COMMON_FLAGS)
 CPPFLAGS = -g $(COMMON_FLAGS)
-LDFLAGS  = -pg 
+LDFLAGS  =  
 LIBS     =  -lSDL -lz -lbcm_host -lbrcmEGL -lbrcmGLESv2 -lpthread -ludev -lbcm2835
 # Uncomment the following line to enable GPIO (requires wiring-pi)
 #CFLAGS   += -DRASPI_GPIO
@@ -437,6 +437,7 @@ clean: clean_$(TARGET)
 $(TARGET): $(OUTPUT_OBJS)
 	$(ECHO) Linking $@...
 	$(LD) -L$(X11_LIBDIR) -L$(BCM_LIBDIR) $(LDFLAGS) -o $@ $(OUTPUT_OBJS) $(LIBS)
+	#cp $(TARGET) ~/blueMSX
 
 clean_$(TARGET):
 	$(ECHO) Cleaning files ...
@@ -445,24 +446,24 @@ clean_$(TARGET):
 
 $(OUTPUT_DIR):
 	$(ECHO) Creating directory $@...
-	$(MKDIR) $(OUTPUT_DIR)
+	@$(MKDIR) $(OUTPUT_DIR)
 
 $(OUTPUT_DIR)/%.o: %.c  $(HEADER_FILES)
 	$(ECHO) Compiling $<...
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
+	@$(CC) $(CFLAGS) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
 
 $(OUTPUT_DIR)/%.o: %.cc  $(HEADER_FILES)
 	$(ECHO) Compiling $<...
-	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
+	@$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
 
 $(OUTPUT_DIR)/%.o: %.cpp  $(HEADER_FILES)
 	$(ECHO) Compiling $<...
-	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
+	@$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
 
 $(OUTPUT_DIR)/%.o: %.cxx  $(HEADER_FILES)
 	$(ECHO) Compiling $<...
-	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
+	@$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
 
 $(OUTPUT_DIR)/%.res: %.rc $(HEADER_FILES)
 	$(ECHO) Compiling $<...
-	$(RC) $(CPPFLAGS) $(INCLUDE) -o $@ -i $<
+	@$(RC) $(CPPFLAGS) $(INCLUDE) -o $@ -i $<
