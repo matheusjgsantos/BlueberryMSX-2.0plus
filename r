@@ -34,10 +34,12 @@ a=`sed -n ${choice}p < menu`
 echo $choice > ./item
 if [[ -n $2 ]]; then 
 	echo ./bluemsx-pi /machine \"${a}\" /romtype2 msxbus $2 $3 $4 $5 $6 $7 > xx
+	chmod 755 xx
 	sudo ./xx > /dev/null 2>&1 &
 	#sudo ./bluemsx-pi /machine "$a" /romtype2 msxbus $2 $3 $4 $5 $6 $7
 else
 	echo ./bluemsx-pi /machine \"${a}\" /romtype1 msxbus /romtype2 msxbus $2 $3 $4 $5 $6 $7 > xx
+	chmod 755 xx
 	sudo ./xx > /dev/null 2>&1 &
 	#sudo ./bluemsx-pi /machine "$a" /romtype1 msxbus /romtype2 msxbus $2 $3
 fi
