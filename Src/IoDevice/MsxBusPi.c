@@ -225,8 +225,12 @@ void SetDelay(int j)
 {
 	for(int i=0; i<j; i++)
 	{
+#if 0		
 	    while(GPIO & MSX_CLK);
 	    while(!(GPIO & MSX_CLK));
+#else
+		GPIO_SET = 0;
+#endif
 	}
 }
 
@@ -320,8 +324,13 @@ int rtapi_open_as_root(const char *filename, int mode) {
 //
 // Set up a memory regions to access GPIO
 //
+
+static int io_initialized = 0;
+
 int setup_io()
 {
+	if (io_initialized)
+		return 0;
 	int i, speed_id, divisor ;	
 	if (!bcm2835_init()) return -1;
 	gpio = bcm2835_regbase(BCM2835_REGBASE_GPIO);
@@ -372,6 +381,7 @@ int setup_io()
 	for(int i=0;i<2000000;i++);
 	GPIO_SET = MSX_RESET;
 	for(int i=0;i<1000000;i++);
+	io_initialized = 1;
 	return 0;
 } // setup_io
 
