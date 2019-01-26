@@ -323,6 +323,10 @@ void joystickButtonUpdate(SDL_JoyButtonEvent *event)
 				inputEventSet(EC_JOY1_BUTTON1);
 			} else if (event->button == 1) {
 				inputEventSet(EC_JOY1_BUTTON2);
+			} else if (event->button == 2) {
+				inputEventSet(EC_JOY1_BUTTON2);
+			} else if (event->button == 3) {
+				inputEventSet(EC_JOY1_BUTTON3);
 			} else if (event->button == 8) {
                 inputEventSet(EC_JOY_BUTTONL);
             } else if (event->button == 9) {
@@ -333,6 +337,10 @@ void joystickButtonUpdate(SDL_JoyButtonEvent *event)
 				inputEventSet(EC_JOY2_BUTTON1);
 			} else if (event->button == 1) {
 				inputEventSet(EC_JOY2_BUTTON2);
+			} else if (event->button == 2) {
+				inputEventSet(EC_JOY2_BUTTON2);
+			} else if (event->button == 3) {
+				inputEventSet(EC_JOY2_BUTTON3);
 			} else if (event->button == 8) {
                 inputEventSet(EC_JOY_BUTTONL);
             } else if (event->button == 9) {

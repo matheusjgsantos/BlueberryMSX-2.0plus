@@ -647,6 +647,7 @@ struct Shortcuts {
     ShortcutHotkey windowSizeFullscreenToggle;
 	ShortcutHotkey scanlinesToggle;
     ShortcutHotkey aspectRatioToggle;
+	ShortcutHotkey videoColorModeToggle;
     struct {
         int maxSpeedIsSet;
     } state;
@@ -661,6 +662,7 @@ ShortcutHotkey toSDLhotkey(ShortcutHotkey hotkey)
 {
 	int sdlmod = 0;
 	int key = 0;
+#if 0	
 	switch (hotkey.type)
 	{
 		case HOTKEY_TYPE_KEYBOARD:
@@ -677,9 +679,24 @@ ShortcutHotkey toSDLhotkey(ShortcutHotkey hotkey)
 		case HOTKEY_TYPE_JOYSTICK:
 			break;
 	}
-	hotkey.mods = sdlmod;
-	hotkey.key = key;
+	hotkey->mods = sdlmod;
+#endif	
+	hotkey.key = sdlkeys[hotkey.key];
 	return hotkey;
+}
+
+int getMods(int mods)
+{
+	int mods0 = 0;
+	if (mods & KMOD_LCTRL) 	 mods0 |= KBD_LCTRL;
+	if (mods & KMOD_RCTRL)   mods0 |= KBD_RCTRL;
+	if (mods & KMOD_LSHIFT)  mods0 |= KBD_LSHIFT;
+	if (mods & KMOD_RSHIFT)  mods0 |= KBD_RSHIFT;
+	if (mods & KMOD_LALT)    mods0 |= KBD_LALT;
+	if (mods & KMOD_RALT)    mods0 |= KBD_RALT;
+	if (mods & KMOD_LMETA)   mods0 |= KBD_LWIN;
+	if (mods & KMOD_RMETA)   mods0 |= KBD_RWIN; 
+	return mods0;
 }
 
 char* shortcutsToString(ShortcutHotkey hotkey) 
@@ -743,7 +760,8 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
     char buffer[512];
     char* token, *value;
     int key;
-    
+
+	ShortcutHotkey skey;
     hotkey->type = HOTKEY_TYPE_NONE;
     hotkey->mods = 0;
     hotkey->key  = 0;
@@ -752,27 +770,8 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 //		printf("shortcut:%s - not assigned\n", name);
         return;
     }
-// #if 0
-    // token = strtok(buffer, "|");
-    // if (token == NULL) {
-        // return;
-    // }
-    // key = stringToHotkey(token);
-    // if (key >= 0) {
-        // hotkey->key  = key;
-        // hotkey->type = HOTKEY_TYPE_KEYBOARD;
-    // }
-    
-    // while (token = strtok(NULL, "|")) {
-        // hotkey->mods |= stringToMod(token);
-    // }
-// #else
-//	sscanf(strtok(buffer, "="), "%"SCNx32, hotkey);	
     sscanf(buffer, "%X", hotkey);
-//	toSDLhotkey(*hotkey);
-//#endif
-//	printf("shortcut:%s - %s,%08x -> %08x\n", name, shortcutsToString(*hotkey), *hotkey, toSDLhotkey(*hotkey));
-	*hotkey = toSDLhotkey(*hotkey);
+	printf("shortcut:%s=%s - %08x\n", name, shortcutsToString(*hotkey), *hotkey = toSDLhotkey(*hotkey));
 }
 
 void shortcutsSetDirectory(char* directory)
@@ -789,9 +788,9 @@ Shortcuts* shortcutsCreate()
 
     IniFile *iniFile = iniFileOpen(filename);
 	
-	printf("shortcut file:%s, %d\n", filename, iniFile);
 
 	if (iniFile->iniBuffer) {
+		printf("shortcut file:%s, %d\n", filename, iniFile);
 		LOAD_SHORTCUT(switchMsxAudio);
 		LOAD_SHORTCUT(spritesEnable);
 		LOAD_SHORTCUT(fdcTiming);
@@ -838,6 +837,7 @@ Shortcuts* shortcutsCreate()
 		LOAD_SHORTCUT(captureScreenshot);
 		LOAD_SHORTCUT(scanlinesToggle);
 		LOAD_SHORTCUT(aspectRatioToggle);
+		LOAD_SHORTCUT(videoColorModeToggle);
 	}
 	iniFileClose(iniFile);
 	shortcuts->resetSoft = resetHard;
@@ -867,8 +867,8 @@ void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym)
 
 void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
 {
-    ShortcutHotkey key = { type, mods, keySym };
-    //printf("key=%08x,type=%02x,mod=%02x,keySym=%04x\n", key,type, mods, keySym);
+    ShortcutHotkey key = { type, getMods(mods), keySym };
+    printf("key=%08x,type=%02x,mod=%02x,keySym=%04x\n", key,type, mods, keySym);
     if (s->state.maxSpeedIsSet) {
         actionMaxSpeedRelease();
         s->state.maxSpeedIsSet = 0;
@@ -932,6 +932,7 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
     if (HOTKEY_EQ(key, s->windowSizeFullscreenToggle))   actionFullscreenToggle();
 	if (HOTKEY_EQ(key, s->scanlinesToggle))	 			 actionToggleScanlinesEnable();
 	if (HOTKEY_EQ(key, s->aspectRatioToggle))	 		 actionToggleVideoSetForce4x3ratio();
+	if (HOTKEY_EQ(key, s->videoColorModeToggle))		 actionToggleVideoColorMode();
 }
 
 

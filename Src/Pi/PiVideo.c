@@ -51,13 +51,13 @@ typedef	struct ShaderInfo {
 } ShaderInfo;
 
 #define	TEX_WIDTH  600
-#define	TEX_HEIGHT 240
+#define	TEX_HEIGHT 480
 
 #define BIT_DEPTH       16
 #define BYTES_PER_PIXEL (BIT_DEPTH >> 3)
 #define ZOOM            1
 #define	WIDTH           544
-#define	HEIGHT          240
+#define	HEIGHT          480
 
 #define	minU 0.0f
 #define	maxU ((float)WIDTH / TEX_WIDTH)	
@@ -377,33 +377,37 @@ void piUpdateEmuDisplay()
 	if (frameBuffer == NULL) {
 		frameBuffer = frameBufferGetWhiteNoiseFrame();
 	}
-	if (frameBufferGetDoubleWidth(frameBuffer, 0) != width)
+	videoRender(video, 	frameBuffer, BIT_DEPTH, 1, msxScreen, 0, msxScreenPitch*2, -1);
+	if (frameBufferGetDoubleWidth(frameBuffer, 0) != width || lines != frameBuffer->lines)
 	{
 		width = frameBufferGetDoubleWidth(frameBuffer, 0);
 		lines = frameBuffer->lines;
-		msxScreenPitch = (256+16)*(width+1);
+		msxScreenPitch = frameBuffer->maxWidth;//(256+16)*(width+1);
 		height = frameBuffer->lines;
+		interlace = frameBuffer->interlace;
 		float sx = 1.0f;
-		float sy = 1.0f;
-		//printf("screen = %x, width = %d, height = %d, double = %d, interfaced = %d, ", msxScreen, msxScreenPitch, frameBuffer->lines, width, interlace);
+		float sy = 1.0f * height / HEIGHT;
+		printf("screen = %x, width = %d, height = %d, double = %d, interlaced = %d\n", msxScreen, msxScreenPitch, lines, width, interlace);
+		fflush(stdin);
 		sx = sx * msxScreenPitch/WIDTH;
 		//printf("sx=%f,sy=%f\n", sx, sy);
-		setOrtho(projection, -sx/2, sx/2, sy/2, -sy/2, -0.5f, +0.5f,1,1);		
+		if (sy == 1.0f)
+			setOrtho(projection, -sx/2, sx/2, sy/2, -sy/2, -0.5f, +0.5f,1,1);		
+		else
+			setOrtho(projection, -sx/2, sx/2, 0, -sy, -0.5f, +0.5f,1,1);		
 		glUniformMatrix4fv(sh->u_vp_matrix, 1, GL_FALSE, &projection[0][0]);
 	}
 	int borderWidth = ((int)((WIDTH - frameBuffer->maxWidth)  * ZOOM)) >> 1;
 	if (borderWidth < 0)
 		borderWidth = 0;
 
-	glUniform1i(shader.scanline, properties->video.scanlinesEnable);
+	glUniform1i(shader.scanline, video->scanLinesEnable);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
 	
 //	videoRender(video, frameBuffer, BIT_DEPTH, 1,
 //				msxScreen + borderWidth * BYTES_PER_PIXEL, 0, msxScreenPitch, -1);
 
-	videoRender(video, 	frameBuffer, BIT_DEPTH, 1,
-				msxScreen, 0, msxScreenPitch*2, -1);
 
 	// if (borderWidth > 0) {
 	// 	int h = height;
@@ -417,8 +421,8 @@ void piUpdateEmuDisplay()
 //	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT,
 //					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
 
-	glTexSubImage2D(GL_TEXTURE_2D, 0, (WIDTH-msxScreenPitch)/2, 0, msxScreenPitch, frameBuffer->lines,
-					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, (WIDTH-msxScreenPitch)/2, 0, msxScreenPitch, lines, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
+//	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, msxScreenPitch, lines, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
 					
 	drawQuad(sh);
 

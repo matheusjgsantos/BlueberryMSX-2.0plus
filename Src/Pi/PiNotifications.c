@@ -169,37 +169,15 @@ void* ScreenShotPng(void* src, int srcPitch, int width, int height, int* bitmapS
     BYTE* dstPtr = rawData;
     printf("width=%d, height=%d\n", width, height);
 
-	if (width > 272)
-	{
-		for (h = 0; h < height; h++) {
-			*dstPtr++ = 0; // Default PNG filter
-			for (w = 0; w < width; w++) {
-				*dstPtr++ = (BYTE)((srcPtr[w] & 0xf800) >> 8);
-				*dstPtr++ = (BYTE)((srcPtr[w] & 0x07e0) >> 3);
-				*dstPtr++ = (BYTE)((srcPtr[w] & 0x001f) << 3);
-			}
-			*dstPtr++ = 0; // Default PNG filter
-			for (w = 0; w < width; w++) {
-				*dstPtr++ = (BYTE)((srcPtr[w] & 0xf800) >> 8);
-				*dstPtr++ = (BYTE)((srcPtr[w] & 0x07e0) >> 3);
-				*dstPtr++ = (BYTE)((srcPtr[w] & 0x001f) << 3);
-			}
-			srcPtr += srcPitch;
+	for (h = 0; h < height; h++) {
+		*dstPtr++ = 0; // Default PNG filter
+		for (w = 0; w < width; w++) {
+			*dstPtr++ = (BYTE)((srcPtr[w] & 0xf800) >> 8);
+			*dstPtr++ = (BYTE)((srcPtr[w] & 0x07e0) >> 3);
+			*dstPtr++ = (BYTE)((srcPtr[w] & 0x001f) << 3);
 		}
-		height *= 2;
+		srcPtr += srcPitch;
 	}
-	else
-	{
-		for (h = 0; h < height; h++) {
-			*dstPtr++ = 0; // Default PNG filter
-			for (w = 0; w < width; w++) {
-				*dstPtr++ = (BYTE)((srcPtr[w] & 0xf800) >> 8);
-				*dstPtr++ = (BYTE)((srcPtr[w] & 0x07e0) >> 3);
-				*dstPtr++ = (BYTE)((srcPtr[w] & 0x001f) << 3);
-			}
-			srcPtr += srcPitch;
-		}
-	}	    
     compressedSize = 0;
     compressedData = zipCompress(rawData, rawSize, &compressedSize);
     free(rawData);

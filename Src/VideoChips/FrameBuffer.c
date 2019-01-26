@@ -487,6 +487,7 @@ FrameBuffer* frameBufferDeinterlace(FrameBuffer* frameBuffer)
 
     if (deintBuffer == NULL) {
         deintBuffer = calloc(1, sizeof(FrameBuffer));
+		deintBuffer->interlace = INTERLACE_NONE;
     }
     deintBuffer->lines = frameBuffer->lines < FB_MAX_LINES / 2 ? 2 * frameBuffer->lines : FB_MAX_LINES;
     deintBuffer->maxWidth = frameBuffer->maxWidth;

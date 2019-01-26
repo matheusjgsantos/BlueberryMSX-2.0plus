@@ -277,14 +277,12 @@ static inline int videoRender240(Video *pVideo, FrameBuffer *frame,
     LineBuffer *lineBuff = frame->line;
 //	printf("double=%d\r", doubleWidth);
 
-    for (h = 0; h < height; h++) {
-        UInt16 *pOldDst = pDst;
-        UInt16 *pSrc = lineBuff->buffer;
-		srcWidth = (256+16)*(lineBuff->doubleWidth+1);
-        int width = srcWidth >> 2;
-
-        if (doubleWidth) {
-//			printf("double\n");
+	if (doubleWidth) {
+		for (h = 0; h < height; h++) {
+			UInt16 *pOldDst = pDst;
+			UInt16 *pSrc = lineBuff->buffer;
+			srcWidth = (256+16)*(lineBuff->doubleWidth+1);
+			int width = srcWidth >> 2;
             while (width--) {
                 // *(pDst++) = (((rgbTable[*(pSrc++)] & 0xe79c) >> 1) + ((rgbTable[*(pSrc++)] & 0xe79c) >> 1)) & 0xe79c;
                 // *(pDst++) = (((rgbTable[*(pSrc++)] & 0xe79c) >> 1) + ((rgbTable[*(pSrc++)] & 0xe79c) >> 1)) & 0xe79c;
@@ -299,21 +297,24 @@ static inline int videoRender240(Video *pVideo, FrameBuffer *frame,
                 *(pDst++) = rgbTable[*(pSrc++)];
                 *(pDst++) = rgbTable[*(pSrc++)];				
             }
+			pDst = pOldDst + dstPitch;
+			lineBuff++;
         }
-        else {
+	}
+    else {
+		srcWidth = (256+16)*(lineBuff->doubleWidth+1);
+		int width;
+		for (h = 0; h < height; h++) {
+			UInt16 *pOldDst = pDst;
+			UInt16 *pSrc = lineBuff->buffer;
+			width = srcWidth;
             while (width--) {
                 *(pDst++) = rgbTable[*(pSrc++)];
-                *(pDst++) = rgbTable[*(pSrc++)];
-                *(pDst++) = rgbTable[*(pSrc++)];
-                *(pDst++) = rgbTable[*(pSrc++)];
             }
-			//memcpy(pDst, pSrc, width*4);
+			pDst = pOldDst + dstPitch;
+			lineBuff++;
         }
-
-        pDst = pOldDst + dstPitch;
-        lineBuff++;
     }
-
     return zoom;
 }
 
@@ -330,6 +331,7 @@ static inline int videoRender480(Video* pVideo, FrameBuffer* frame, int bitDepth
 
     dstPitch /= (int)sizeof(UInt16);
 
+#if 0
     for (h = 0; h < height; h += 2) {
         UInt16* pOldDst = pDst;
         UInt16* pSrc1 = frame->line[h + 0].buffer;
@@ -342,6 +344,8 @@ static inline int videoRender480(Video* pVideo, FrameBuffer* frame, int bitDepth
                 UInt16 col1 = (((rgbTable[pSrc2[0]] & 0xe79c) >> 2) + ((rgbTable[pSrc2[1]] & 0xe79c) >> 2));
                 
                 *pDst++ = (col0 + col1) & 0xe79c;
+				if (frame->interlace == INTERLACE_NONE)
+					*pDst++ = *(pDst-1);
                 pSrc1 += 2;
                 pSrc2 += 2;
             }
@@ -354,7 +358,17 @@ static inline int videoRender480(Video* pVideo, FrameBuffer* frame, int bitDepth
         }
         pDst = pOldDst + dstPitch; 
     }
-
+#else
+	for (h = 0; h < height; h++) {
+        UInt16* pOldDst = pDst;
+        UInt16* pSrc1 = frame->line[h].buffer;
+		int width = srcWidth;
+		while (width--) {
+			*pDst++ = rgbTable[*pSrc1++];
+		}
+        pDst = pOldDst + dstPitch; 
+	}
+#endif
     return zoom;
 }
 
@@ -365,11 +379,12 @@ int videoRender(Video* pVideo, FrameBuffer* frame, int bitDepth, int zoom,
         return zoom;
     }
 
-	/*
     if (frame->interlace != INTERLACE_NONE && pVideo->deInterlace) {
+		FrameBuffer *frame0 = frame;
         frame = frameBufferDeinterlace(frame);
+		frame0->lines = 480;
+		frame0->maxWidth = 544;
     }
-	*/
 
     if (frame->lines <= 240) {
         zoom = videoRender240(pVideo, frame, bitDepth, zoom, pDst, dstOffset, dstPitch, canChangeZoom);

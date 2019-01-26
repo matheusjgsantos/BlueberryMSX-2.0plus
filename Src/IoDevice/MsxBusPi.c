@@ -224,7 +224,10 @@ void SetAddress(unsigned short addr)
 void SetDelay(int j)
 {
 	for(int i=0; i<j; i++)
-	    GPIO_SET = 0;
+	{
+	    while(GPIO & MSX_CLK);
+	    while(!(GPIO & MSX_CLK));
+	}
 }
 
 void SetData(int ioflag, int flag, int delay, unsigned char byte)
@@ -232,14 +235,12 @@ void SetData(int ioflag, int flag, int delay, unsigned char byte)
 	GPIO_SET = byte;
 	GPIO_CLR = flag | MSX_WR;
 	GPIO_SET = ioflag | MSX_WR;
-	GPIO_SET = ioflag | MSX_WR;
 	GPIO_CLR = flag;
-    SetDelay(5);
+//    SetDelay(1);
 	GPIO_CLR = MSX_WR;
-	while(!(GPIO & MSX_WAIT));
     SetDelay(delay);
+	while(!(GPIO & MSX_WAIT));
 	GPIO_SET = MSX_WR;
-    SetDelay(2);
    	GPIO_SET = MSX_CONTROLS;
 	GPIO_CLR = LE_C;
 
@@ -250,10 +251,10 @@ unsigned char GetData(int flag, int rflag, int delay)
 	unsigned char byte;
 	GPIO_SET = DAT_DIR | 0xff;
 	GPIO_CLR = flag;
-    SetDelay(1);
+//    SetDelay(1);
 	GPIO_CLR = rflag;
-	while(!(GPIO & MSX_WAIT));
 	SetDelay(delay);
+	while(!(GPIO & MSX_WAIT));
 	byte = GPIO;
   	GPIO_SET = LE_D | MSX_CONTROLS;
 	GPIO_CLR = LE_C;
@@ -267,7 +268,7 @@ unsigned char GetData(int flag, int rflag, int delay)
 	cs1 = (addr & 0xc000) == 0x4000 ? MSX_CS1: 0;
 	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2: 0;
 	SetAddress(addr);
-	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, MSX_RD | cs1 | cs2, 30);
+	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, MSX_RD | cs1 | cs2, 1);
 #ifdef DEBUG    
 	printf("+%04x:%02xr\n", addr, byte);
 #endif
@@ -277,7 +278,7 @@ unsigned char GetData(int flag, int rflag, int delay)
  void msxwrite(int slot, unsigned short addr, unsigned char byte)
  {
 	SetAddress(addr);
-	SetData(MSX_MREQ, (slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, 45, byte);
+	SetData(MSX_MREQ, (slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, 2, byte);
 #ifdef DEBUG  
 	printf("+%04x:%02xw\n", addr, byte);
 #endif
@@ -288,7 +289,7 @@ unsigned char GetData(int flag, int rflag, int delay)
  {
 	unsigned char byte;
 	SetAddress(addr);
-	byte = GetData(MSX_IORQ, MSX_RD, 45);
+	byte = GetData(MSX_IORQ, MSX_RD, 2);
 #ifdef DEBUG      
 	printf("-IO%02x:%02xr\n", addr, byte);
 #endif
@@ -298,7 +299,7 @@ unsigned char GetData(int flag, int rflag, int delay)
  void msxwriteio(unsigned short addr, unsigned char byte)
    {
 	SetAddress(addr);
-	SetData(MSX_IORQ, MSX_IORQ, 55, byte);
+	SetData(MSX_IORQ, MSX_IORQ, 3, byte);
 #ifdef DEBUG      
 	printf("-IO%02x:%02xw\n", addr, byte);
 #endif
@@ -341,7 +342,7 @@ int setup_io()
 		int divi, divr, divf, freq;
 		bcm2835_gpio_fsel(20, BCM2835_GPIO_FSEL_ALT5); // GPIO_20
 		speed_id = 1;
-		freq = 3500000;
+		freq = 3580000;
 		divi = 19200000 / freq ;
 		divr = 19200000 % freq ;
 		divf = (int)((double)divr * 4096.0 / 19200000.0) ;
@@ -351,6 +352,7 @@ int setup_io()
 		GP_CLK0_CTL = 0x5A000000 | speed_id;    // GPCLK0 off
 		while (GP_CLK0_CTL & 0x80);    // Wait for BUSY low
 		GP_CLK0_DIV = 0x5A000000 | (divi << 12) | divf; // set DIVI
+		usleep(10);
 		GP_CLK0_CTL = 0x5A000010 | speed_id;    // GPCLK0 on
 		printf("clock enabled: 0x%08x\n", GP_CLK0_CTL );
 	}

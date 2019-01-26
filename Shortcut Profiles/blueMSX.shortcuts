@@ -80,3 +80,4 @@ videoCapPlay=004E1401
 videoCapRec=00581401
 videoCapStop=00431401
 videoCapSave=00561401
+videoColorModeToggle=00780801

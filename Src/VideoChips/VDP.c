@@ -783,8 +783,8 @@ static void onScrModeChange(VDP* vdp, UInt32 time)
     vdp->timeScrModeEn = 0;
     
     vdp->screenMode = updateScreenMode(vdp);
-	if (screenMode != vdp->screenMode)
-		printf("screenMode:%d\n", vdp->screenMode);
+//	if (screenMode != vdp->screenMode)
+//		printf("screenMode:%d\n", vdp->screenMode);
     
     vdp->chrTabBase = ((((int)vdp->vdpRegs[2] << 10) & ~((int)(vdp->vdpRegs[25] & 1) << 15)) | ~(-1 << 10)) & vdp->vramMask;
     vdp->chrGenBase = (((int)vdp->vdpRegs[4] << 11) | ~(-1 << 11)) & vdp->vramMask;

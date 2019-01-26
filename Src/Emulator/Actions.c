@@ -753,7 +753,8 @@ void actionEmuResetClean() {
 }
 
 void actionScreenCapture() {
-    archScreenCapture(SC_NORMAL, NULL, 0);
+	if (state.properties->settings.usePngScreenshots)
+		archScreenCapture(SC_NORMAL, NULL, 0);
 }
 
 void actionScreenCaptureUnfilteredSmall() {
@@ -1193,6 +1194,15 @@ void actionVideoSetColorMode(int value) {
     videoUpdateAll(state.video, state.properties);
     archUpdateEmuDisplayConfig();
 }
+
+void actionToggleVideoColorMode() {
+	state.properties->video.monitorColor++;
+	if (state.properties->video.monitorColor >= P_VIDEO_MONCOUNT)
+		state.properties->video.monitorColor = 0;
+	printf("actionToggleVideoColorMode:%d\n", state.properties->video.monitorColor);
+    videoUpdateAll(state.video, state.properties);
+    archUpdateEmuDisplayConfig();
+}	
 
 void actionVideoSetFilter(int value) {
     state.properties->video.monitorType = (int)ceil((P_VIDEO_PALCOUNT - 1) * value / 100.0);
