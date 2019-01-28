@@ -381,8 +381,8 @@ void piUpdateEmuDisplay()
 	if (frameBufferGetDoubleWidth(frameBuffer, 0) != width || lines != frameBuffer->lines)
 	{
 		width = frameBufferGetDoubleWidth(frameBuffer, 0);
-		lines = frameBuffer->lines;
-		msxScreenPitch = frameBuffer->maxWidth;//(256+16)*(width+1);
+		lines = frameBuffer->lines ;
+		msxScreenPitch = frameBuffer->maxWidth * (width+1);//(256+16)*(width+1);
 		height = frameBuffer->lines;
 		interlace = frameBuffer->interlace;
 		float sx = 1.0f;

@@ -55,6 +55,8 @@ volatile unsigned *gpio7;
 volatile unsigned *gpio13;
 volatile unsigned *gpio1;
 volatile unsigned *gclk_base;
+
+#define CLK_ENABLED
  
  
 // GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
@@ -223,15 +225,18 @@ void SetAddress(unsigned short addr)
 
 void SetDelay(int j)
 {
+#ifdef CLK_ENABLED
 	for(int i=0; i<j; i++)
 	{
-#if 0		
-	    while(GPIO & MSX_CLK);
 	    while(!(GPIO & MSX_CLK));
-#else
-		GPIO_SET = 0;
-#endif
+	    while(GPIO & MSX_CLK);
 	}
+#else
+	for(int i=0; i<j*3; i++)
+	{
+		GPIO_SET = 0;
+	}
+#endif
 }
 
 void SetData(int ioflag, int flag, int delay, unsigned char byte)
@@ -239,12 +244,15 @@ void SetData(int ioflag, int flag, int delay, unsigned char byte)
 	GPIO_SET = byte;
 	GPIO_CLR = flag | MSX_WR;
 	GPIO_SET = ioflag | MSX_WR;
-	GPIO_CLR = flag;
-//    SetDelay(1);
-	GPIO_CLR = MSX_WR;
+#ifdef CLK_ENABLED	
+	while(!(GPIO & MSX_CLK));
+#endif
+	GPIO_CLR = ioflag | flag | MSX_WR;
     SetDelay(delay);
 	while(!(GPIO & MSX_WAIT));
-	GPIO_SET = MSX_WR;
+#ifdef CLK_ENABLED	
+	while((GPIO & MSX_CLK));
+#endif	
    	GPIO_SET = MSX_CONTROLS;
 	GPIO_CLR = LE_C;
 
@@ -253,12 +261,17 @@ void SetData(int ioflag, int flag, int delay, unsigned char byte)
 unsigned char GetData(int flag, int rflag, int delay)
 {
 	unsigned char byte;
-	GPIO_SET = DAT_DIR | 0xff;
+	GPIO_SET = DAT_DIR | 0xff | MSX_CONTROLS;
+#ifdef CLK_ENABLED
+	while(!(GPIO & MSX_CLK));
+#endif
 	GPIO_CLR = flag;
-//    SetDelay(1);
 	GPIO_CLR = rflag;
 	SetDelay(delay);
 	while(!(GPIO & MSX_WAIT));
+#ifdef CLK_ENABLED	
+	while((GPIO & MSX_CLK));
+#endif	
 	byte = GPIO;
   	GPIO_SET = LE_D | MSX_CONTROLS;
 	GPIO_CLR = LE_C;
@@ -272,7 +285,7 @@ unsigned char GetData(int flag, int rflag, int delay)
 	cs1 = (addr & 0xc000) == 0x4000 ? MSX_CS1: 0;
 	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2: 0;
 	SetAddress(addr);
-	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, MSX_RD | cs1 | cs2, 1);
+	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | cs1 | cs2, MSX_RD, 1);
 #ifdef DEBUG    
 	printf("+%04x:%02xr\n", addr, byte);
 #endif

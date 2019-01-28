@@ -771,7 +771,7 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
         return;
     }
     sscanf(buffer, "%X", hotkey);
-	printf("shortcut:%s=%s - %08x\n", name, shortcutsToString(*hotkey), *hotkey = toSDLhotkey(*hotkey));
+//	printf("shortcut:%s=%s - %08x\n", name, shortcutsToString(*hotkey), *hotkey = toSDLhotkey(*hotkey));
 }
 
 void shortcutsSetDirectory(char* directory)
@@ -790,7 +790,7 @@ Shortcuts* shortcutsCreate()
 	
 
 	if (iniFile->iniBuffer) {
-		printf("shortcut file:%s, %d\n", filename, iniFile);
+//		printf("shortcut file:%s, %d\n", filename, iniFile);
 		LOAD_SHORTCUT(switchMsxAudio);
 		LOAD_SHORTCUT(spritesEnable);
 		LOAD_SHORTCUT(fdcTiming);
@@ -868,7 +868,7 @@ void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym)
 void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
 {
     ShortcutHotkey key = { type, getMods(mods), keySym };
-    printf("key=%08x,type=%02x,mod=%02x,keySym=%04x\n", key,type, mods, keySym);
+//    printf("key=%08x,type=%02x,mod=%02x,keySym=%04x\n", key,type, mods, keySym);
     if (s->state.maxSpeedIsSet) {
         actionMaxSpeedRelease();
         s->state.maxSpeedIsSet = 0;
