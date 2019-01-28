@@ -558,6 +558,12 @@ typedef struct {
     unsigned type : 7;
     unsigned mods : 9;
     unsigned key  : 16;
+} ShortcutHotkey0;
+
+typedef struct {
+    unsigned type : 4;
+    unsigned mods : 12;
+    unsigned key  : 16;
 } ShortcutHotkey;
 
 struct IniFile
@@ -757,11 +763,8 @@ static ShortcutHotkey int2hotkey(int* hotkey) {
 
 static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 {
-    char buffer[512];
-    char* token, *value;
-    int key;
-
-	ShortcutHotkey skey;
+	char buffer[2048];
+	ShortcutHotkey0 key;
     hotkey->type = HOTKEY_TYPE_NONE;
     hotkey->mods = 0;
     hotkey->key  = 0;
@@ -770,8 +773,13 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 //		printf("shortcut:%s - not assigned\n", name);
         return;
     }
-    sscanf(buffer, "%X", hotkey);
-//	printf("shortcut:%s=%s - %08x\n", name, shortcutsToString(*hotkey), *hotkey = toSDLhotkey(*hotkey));
+    sscanf(buffer, "%X", &key);
+	hotkey->type = key.type;
+	hotkey->mods = key.mods;
+	hotkey->key  = key.key;
+#ifdef DEBUG
+	printf("shortcut:%s=%s - %08x\n", name, shortcutsToString(*hotkey), *hotkey = toSDLhotkey(*hotkey));
+#endif
 }
 
 void shortcutsSetDirectory(char* directory)
@@ -790,7 +798,6 @@ Shortcuts* shortcutsCreate()
 	
 
 	if (iniFile->iniBuffer) {
-//		printf("shortcut file:%s, %d\n", filename, iniFile);
 		LOAD_SHORTCUT(switchMsxAudio);
 		LOAD_SHORTCUT(spritesEnable);
 		LOAD_SHORTCUT(fdcTiming);
@@ -867,8 +874,10 @@ void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym)
 
 void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
 {
-    ShortcutHotkey key = { type, getMods(mods), keySym };
-//    printf("key=%08x,type=%02x,mod=%02x,keySym=%04x\n", key,type, mods, keySym);
+    ShortcutHotkey key = { type, mods, keySym };
+#ifdef DEBUG	
+    printf("key=%08x,type=%02x,mod=%02x,keySym=%04x\n", key,type, mods, keySym);
+#endif
     if (s->state.maxSpeedIsSet) {
         actionMaxSpeedRelease();
         s->state.maxSpeedIsSet = 0;
