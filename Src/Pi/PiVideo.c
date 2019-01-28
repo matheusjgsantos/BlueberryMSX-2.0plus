@@ -227,6 +227,8 @@ int piInitVideo()
 	}
 
 	printf( "Width/height: %d/%d\n", screenWidth, screenHeight);
+	if (screenHeight < 600)
+		video->scanLinesEnable = 0;
 
 	VC_RECT_T dstRect;
 	dstRect.x = 0;
@@ -387,7 +389,7 @@ void piUpdateEmuDisplay()
 		interlace = frameBuffer->interlace;
 		float sx = 1.0f;
 		float sy = 1.0f * height / HEIGHT;
-		printf("screen = %x, width = %d, height = %d, double = %d, interlaced = %d\n", msxScreen, msxScreenPitch, lines, width, interlace);
+		//printf("screen = %x, width = %d, height = %d, double = %d, interlaced = %d\n", msxScreen, msxScreenPitch, lines, width, interlace);
 		fflush(stdin);
 		sx = sx * msxScreenPitch/WIDTH;
 		//printf("sx=%f,sy=%f\n", sx, sy);
