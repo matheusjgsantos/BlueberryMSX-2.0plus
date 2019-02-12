@@ -660,7 +660,7 @@ struct Shortcuts {
 };
 
 
-#define LOAD_SHORTCUT(hotkey) loadShortcut(iniFile, #hotkey, &shortcuts->hotkey)
+#define LOAD_SHORTCUT(hotkey) loadShortcut(iniFile, #hotkey, &shortcuts->hotkey); printf("%08x\n", shortcuts->hotkey);
 
 #define HOTKEY_EQ(hotkey1, hotkey2) (*(UInt32*)&hotkey1 == *(UInt32*)&hotkey2)
 
@@ -668,7 +668,6 @@ ShortcutHotkey toSDLhotkey(ShortcutHotkey hotkey)
 {
 	int sdlmod = 0;
 	int key = 0;
-#if 0	
 	switch (hotkey.type)
 	{
 		case HOTKEY_TYPE_KEYBOARD:
@@ -685,8 +684,7 @@ ShortcutHotkey toSDLhotkey(ShortcutHotkey hotkey)
 		case HOTKEY_TYPE_JOYSTICK:
 			break;
 	}
-	hotkey->mods = sdlmod;
-#endif	
+	hotkey.mods = sdlmod;
 	hotkey.key = sdlkeys[hotkey.key];
 	return hotkey;
 }
@@ -778,7 +776,8 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 	hotkey->mods = key.mods;
 	hotkey->key  = key.key;
 #ifdef DEBUG
-	printf("shortcut:%s=%s - %08x\n", name, shortcutsToString(*hotkey), *hotkey = toSDLhotkey(*hotkey));
+	printf("shortcut:%s=%s - %08x->%08x\n", name, shortcutsToString(*hotkey), key, *hotkey = toSDLhotkey(*hotkey));
+	
 #endif
 }
 
@@ -934,7 +933,7 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
     if (HOTKEY_EQ(key, s->resetClean))                   actionEmuResetClean();
     if (HOTKEY_EQ(key, s->volumeIncrease))               actionVolumeIncrease();
     if (HOTKEY_EQ(key, s->volumeDecrease))               actionVolumeDecrease();
-    if (HOTKEY_EQ(key, s->volumeMute))                   actionMuteToggleMaster();
+//  if (HOTKEY_EQ(key, s->volumeMute))                   actionMuteToggleMaster();
     if (HOTKEY_EQ(key, s->volumeStereo))                 actionVolumeToggleStereo();
     if (HOTKEY_EQ(key, s->windowSizeNormal))             actionWindowSizeNormal();
     if (HOTKEY_EQ(key, s->windowSizeFullscreen))         actionWindowSizeFullscreen();

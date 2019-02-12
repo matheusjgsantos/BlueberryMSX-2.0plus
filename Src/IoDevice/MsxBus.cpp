@@ -36,6 +36,7 @@ extern "C" {
 #include "RomLoader.h"
 extern void ledSetSlot1Busy();
 extern void ledSetSlot2Busy();
+extern void checkInt(void);
 };
 //#define FAKE_ROM
 #ifdef WIN32
@@ -104,6 +105,7 @@ void CMSXBUS::timelog()
 
 int CMSXBUS::readMemory(UInt16 address)
 {
+	checkInt();
 	int byte = msxread(slot, address);
 	int value = byte;
 	static int time = 0;
@@ -148,6 +150,7 @@ int CMSXBUS::readMemory(UInt16 address)
 
 int CMSXBUS::writeMemory(UInt16 address, UInt8 value)
 {
+	checkInt();
 	msxwrite(slot, address, value);
 //	msxwrite(slot, address, value);
 //	if (slot == 1)
@@ -157,6 +160,7 @@ int CMSXBUS::writeMemory(UInt16 address, UInt8 value)
 
 int CMSXBUS::readIo(UInt16 port)
 {
+	checkInt();
 	int value = msxreadio(port);
 // 	printf("readio(%02x): %02x\n", port, value);
     return value;
@@ -164,6 +168,7 @@ int CMSXBUS::readIo(UInt16 port)
 
 int CMSXBUS::writeIo(UInt16 port, UInt8 value)
 {
+	checkInt();
 	msxwriteio(port, value);
 // 	printf("writeio(%02x): %02x\n", port, value);
     return true;

@@ -318,7 +318,8 @@ int piInitVideo()
 
 	// We're doing our own video rendering - this is just so SDL-based keyboard
 	// can work
-//    SDL_VideoInit("DISPMANX", 0);
+    //SDL_VideoInit("DISPMANX", 0);
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 	sdlScreen = SDL_SetVideoMode(0, 0, 0, SDL_ASYNCBLIT);
     SDL_ShowCursor(SDL_DISABLE);
 	return 1;

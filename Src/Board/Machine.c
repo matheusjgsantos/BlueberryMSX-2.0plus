@@ -668,7 +668,6 @@ int machineIsValid(const char* machineName, int checkRoms)
                             FILE* file = fopen(machine->slotInfo[i].name, "r");
                             if (file == NULL)
                             {
-								printf("File not found:%s\n", machine->slotInfo[i].name);
                                 success = 0;
                                 continue;
                             }

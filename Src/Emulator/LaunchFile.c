@@ -330,21 +330,21 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
             int count360;
             int count720;
             int countSf7;
+			int countNul;
             char* fileListDsk = zipGetFileList(filename, ".dsk", &countDsk);
-			printf("fileListDsk:%s, cnt=%d\n", fileListDsk, countDsk);
             char* fileListDi1 = zipGetFileList(filename, ".di1", &countDi1);
             char* fileListDi2 = zipGetFileList(filename, ".di2", &countDi2);
             char* fileList360 = zipGetFileList(filename, ".360", &count360);
             char* fileList720 = zipGetFileList(filename, ".720", &count720);
             char* fileListSf7 = zipGetFileList(filename, ".Sf7", &countSf7);
-            int count = countDsk + countDi1 + countDi2 + count360 + count720 + countSf7;
-			printf("dsk=%d, di1=%d, di2=%d, 360=%d, 720=%d, sf7=%d\n", countDsk, countDi1, countDi2, count360, count720, countSf7);
+            int count = countDsk + countDi1 + countDi2 + count360 + count720 + countSf7 + countNul;
             int sizeDsk = 0;
             int sizeDi1 = 0;
             int sizeDi2 = 0;
             int size360 = 0;
             int size720 = 0;
             int sizeSf7 = 0;
+			int sizeNul = 0;
 
             for (i = 0; i < countDsk; i++) {
                 sizeDsk += strlen(fileListDsk + sizeDsk) + 1;

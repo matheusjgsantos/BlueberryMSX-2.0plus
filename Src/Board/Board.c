@@ -1234,6 +1234,9 @@ void boardChangeDiskette(int driveId, char* fileName, const char* fileInZipFile)
     if (fileInZipFile && strlen(fileInZipFile) == 0) {
         fileInZipFile = NULL;
     }
+	
+	if (!fileName && !fileInZipFile)
+		return;		
 
     if (boardDeviceInfo != NULL) {
         boardDeviceInfo->disks[driveId].inserted = fileName != NULL;

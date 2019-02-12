@@ -215,7 +215,7 @@ void setup_gclk();
 
 void SetAddress(unsigned short addr)
 {
-	GPIO_CLR = LE_C | 0xffff | DAT_DIR;
+	GPIO_CLR = 0xffff | DAT_DIR;
 	GPIO_SET = LE_A | LE_D | addr;
 	GPIO_SET = LE_A;
     GPIO_CLR = LE_A;
@@ -242,18 +242,19 @@ void SetDelay(int j)
 void SetData(int ioflag, int flag, int delay, unsigned char byte)
 {
 	GPIO_SET = byte;
-	GPIO_CLR = flag | MSX_WR;
-	GPIO_SET = ioflag | MSX_WR;
 #ifdef CLK_ENABLED	
 	while(!(GPIO & MSX_CLK));
 #endif
+	GPIO_CLR = flag | MSX_WR;
+//	GPIO_SET = MSX_WR;
 	GPIO_CLR = ioflag | flag | MSX_WR;
     SetDelay(delay);
 	while(!(GPIO & MSX_WAIT));
 #ifdef CLK_ENABLED	
 	while((GPIO & MSX_CLK));
-#endif	
-   	GPIO_SET = MSX_CONTROLS;
+#endif
+	
+   	GPIO_SET = LE_D | MSX_CONTROLS;
 	GPIO_CLR = LE_C;
 
 }   
@@ -261,11 +262,11 @@ void SetData(int ioflag, int flag, int delay, unsigned char byte)
 unsigned char GetData(int flag, int rflag, int delay)
 {
 	unsigned char byte;
-	GPIO_SET = DAT_DIR | 0xff | MSX_CONTROLS;
+	GPIO_SET = DAT_DIR | MSX_CONTROLS | 0xff;
 #ifdef CLK_ENABLED
 	while(!(GPIO & MSX_CLK));
 #endif
-	GPIO_CLR = flag;
+	GPIO_CLR = flag | 0xff;
 	GPIO_CLR = rflag;
 	SetDelay(delay);
 	while(!(GPIO & MSX_WAIT));
@@ -352,7 +353,7 @@ int setup_io()
 		bcm2835_gpio_fsel(i, 1);    
 		bcm2835_gpio_set_pud(i, BCM2835_GPIO_PUD_UP);
 	}
-
+	
 	gpio10 = gpio+10;
 	gpio7 = gpio+7;
 	gpio13 = gpio+13;
@@ -421,6 +422,7 @@ void msxinit()
 	const struct sched_param priority = {1};
 	sched_setscheduler(0, SCHED_FIFO, &priority);  
 //	stick_this_thread_to_core(0);
+	//setuid(geteuid());
 	if (setup_io() == -1)
     {
         printf("GPIO init error\n");
@@ -464,6 +466,13 @@ void frontled(unsigned char byte)
     }
 }
 
+void checkInt()
+{
+	if (!(GPIO & MSX_INT))
+	{
+		boardSetInt(0x10000);
+	}
+}
 
 #ifdef _MAIN
 
