@@ -628,6 +628,8 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
     if (drives[driveId] == NULL) {
         return 0;
     }
+	// reduce buffer cache to zero for realistic access
+	setbuf(drives[driveId], 0);
 
 	if (fileName[0] != '/')
 	{
