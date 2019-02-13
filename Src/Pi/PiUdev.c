@@ -28,6 +28,17 @@
 #include <libudev.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <linux/fd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <scsi/scsi.h>
+#include <scsi/sg.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "PiInput.h"
 
@@ -40,6 +51,7 @@ static void udevMon(void *arg);
 
 static int connectedMice = 0;
 static int connectedJoysticks = 0;
+static int connectedFloppyDisks = 0;
 
 // Based on
 // http://www.signal11.us/oss/udev/udev_example.c
@@ -52,6 +64,7 @@ int piInitUdev()
 
 	mon = udev_monitor_new_from_netlink(udev, "udev");
 	udev_monitor_filter_add_match_subsystem_devtype(mon, "input", NULL);
+	udev_monitor_filter_add_match_subsystem_devtype(mon, "block", NULL);
 	udev_monitor_enable_receiving(mon);
 
 	if (pthread_create(&monthread, NULL, udevMon, NULL) != 0) {
@@ -78,11 +91,13 @@ void piScanDevices()
 {
 	connectedMice = 0;
 	connectedJoysticks = 0;
+	connectedFloppyDisks = 0;
 	struct udev_enumerate *uenum;
 	struct udev_list_entry *devices, *devEntry;
 	
 	uenum = udev_enumerate_new(udev);
 	udev_enumerate_add_match_subsystem(uenum, "input");
+	udev_enumerate_add_match_subsystem(uenum, "block");
 	udev_enumerate_scan_devices(uenum);
 	devices = udev_enumerate_get_list_entry(uenum);
 	udev_list_entry_foreach(devEntry, devices) {
@@ -94,8 +109,9 @@ void piScanDevices()
 			connectedMice++;
 		} else if (strncmp(sysname, "js", 2) == 0) {
 			connectedJoysticks++;
+		} else if (strncmp(sysname, "sd", 2) == 0) {
+			connectedFloppyDisks++;
 		}
-		
 		udev_device_unref(dev);
 	};
 	connectedMice = 0;
@@ -103,6 +119,109 @@ void piScanDevices()
 
 	piInputResetMSXDevices(connectedMice, connectedJoysticks);
 }
+
+#define TIME_OUT (100 * 1000)	/* milliseconds */
+
+#define UFI_GOOD 0
+#define UFI_ERROR -1
+#define UFI_UNFORMATTED_MEDIA 1
+#define UFI_FORMATTED_MEDIA 2
+#define UFI_NO_MEDIA 3
+
+#define UFI_PROTECTED 1
+#define UFI_NOT_PROTECTED 0
+
+static const unsigned char TEST_UNIT_READY_CMD[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+static const unsigned char READ_FORMAT_CAPACITIES_CMD[] = {
+    0x23, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x40, 0x00, 0x00, 0x00
+};
+
+static const unsigned char INQUIRY_CMD[] = {
+    0x12, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x40, 0x00, 0x00, 0x00
+};
+
+static const unsigned char MODE_SENSE_CMD[] = {
+    0x5A, 0x00, 0x05, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x40, 0x00, 0x00, 0x00
+};
+
+static const unsigned char FORMAT_UNIT_CMD[] = {
+    0x04, 0x17, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x0C, 0x00, 0x00, 0x00
+};
+
+static const unsigned char FORMAT_UNIT_DATA[] = {
+    0x00, 0xB0, 0x00, 0x08, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+}; 
+
+static int ufi_invoke(int fd, const char *cmd, size_t cmd_size, char *data, size_t data_size, int direction)
+{
+    sg_io_hdr_t sg_io_hdr;
+    unsigned char sense_buffer[32];
+
+    memset(&sg_io_hdr, 0, sizeof(sg_io_hdr));
+    sg_io_hdr.interface_id = 'S';
+    sg_io_hdr.cmdp = (char *)cmd;
+    sg_io_hdr.cmd_len = cmd_size;
+    sg_io_hdr.dxfer_direction = direction;
+    sg_io_hdr.dxferp = data;
+    sg_io_hdr.dxfer_len = data_size;
+    sg_io_hdr.sbp = sense_buffer;
+    sg_io_hdr.mx_sb_len = sizeof(sense_buffer);
+    sg_io_hdr.timeout = TIME_OUT;
+
+    if (ioctl(fd, SG_IO, &sg_io_hdr) < 0) {
+        return UFI_ERROR;
+    }
+    if (cmd[0] == TEST_UNIT_READY_CMD[0]) {
+	if (sg_io_hdr.masked_status == CHECK_CONDITION &&
+	    (sense_buffer[2] & 0xf) == 0x6 && sense_buffer[12] == 0x28 && sense_buffer[13] == 0x00) {
+	    /* media change */
+	    if (ioctl(fd, SG_IO, &sg_io_hdr) < 0) {
+		return UFI_ERROR;
+	    }
+	}
+	if (sg_io_hdr.masked_status == CHECK_CONDITION &&
+	    (sense_buffer[2] & 0xf) == 0x3 && sense_buffer[12] == 0x30 && sense_buffer[13] == 0x01) {
+	    /* unformatted media */
+	    return UFI_UNFORMATTED_MEDIA;
+	}
+	if (sg_io_hdr.masked_status == CHECK_CONDITION &&
+	    (sense_buffer[2] & 0xf) == 0x2 && sense_buffer[12] == 0x3a && sense_buffer[13] == 0x00) {
+	    /* no media */
+	    return UFI_NO_MEDIA;
+	}
+    }
+    if (sg_io_hdr.masked_status != GOOD) {
+#if 0		
+	if (verbose) {
+	    int i;
+	    fprintf(stderr, "SCSI error(command=%02x, status=%02x)\n", *cmd, sg_io_hdr.masked_status);
+	    for (i = 0; i < sizeof(sense_buffer); i++) {
+		printf("%02x ", sense_buffer[i]);
+		if (i % 16 == 15) printf("\n");
+	    }
+	}
+#endif	
+	errno = EPROTO;
+	return UFI_ERROR;
+    }
+    return UFI_GOOD;
+}
+
+#define ufi_invoke_to(fd, cmd, data) \
+  ufi_invoke(fd, cmd, sizeof(cmd), data, sizeof(data), SG_DXFER_TO_DEV)
+#define ufi_invoke_from(fd, cmd, data) \
+  ufi_invoke(fd, cmd, sizeof(cmd), data, sizeof(data), SG_DXFER_FROM_DEV)
+#define ufi_invoke_no(fd, cmd) \
+  ufi_invoke(fd, cmd, sizeof(cmd), NULL, 0, SG_DXFER_TO_DEV) 
 
 static void udevMon(void *arg)
 {
@@ -112,7 +231,7 @@ static void udevMon(void *arg)
 	struct udev_device *dev;
 	fd_set fds;
 	struct timeval tv;
-	int ret;
+	int ret, fd, res, prev_res;
 	
 	while (!stopMonitor) {
 		FD_ZERO(&fds);
@@ -144,15 +263,27 @@ static void udevMon(void *arg)
 						piInputResetJoysticks();
 						piInputResetMSXDevices(connectedMice, connectedJoysticks);
 					}
-				}
-
 				udev_device_unref(dev);
+				}
 			}
 		}
-		
-		usleep(250*1000);
+		for(int i = 0; i < connectedFloppyDisks; i++)
+		{
+			char devname[100];
+			sprintf(devname, "/dev/sd%c", 'a' + i);
+			fd = open(devname, 3 | O_NDELAY);
+			res = ufi_invoke_no(fd, TEST_UNIT_READY_CMD);
+			if (res == 0 && prev_res != 0) {
+				//	printf("disk_inserted\n");
+				diskChange(i ,devname, 0);
+			} else if (res == 3 && prev_res != 3) {
+				diskChange(1, 0, 0);
+			}
+			prev_res = res;
+			close(fd);
+		}
+		usleep(1000*1000);
 	}
-	
 	fprintf(stderr, "udev monitor exiting\n");
 }
 

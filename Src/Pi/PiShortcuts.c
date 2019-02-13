@@ -660,7 +660,7 @@ struct Shortcuts {
 };
 
 
-#define LOAD_SHORTCUT(hotkey) loadShortcut(iniFile, #hotkey, &shortcuts->hotkey); printf("%08x\n", shortcuts->hotkey);
+#define LOAD_SHORTCUT(hotkey) loadShortcut(iniFile, #hotkey, &shortcuts->hotkey)
 
 #define HOTKEY_EQ(hotkey1, hotkey2) (*(UInt32*)&hotkey1 == *(UInt32*)&hotkey2)
 
@@ -777,7 +777,6 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 	hotkey->key  = key.key;
 #ifdef DEBUG
 	printf("shortcut:%s=%s - %08x->%08x\n", name, shortcutsToString(*hotkey), key, *hotkey = toSDLhotkey(*hotkey));
-	
 #endif
 }
 
@@ -812,8 +811,8 @@ Shortcuts* shortcutsCreate()
 		LOAD_SHORTCUT(cartRemove[1]);
 		LOAD_SHORTCUT(cartAutoReset);
 		
-		LOAD_SHORTCUT(diskRemove[0]);
-		LOAD_SHORTCUT(diskRemove[1]);
+//		LOAD_SHORTCUT(diskRemove[0]);
+//		LOAD_SHORTCUT(diskRemove[1]);
 		LOAD_SHORTCUT(diskChange[0]);
 		LOAD_SHORTCUT(diskAutoReset);
 
@@ -913,7 +912,7 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
 
     if (HOTKEY_EQ(key, s->diskChange[0]))              	 actionDiskQuickChange();
 //  if (HOTKEY_EQ(key, s->diskRemove[0]))                actionDiskRemoveA();
-    if (HOTKEY_EQ(key, s->diskRemove[1]))                actionDiskRemoveB();
+//  if (HOTKEY_EQ(key, s->diskRemove[1]))                actionDiskRemoveB();
     if (HOTKEY_EQ(key, s->diskAutoReset))                actionToggleDiskAutoReset();
 
     if (HOTKEY_EQ(key, s->casRewind))                    actionCasRewind();
@@ -923,7 +922,7 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
     if (HOTKEY_EQ(key, s->casSave))                      actionCasSave();
 
     if (HOTKEY_EQ(key, s->emulationRunPause))            actionEmuTogglePause();
-    if (HOTKEY_EQ(key, s->emulationStop))                actionEmuStop();
+//  if (HOTKEY_EQ(key, s->emulationStop))                actionEmuStop();
     if (HOTKEY_EQ(key, s->emuSpeedNormal))               actionEmuSpeedNormal();
     if (HOTKEY_EQ(key, s->emuSpeedInc))                  actionEmuSpeedIncrease();
     if (HOTKEY_EQ(key, s->emuSpeedDec))                  actionEmuSpeedDecrease();

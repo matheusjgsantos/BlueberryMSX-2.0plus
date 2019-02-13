@@ -402,7 +402,7 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
         }
     }
 	
-	if (!cfileexists(filename))
+	if (!cfileexists(filename))// && strncmp("/dev/sd", filename, 6))
 	{
 		printf("file not exists: %s\n", filename);
 		return 1;

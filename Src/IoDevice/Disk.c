@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <sys/stat.h>
 
 // PacketFileSystem.h Need to be included after all other includes
@@ -42,7 +43,7 @@
 #define DISK_ERRORS_HEADER_SIZE 0x14
 #define DISK_ERRORS_SIZE        ((MAXSECTOR+7)/8)
 
-static int   drivesEnabled[MAXDRIVES] = { 1, 1 };
+static int   drivesEnabled[MAXDRIVES] = { 1,  };
 static int   drivesIsCdrom[MAXDRIVES];
 static FILE* drives[MAXDRIVES];
 static int   RdOnly[MAXDRIVES];
@@ -57,6 +58,7 @@ static int   changed[MAXDRIVES];
 static int   diskType[MAXDRIVES];
 static int   maxSector[MAXDRIVES];
 static char* drivesErrors[MAXDRIVES];
+static char* fileNames[MAXDRIVES] = { "/dev/sda", "/dev/sdb" };
 static const UInt8 svi328Cpm80track[] = "CP/M-80";
 static void diskHdUpdateInfo(int driveId);
 static void diskReadHdIdentifySector(int driveId, UInt8* buffer);
@@ -65,14 +67,15 @@ enum { MSX_DISK, SVI328_DISK, IDEHD_DISK } diskTypes;
 
 UInt8 diskEnabled(int driveId)
 {
-    return driveId >= 0 && driveId < MAXDRIVES && drivesEnabled[driveId];
+    int a = driveId >= 0 && driveId < MAXDRIVES && drivesEnabled[driveId];
+//	printf("diskEnabled(%d)=>%d\n", driveId, a);
+	return a;
 }
 
 int diskIsCdrom(int driveId)
 {
     return driveId >= 0 && driveId < MAXDRIVES && drivesIsCdrom[driveId];
 }
-
 
 UInt8 diskReadOnly(int driveId)
 {
@@ -84,14 +87,27 @@ UInt8 diskReadOnly(int driveId)
 
 void  diskEnable(int driveId, int enable)
 {
-    if (driveId >= 0 && driveId < MAXDRIVES)
+    if (driveId >= 0 && driveId < MAXDRIVES && drives[driveId] != 0)
         drivesEnabled[driveId] = enable;
+//	printf("diskEnable(%d, %d), drives[driveId]=%d,=>%d \n", driveId, enable, drives[driveId], drivesEnabled[driveId]);
 }
 
 UInt8 diskPresent(int driveId)
 {
-    return driveId >= 0 && driveId < MAXDRIVES && 
+#if 0
+	static int retry = 0;
+	if (driveId >= 0 && drives[driveId] == NULL) {
+		if (access(fileNames[driveId], F_OK) != -1) {
+			
+			diskChange(driveId, fileNames[driveId], 0);
+			return 0;
+		}
+	}
+#endif
+	int a = driveId >= 0 && driveId < MAXDRIVES && 
         (drives[driveId] != NULL || ramImageBuffer[driveId] != NULL);
+//	printf("diskPresent(%d,%s,%d)=>%d\n", driveId, fileNames[driveId], drives[driveId], a);
+	return a;
 }
 
 int diskGetSectorsPerTrack(int driveId)
@@ -616,6 +632,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
         diskUpdateInfo(driveId);
         return ramImageBuffer[driveId] != NULL;
     }
+	
 
     drives[driveId] = fopen(fileName, "r+b");
     RdOnly[driveId] = 0;
@@ -626,10 +643,15 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
     }
 
     if (drives[driveId] == NULL) {
-        return 0;
+		if (fileName != NULL && strncmp("/dev/sd", fileName, 6) == 0) {
+			fileNames[driveId] = (char *) calloc(2048, 1);
+			memcpy(fileNames[driveId], fileName, strlen(fileName)+1);
+		}
+		return 0;
     }
 	// reduce buffer cache to zero for realistic access
-	setbuf(drives[driveId], 0);
+	if (drives[driveId])
+		setbuf(drives[driveId], 0);
 
 	if (fileName[0] != '/')
 	{

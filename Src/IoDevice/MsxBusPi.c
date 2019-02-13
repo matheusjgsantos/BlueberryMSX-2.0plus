@@ -219,7 +219,6 @@ void SetAddress(unsigned short addr)
 	GPIO_SET = LE_A | LE_D | addr;
 	GPIO_SET = LE_A;
     GPIO_CLR = LE_A;
-	GPIO_SET = LE_C | MSX_CONTROLS;
 	GPIO_CLR = LE_D | 0xff;
 }	
 
@@ -228,8 +227,7 @@ void SetDelay(int j)
 #ifdef CLK_ENABLED
 	for(int i=0; i<j; i++)
 	{
-	    while(!(GPIO & MSX_CLK));
-	    while(GPIO & MSX_CLK);
+	    while((GPIO & MSX_CLK));
 	}
 #else
 	for(int i=0; i<j*3; i++)
@@ -241,19 +239,21 @@ void SetDelay(int j)
 
 void SetData(int ioflag, int flag, int delay, unsigned char byte)
 {
-	GPIO_SET = byte;
-#ifdef CLK_ENABLED	
-	while(!(GPIO & MSX_CLK));
-#endif
-	GPIO_CLR = flag | MSX_WR;
-//	GPIO_SET = MSX_WR;
-	GPIO_CLR = ioflag | flag | MSX_WR;
-    SetDelay(delay);
-	while(!(GPIO & MSX_WAIT));
+	GPIO_CLR = DAT_DIR | 0xff;
+	GPIO_SET = MSX_CONTROLS | byte;
+	GPIO_SET = LE_C;
+	GPIO_SET = LE_C;
 #ifdef CLK_ENABLED	
 	while((GPIO & MSX_CLK));
 #endif
-	
+	GPIO_CLR = flag | MSX_WR;
+//	GPIO_SET = MSX_WR;
+	GPIO_CLR = ioflag | flag | MSX_WR ;
+    SetDelay(delay);
+	while(!(GPIO & MSX_WAIT));
+#ifdef CLK_ENABLED	
+	while(!(GPIO & MSX_CLK));
+#endif	
    	GPIO_SET = LE_D | MSX_CONTROLS;
 	GPIO_CLR = LE_C;
 
@@ -263,15 +263,16 @@ unsigned char GetData(int flag, int rflag, int delay)
 {
 	unsigned char byte;
 	GPIO_SET = DAT_DIR | MSX_CONTROLS | 0xff;
+	GPIO_SET = LE_C;
 #ifdef CLK_ENABLED
 	while(!(GPIO & MSX_CLK));
 #endif
-	GPIO_CLR = flag | 0xff;
-	GPIO_CLR = rflag;
+	GPIO_CLR = rflag | flag;
+//	GPIO_CLR = rflag;
 	SetDelay(delay);
 	while(!(GPIO & MSX_WAIT));
 #ifdef CLK_ENABLED	
-	while((GPIO & MSX_CLK));
+	while(!(GPIO & MSX_CLK));
 #endif	
 	byte = GPIO;
   	GPIO_SET = LE_D | MSX_CONTROLS;
@@ -353,7 +354,7 @@ int setup_io()
 		bcm2835_gpio_fsel(i, 1);    
 		bcm2835_gpio_set_pud(i, BCM2835_GPIO_PUD_UP);
 	}
-	
+
 	gpio10 = gpio+10;
 	gpio7 = gpio+7;
 	gpio13 = gpio+13;
