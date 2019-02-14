@@ -56,7 +56,7 @@ volatile unsigned *gpio13;
 volatile unsigned *gpio1;
 volatile unsigned *gclk_base;
 
-#define CLK_ENABLED
+//#define CLK_ENABLED
  
  
 // GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
@@ -230,7 +230,7 @@ void SetDelay(int j)
 	    while((GPIO & MSX_CLK));
 	}
 #else
-	for(int i=0; i<j*3; i++)
+	for(int i=0; i<j*33; i++)
 	{
 		GPIO_SET = 0;
 	}
@@ -246,10 +246,11 @@ void SetData(int ioflag, int flag, int delay, unsigned char byte)
 #ifdef CLK_ENABLED	
 	while((GPIO & MSX_CLK));
 #endif
-	GPIO_CLR = flag | MSX_WR;
+//	GPIO_CLR = flag | MSX_WR;
 //	GPIO_SET = MSX_WR;
 	GPIO_CLR = ioflag | flag | MSX_WR ;
     SetDelay(delay);
+	while(!(GPIO & MSX_WAIT));
 	while(!(GPIO & MSX_WAIT));
 #ifdef CLK_ENABLED	
 	while(!(GPIO & MSX_CLK));
@@ -271,9 +272,11 @@ unsigned char GetData(int flag, int rflag, int delay)
 //	GPIO_CLR = rflag;
 	SetDelay(delay);
 	while(!(GPIO & MSX_WAIT));
+	while(!(GPIO & MSX_WAIT));
 #ifdef CLK_ENABLED	
 	while(!(GPIO & MSX_CLK));
 #endif	
+	byte = GPIO;
 	byte = GPIO;
   	GPIO_SET = LE_D | MSX_CONTROLS;
 	GPIO_CLR = LE_C;
@@ -372,7 +375,7 @@ int setup_io()
 		divf = (int)((double)divr * 4096.0 / 19200000.0) ;
 		if (divi > 4095)
 			divi = 4095 ;		
-		divisor = 1 < 12;// | (int)(6648/1024);
+//		divisor = 1 < 12;// | (int)(6648/1024);
 		GP_CLK0_CTL = 0x5A000000 | speed_id;    // GPCLK0 off
 		while (GP_CLK0_CTL & 0x80);    // Wait for BUSY low
 		GP_CLK0_DIV = 0x5A000000 | (divi << 12) | divf; // set DIVI
@@ -421,9 +424,8 @@ void clear_io()
 void msxinit()
 {
 	const struct sched_param priority = {1};
-	sched_setscheduler(0, SCHED_FIFO, &priority);  
+//	sched_setscheduler(0, SCHED_FIFO, &priority);  
 //	stick_this_thread_to_core(0);
-	//setuid(geteuid());
 	if (setup_io() == -1)
     {
         printf("GPIO init error\n");
