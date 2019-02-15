@@ -55,8 +55,6 @@ volatile unsigned *gpio7;
 volatile unsigned *gpio13;
 volatile unsigned *gpio1;
 volatile unsigned *gclk_base;
-
-//#define CLK_ENABLED
  
  
 // GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
@@ -215,47 +213,34 @@ void setup_gclk();
 
 void SetAddress(unsigned short addr)
 {
-	GPIO_CLR = 0xffff | DAT_DIR;
+	GPIO_CLR = LE_C | 0xffff | DAT_DIR;
 	GPIO_SET = LE_A | LE_D | addr;
 	GPIO_SET = LE_A;
     GPIO_CLR = LE_A;
+	GPIO_SET = LE_C | MSX_CONTROLS;
 	GPIO_CLR = LE_D | 0xff;
 }	
 
 void SetDelay(int j)
 {
-#ifdef CLK_ENABLED
 	for(int i=0; i<j; i++)
-	{
-	    while((GPIO & MSX_CLK));
-	}
-#else
-	for(int i=0; i<j*33; i++)
-	{
-		GPIO_SET = 0;
-	}
-#endif
+	    GPIO_SET = 0;
 }
 
 void SetData(int ioflag, int flag, int delay, unsigned char byte)
 {
-	GPIO_CLR = DAT_DIR | 0xff;
-	GPIO_SET = MSX_CONTROLS | byte;
-	GPIO_SET = LE_C;
-	GPIO_SET = LE_C;
-#ifdef CLK_ENABLED	
-	while((GPIO & MSX_CLK));
-#endif
-//	GPIO_CLR = flag | MSX_WR;
-//	GPIO_SET = MSX_WR;
-	GPIO_CLR = ioflag | flag | MSX_WR ;
+	GPIO_SET = byte;
+	GPIO_CLR = flag | MSX_WR;
+	GPIO_SET = ioflag | MSX_WR;
+	GPIO_SET = ioflag | MSX_WR;
+	GPIO_CLR = flag;
+    SetDelay(5);
+	GPIO_CLR = MSX_WR;
+	while(!(GPIO & MSX_WAIT));
     SetDelay(delay);
-	while(!(GPIO & MSX_WAIT));
-	while(!(GPIO & MSX_WAIT));
-#ifdef CLK_ENABLED	
-	while(!(GPIO & MSX_CLK));
-#endif	
-   	GPIO_SET = LE_D | MSX_CONTROLS;
+	GPIO_SET = MSX_WR;
+    SetDelay(2);
+   	GPIO_SET = MSX_CONTROLS;
 	GPIO_CLR = LE_C;
 
 }   
@@ -263,20 +248,12 @@ void SetData(int ioflag, int flag, int delay, unsigned char byte)
 unsigned char GetData(int flag, int rflag, int delay)
 {
 	unsigned char byte;
-	GPIO_SET = DAT_DIR | MSX_CONTROLS | 0xff;
-	GPIO_SET = LE_C;
-#ifdef CLK_ENABLED
-	while(!(GPIO & MSX_CLK));
-#endif
-	GPIO_CLR = rflag | flag;
-//	GPIO_CLR = rflag;
+	GPIO_SET = DAT_DIR | 0xff;
+	GPIO_CLR = flag;
+    SetDelay(1);
+	GPIO_CLR = rflag;
+	while(!(GPIO & MSX_WAIT));
 	SetDelay(delay);
-	while(!(GPIO & MSX_WAIT));
-	while(!(GPIO & MSX_WAIT));
-#ifdef CLK_ENABLED	
-	while(!(GPIO & MSX_CLK));
-#endif	
-	byte = GPIO;
 	byte = GPIO;
   	GPIO_SET = LE_D | MSX_CONTROLS;
 	GPIO_CLR = LE_C;
@@ -290,7 +267,7 @@ unsigned char GetData(int flag, int rflag, int delay)
 	cs1 = (addr & 0xc000) == 0x4000 ? MSX_CS1: 0;
 	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2: 0;
 	SetAddress(addr);
-	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | cs1 | cs2, MSX_RD, 1);
+	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, MSX_RD | cs1 | cs2, 30);
 #ifdef DEBUG    
 	printf("+%04x:%02xr\n", addr, byte);
 #endif
@@ -300,7 +277,7 @@ unsigned char GetData(int flag, int rflag, int delay)
  void msxwrite(int slot, unsigned short addr, unsigned char byte)
  {
 	SetAddress(addr);
-	SetData(MSX_MREQ, (slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, 2, byte);
+	SetData(MSX_MREQ, (slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, 45, byte);
 #ifdef DEBUG  
 	printf("+%04x:%02xw\n", addr, byte);
 #endif
@@ -311,7 +288,7 @@ unsigned char GetData(int flag, int rflag, int delay)
  {
 	unsigned char byte;
 	SetAddress(addr);
-	byte = GetData(MSX_IORQ, MSX_RD, 2);
+	byte = GetData(MSX_IORQ, MSX_RD, 45);
 #ifdef DEBUG      
 	printf("-IO%02x:%02xr\n", addr, byte);
 #endif
@@ -321,12 +298,20 @@ unsigned char GetData(int flag, int rflag, int delay)
  void msxwriteio(unsigned short addr, unsigned char byte)
    {
 	SetAddress(addr);
-	SetData(MSX_IORQ, MSX_IORQ, 3, byte);
+	SetData(MSX_IORQ, MSX_IORQ, 55, byte);
 #ifdef DEBUG      
 	printf("-IO%02x:%02xw\n", addr, byte);
 #endif
 	return;
  }
+ 
+void checkInt()
+{
+	if (!(GPIO & MSX_INT))
+	{
+		boardSetInt(0x10000);
+	}
+} 
  
 #if 0 
 int rtapi_open_as_root(const char *filename, int mode) {
@@ -342,13 +327,8 @@ int rtapi_open_as_root(const char *filename, int mode) {
 //
 // Set up a memory regions to access GPIO
 //
-
-static int io_initialized = 0;
-
 int setup_io()
 {
-	if (io_initialized)
-		return 0;
 	int i, speed_id, divisor ;	
 	if (!bcm2835_init()) return -1;
 	gpio = bcm2835_regbase(BCM2835_REGBASE_GPIO);
@@ -369,17 +349,16 @@ int setup_io()
 		int divi, divr, divf, freq;
 		bcm2835_gpio_fsel(20, BCM2835_GPIO_FSEL_ALT5); // GPIO_20
 		speed_id = 1;
-		freq = 3580000;
+		freq = 3500000;
 		divi = 19200000 / freq ;
 		divr = 19200000 % freq ;
 		divf = (int)((double)divr * 4096.0 / 19200000.0) ;
 		if (divi > 4095)
 			divi = 4095 ;		
-//		divisor = 1 < 12;// | (int)(6648/1024);
+		divisor = 1 < 12;// | (int)(6648/1024);
 		GP_CLK0_CTL = 0x5A000000 | speed_id;    // GPCLK0 off
 		while (GP_CLK0_CTL & 0x80);    // Wait for BUSY low
 		GP_CLK0_DIV = 0x5A000000 | (divi << 12) | divf; // set DIVI
-		usleep(10);
 		GP_CLK0_CTL = 0x5A000010 | speed_id;    // GPCLK0 on
 		printf("clock enabled: 0x%08x\n", GP_CLK0_CTL );
 	}
@@ -399,7 +378,6 @@ int setup_io()
 	for(int i=0;i<2000000;i++);
 	GPIO_SET = MSX_RESET;
 	for(int i=0;i<1000000;i++);
-	io_initialized = 1;
 	return 0;
 } // setup_io
 
@@ -424,7 +402,7 @@ void clear_io()
 void msxinit()
 {
 	const struct sched_param priority = {1};
-//	sched_setscheduler(0, SCHED_FIFO, &priority);  
+	sched_setscheduler(0, SCHED_FIFO, &priority);  
 //	stick_this_thread_to_core(0);
 	if (setup_io() == -1)
     {
@@ -469,13 +447,6 @@ void frontled(unsigned char byte)
     }
 }
 
-void checkInt()
-{
-	if (!(GPIO & MSX_INT))
-	{
-		boardSetInt(0x10000);
-	}
-}
 
 #ifdef _MAIN
 
