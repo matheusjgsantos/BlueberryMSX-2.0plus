@@ -378,20 +378,23 @@ int videoRender(Video* pVideo, FrameBuffer* frame, int bitDepth, int zoom,
     if (frame == NULL) {
         return zoom;
     }
-
+	static int interface = 0;
     if (frame->interlace != INTERLACE_NONE && pVideo->deInterlace) {
 		FrameBuffer *frame0 = frame;
-        frame = frameBufferDeinterlace(frame);
-		frame0->lines = 480;
+        frame0 = frameBufferDeinterlace(frame);
 		frame0->maxWidth = 544;
+        zoom = videoRender480(pVideo, frame0, bitDepth, zoom, pDst, dstOffset, dstPitch, canChangeZoom);
+		frame->lines = 480;
+		frame->interlace = 0;
     }
-
-    if (frame->lines <= 240) {
-        zoom = videoRender240(pVideo, frame, bitDepth, zoom, pDst, dstOffset, dstPitch, canChangeZoom);
-    }
-    else {
-        zoom = videoRender480(pVideo, frame, bitDepth, zoom, pDst, dstOffset, dstPitch, canChangeZoom);
-    }
-
+	else 
+	{
+		if (frame->lines <= 240) {
+			zoom = videoRender240(pVideo, frame, bitDepth, zoom, pDst, dstOffset, dstPitch, canChangeZoom);
+		}
+//		else {
+//			zoom = videoRender480(pVideo, frame, bitDepth, zoom, pDst, dstOffset, dstPitch, canChangeZoom);
+//		}
+	}
     return zoom;
 }

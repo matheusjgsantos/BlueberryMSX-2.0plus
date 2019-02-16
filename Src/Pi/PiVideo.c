@@ -227,7 +227,7 @@ int piInitVideo()
 	}
 
 	printf( "Width/height: %d/%d\n", screenWidth, screenHeight);
-	if (screenHeight < 600)
+	if (screenHeight < 600 && video)
 		video->scanLinesEnable = 0;
 
 	VC_RECT_T dstRect;
@@ -318,9 +318,9 @@ int piInitVideo()
 
 	// We're doing our own video rendering - this is just so SDL-based keyboard
 	// can work
-    //SDL_VideoInit("DISPMANX", 0);
-	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-	sdlScreen = SDL_SetVideoMode(0, 0, 0, SDL_ASYNCBLIT);
+	SDL_Init(SDL_INIT_EVERYTHING);
+//    SDL_VideoInit("fbdev", 0);
+	sdlScreen = SDL_SetVideoMode(0, 0, 0, 0);//SDL_ASYNCBLIT);
     SDL_ShowCursor(SDL_DISABLE);
 	return 1;
 }
@@ -381,36 +381,17 @@ void piUpdateEmuDisplay()
 		frameBuffer = frameBufferGetWhiteNoiseFrame();
 	}
 	videoRender(video, 	frameBuffer, BIT_DEPTH, 1, msxScreen, 0, msxScreenPitch*2, -1);
-	if (frameBufferGetDoubleWidth(frameBuffer, 0) != width || lines != frameBuffer->lines)
-	{
-		width = frameBufferGetDoubleWidth(frameBuffer, 0);
-		lines = frameBuffer->lines ;
-		msxScreenPitch = frameBuffer->maxWidth * (width+1);//(256+16)*(width+1);
-		height = frameBuffer->lines;
-		interlace = frameBuffer->interlace;
-		float sx = 1.0f;
-		float sy = 1.0f * height / HEIGHT;
-		//printf("screen = %x, width = %d, height = %d, double = %d, interlaced = %d\n", msxScreen, msxScreenPitch, lines, width, interlace);
-		fflush(stdin);
-		sx = sx * msxScreenPitch/WIDTH;
-		//printf("sx=%f,sy=%f\n", sx, sy);
-		if (sy == 1.0f)
-			setOrtho(projection, -sx/2, sx/2, sy/2, -sy/2, -0.5f, +0.5f,1,1);		
-		else
-			setOrtho(projection, -sx/2, sx/2, 0, -sy, -0.5f, +0.5f,1,1);		
-		glUniformMatrix4fv(sh->u_vp_matrix, 1, GL_FALSE, &projection[0][0]);
-	}
-	int borderWidth = ((int)((WIDTH - frameBuffer->maxWidth)  * ZOOM)) >> 1;
-	if (borderWidth < 0)
-		borderWidth = 0;
+//	int borderWidth = ((int)((WIDTH - frameBuffer->maxWidth)  * ZOOM)) >> 1;
+//	if (borderWidth < 0)
+//		borderWidth = 0;
 
-	glUniform1i(shader.scanline, video->scanLinesEnable);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textures[0]);
 	
 //	videoRender(video, frameBuffer, BIT_DEPTH, 1,
 //				msxScreen + borderWidth * BYTES_PER_PIXEL, 0, msxScreenPitch, -1);
 
+	glUniform1i(shader.scanline, video->scanLinesEnable);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
 
 	// if (borderWidth > 0) {
 	// 	int h = height;
@@ -424,9 +405,26 @@ void piUpdateEmuDisplay()
 //	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT,
 //					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
 
-	glTexSubImage2D(GL_TEXTURE_2D, 0, (WIDTH-msxScreenPitch)/2, 0, msxScreenPitch, lines, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, (WIDTH-msxScreenPitch)/2, 0, msxScreenPitch, height, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
 //	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, msxScreenPitch, lines, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
-					
+	if (frameBufferGetDoubleWidth(frameBuffer, 0) != width || height != frameBuffer->lines)
+	{
+		width = frameBufferGetDoubleWidth(frameBuffer, 0);
+		height = frameBuffer->lines;
+		msxScreenPitch = frameBuffer->maxWidth * (width+1);//(256+16)*(width+1);
+		interlace = frameBuffer->interlace;
+		float sx = 1.0f * msxScreenPitch/WIDTH;
+		float sy = 1.0f * height / HEIGHT;
+//		printf("screen = %x, width = %d, height = %d, double = %d, interlaced = %d\n", msxScreen, msxScreenPitch, height, width, interlace);
+//		printf("sx=%f,sy=%f\n", sx, sy);
+		fflush(stdin);
+		if (sy == 1.0f)
+			setOrtho(projection, -sx/2, sx/2,  sy/2, -sy/2, -0.5f, +0.5f,1,1);		
+		else
+			setOrtho(projection, -sx/2, sx/2,    0,   -sy, -0.5f, +0.5f,1,1);		
+		//setOrtho(projection, -1, 1,    1,   -1, -0.5f, +0.5f,1,1);		
+		glUniformMatrix4fv(sh->u_vp_matrix, 1, GL_FALSE, projection);
+	}					
 	drawQuad(sh);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
