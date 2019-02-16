@@ -25,6 +25,8 @@
 ******************************************************************************
 */
 
+//#define DEBUG
+
 #include "PiShortcuts.h"
 #include <SDL.h>
 #include <SDL_keysym.h>
@@ -775,8 +777,9 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 	hotkey->type = key.type;
 	hotkey->mods = key.mods;
 	hotkey->key  = key.key;
+	*hotkey = toSDLhotkey(*hotkey);
 #ifdef DEBUG
-	printf("shortcut:%s=%s - %08x->%08x\n", name, shortcutsToString(*hotkey), key, *hotkey = toSDLhotkey(*hotkey));
+	printf("shortcut:%s=%s - %08x->%08x\n", name, shortcutsToString(*hotkey), key, *hotkey);
 #endif
 }
 
