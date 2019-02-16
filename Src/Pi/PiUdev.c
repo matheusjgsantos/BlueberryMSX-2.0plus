@@ -222,6 +222,39 @@ static int ufi_invoke(int fd, const char *cmd, size_t cmd_size, char *data, size
   ufi_invoke(fd, cmd, sizeof(cmd), data, sizeof(data), SG_DXFER_FROM_DEV)
 #define ufi_invoke_no(fd, cmd) \
   ufi_invoke(fd, cmd, sizeof(cmd), NULL, 0, SG_DXFER_TO_DEV) 
+  
+int ufi_format_unit(int fd, int blocks, int block_size, int track, int head)
+{
+    unsigned char command[sizeof(FORMAT_UNIT_CMD)];
+    unsigned char data[sizeof(FORMAT_UNIT_DATA)];
+
+    memcpy(command, FORMAT_UNIT_CMD, sizeof(command));
+    memcpy(data, FORMAT_UNIT_DATA, sizeof(data));
+    command[2] = track;
+    data[1] |= head;
+    data[4] = (blocks >> 24) & 0xff;
+    data[5] = (blocks >> 16) & 0xff;
+    data[6] = (blocks >> 8) & 0xff;
+    data[7] = blocks & 0xff;
+    data[9] = (block_size >> 16) & 0xff;
+    data[10] = (block_size >> 8) & 0xff;
+    data[11] = block_size & 0xff;
+
+    if (ufi_invoke_to(fd, command, data) != 0) {
+	return UFI_ERROR;
+    }
+    return UFI_GOOD;
+}  
+
+unsigned char udev_format_unit(char devname[], int blocks, int block_size, int track, int head)
+{
+	int fd =  open(devname, 3 | O_NDELAY);
+	int ret = 0;
+	if (fd)
+		ret = ufi_format_unit(fd, blocks, block_size, track, head);
+	close(fd);
+	return ret;
+}
 
 static void udevMon(void *arg)
 {
@@ -231,7 +264,7 @@ static void udevMon(void *arg)
 	struct udev_device *dev;
 	fd_set fds;
 	struct timeval tv;
-	int ret, fd, res, prev_res;
+	int ret, fd, res, prev_res[2];
 	
 	while (!stopMonitor) {
 		FD_ZERO(&fds);
@@ -267,20 +300,24 @@ static void udevMon(void *arg)
 				}
 			}
 		}
-		for(int i = 0; i < connectedFloppyDisks; i++)
+		for(int i = 0; i < 2; i++)
 		{
 			char devname[100];
 			sprintf(devname, "/dev/sd%c", 'a' + i);
 			fd = open(devname, 3 | O_NDELAY);
 			res = ufi_invoke_no(fd, TEST_UNIT_READY_CMD);
-			if (res == 0 && prev_res != 0) {
-				//	printf("disk_inserted\n");
+			if (res == 0 && prev_res[i] != 0) {
+				printf("disk_inserted %d %d %d\n", i, res, prev_res[i]);
+				close(fd);
+				prev_res[i] = res;
 				diskChange(i ,devname, 0);
-			} else if (res == 3 && prev_res != 3) {
-				diskChange(1, 0, 0);
+				continue;
+			} else if (res == -1 && prev_res[i] != -1) {
+				diskChange(i, 0, 0);
+				printf("disk_removed %d %d %d\n", i, res, prev_res[i]);
 			}
-			prev_res = res;
 			close(fd);
+			prev_res[i] = res;
 		}
 		usleep(1000*1000);
 	}

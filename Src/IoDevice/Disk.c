@@ -58,7 +58,7 @@ static int   changed[MAXDRIVES];
 static int   diskType[MAXDRIVES];
 static int   maxSector[MAXDRIVES];
 static char* drivesErrors[MAXDRIVES];
-static char* fileNames[MAXDRIVES] = { "/dev/sda", "/dev/sdb" };
+static char* fileNames[MAXDRIVES] = { 0, 0 };
 static const UInt8 svi328Cpm80track[] = "CP/M-80";
 static void diskHdUpdateInfo(int driveId);
 static void diskReadHdIdentifySector(int driveId, UInt8* buffer);
@@ -477,7 +477,7 @@ UInt8 diskWrite(int driveId, UInt8 *buffer, int sector)
     if (sector >= maxSector[driveId]) {
         return 0;
     }
-
+	
     if (ramImageBuffer[driveId] != NULL) {
         int offset = sector * sectorSize[driveId];
 
@@ -490,7 +490,18 @@ UInt8 diskWrite(int driveId, UInt8 *buffer, int sector)
     }
     else {
         if (drives[driveId] != NULL && !RdOnly[driveId]) {
-            if (0 == fseek(drives[driveId], sector * sectorSize[driveId], SEEK_SET)) {
+			int track = sector / tracks[driveId] / sides[driveId];
+			int sec = (sector/sides[driveId]) % tracks[driveId];
+			int head = sector % sides[driveId];
+			printf("formatting %s, track=%02d, head=%d\r", fileNames[driveId], track, head);
+			if (fileNames[driveId]) {
+				printf("formatting %s, track=%02d, head=%d\r", fileNames[driveId], track, head);
+				UInt8 success = udev_format_unit(fileNames, sector, sectorSize[driveId], track, head);
+                if (success && sector == 0) {
+                    diskUpdateInfo(driveId);
+                }
+			} else if (0 == fseek(drives[driveId], sector * sectorSize[driveId], SEEK_SET)) {
+				printf("formatting file image, track=%02d, head=%d\r", track, head);
                 UInt8 success = fwrite(buffer, 1, sectorSize[driveId], drives[driveId]) == sectorSize[driveId];
                 if (success && sector == 0) {
                     diskUpdateInfo(driveId);
@@ -642,11 +653,13 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
         RdOnly[driveId] = 1;
     }
 
+	if (fileName != NULL && strncmp("/dev/sd", fileName, 7) == 0) {
+		fileNames[driveId] = (char *) calloc(2048, 1);
+		memcpy(fileNames[driveId], fileName, strlen(fileName)+1);
+		printf("%s inserted\n", fileName);
+	}
+	
     if (drives[driveId] == NULL) {
-		if (fileName != NULL && strncmp("/dev/sd", fileName, 6) == 0) {
-			fileNames[driveId] = (char *) calloc(2048, 1);
-			memcpy(fileNames[driveId], fileName, strlen(fileName)+1);
-		}
 		return 0;
     }
 	// reduce buffer cache to zero for realistic access
