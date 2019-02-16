@@ -142,8 +142,8 @@ int romMapperMsxBusCreate(int cartSlot, int slot, int sslot)
 		printf("MSXBus created. cartSlot=%d slot=%d sslot=%d\n", cartSlot, slot, sslot);
 
     if (rm->msxBus != NULL && cartSlot == 0) {
-		for(i = 1; i < 255; i++)
-			ioPortRegisterUnused(i, readIo, writeIo, rm);
+//		for(i = 1; i < 255; i++)
+//			ioPortRegisterUnused(i, readIo, writeIo, rm);
         slotRegister(slot, sslot, 0, 8, read, read, write, destroy, rm);
         for (i = 0; i < 8; i++) {   
             slotMapPage(rm->slot, rm->sslot, i, NULL, 0, 0);
