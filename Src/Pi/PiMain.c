@@ -324,7 +324,7 @@ int main(int argc, char **argv)
 	keyboardInit(properties);
 
 	// Larger buffers cause sound delay
-	properties->sound.bufSize = 40;
+	// properties->sound.bufSize = 40;
 
 	mixer = mixerCreate();
 	for (i = 0; i < MIXER_CHANNEL_TYPE_COUNT; i++) {
@@ -476,7 +476,7 @@ int main(int argc, char **argv)
     frontled(0);
 #endif
 	fprintf(stderr, "Powered off\n");
-	SDL_Init(0);
-	exit(0);
+//	SDL_Init(0);
+//	exit(0);
 	return 0;
 }
