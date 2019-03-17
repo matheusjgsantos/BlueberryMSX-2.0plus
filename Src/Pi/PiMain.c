@@ -179,6 +179,8 @@ static void handleEvent(SDL_Event* event)
                 actionQuit();
 			else if (inputEventGetState(EC_JOY_BUTTONL) * inputEventGetState(EC_JOY1_BUTTON3))
 				actionToggleVideoColorMode();
+			else if (inputEventGetState(EC_JOY_BUTTONL) * inputEventGetState(EC_JOY1_BUTTON2))
+				actionToggleScanlinesEnable();
             else if (inputEventGetState(EC_JOY_BUTTONL))
                 actionDiskQuickChange();
         }
