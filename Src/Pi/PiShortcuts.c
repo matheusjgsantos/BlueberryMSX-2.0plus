@@ -609,7 +609,9 @@ static const ShortcutHotkey toggleScanline = {
 static const ShortcutHotkey toggleAspectRatio = {
     HOTKEY_TYPE_KEYBOARD, KMOD_LCTRL, SDLK_F10,	
 };
-
+static const ShortcutHotkey toggleColorMode = {
+    HOTKEY_TYPE_KEYBOARD, KMOD_LALT, SDLK_F11,
+};
 
 struct Shortcuts {
     ShortcutHotkey quit;
@@ -852,6 +854,7 @@ Shortcuts* shortcutsCreate()
 	shortcuts->captureScreenshot = screenShot;
 	shortcuts->scanlinesToggle = toggleScanline;
 	shortcuts->aspectRatioToggle = toggleAspectRatio;
+        shortcuts->videoColorModeToggle = toggleColorMode;
 	
     return shortcuts;
 }
