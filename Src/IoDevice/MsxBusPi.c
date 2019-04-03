@@ -223,7 +223,7 @@ void SetAddress(unsigned short addr)
 
 void SetDelay(int j)
 {
-	for(int i=0; i<j; i++)
+	for(int i=0; i<j/2; i++)   // plaire
 	    GPIO_SET = 0;
 }
 
@@ -334,8 +334,10 @@ int setup_io()
 	gpio = bcm2835_regbase(BCM2835_REGBASE_GPIO);
 	for(int i=0; i < 27; i++)
 	{
-		bcm2835_gpio_fsel(i, 1);    
-		bcm2835_gpio_set_pud(i, BCM2835_GPIO_PUD_UP);
+		if (i != 20) {	// if use new pads_strength (pads.c)
+			bcm2835_gpio_fsel(i, 1);    
+			bcm2835_gpio_set_pud(i, BCM2835_GPIO_PUD_UP);
+		}
 	}
 
 	gpio10 = gpio+10;
@@ -349,7 +351,7 @@ int setup_io()
 		int divi, divr, divf, freq;
 		bcm2835_gpio_fsel(20, BCM2835_GPIO_FSEL_ALT5); // GPIO_20
 		speed_id = 1;
-		freq = 3500000;
+		freq = 3579545;	// msx clock
 		divi = 19200000 / freq ;
 		divr = 19200000 % freq ;
 		divf = (int)((double)divr * 4096.0 / 19200000.0) ;
