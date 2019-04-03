@@ -2,6 +2,12 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 
+// plaire
+#include <stdio.h>
+// plaire 
+#define GP_CLK0_CTL *(gclk_base + 0x1C)
+#define GP_CLK0_DIV *(gclk_base + 0x1D)
+
 void main(int argc, char *argv[])
 {
 	volatile unsigned *gclk_base;
@@ -18,14 +24,14 @@ void main(int argc, char *argv[])
 	{
 		int divi, divr, divf, freq;
 		bcm2835_gpio_fsel(20, BCM2835_GPIO_FSEL_ALT5); // GPIO_20
-		speed_id = 1;
+		int speed_id = 1;
 		freq = 3579545;  // 3.579545Mhz
 		divi = 19200000 / freq ;
 		divr = 19200000 % freq ;
 		divf = (int)((double)divr * 4096.0 / 19200000.0) ;
 		if (divi > 4095)
 			divi = 4095 ;		
-		divisor = 1 < 12;// | (int)(6648/1024);
+		int divisor = 1 < 12;// | (int)(6648/1024);
 		GP_CLK0_CTL = 0x5A000000 | speed_id;    // GPCLK0 off
 		while (GP_CLK0_CTL & 0x80);    // Wait for BUSY low
 		GP_CLK0_DIV = 0x5A000000 | (divi << 12) | divf; // set DIVI
