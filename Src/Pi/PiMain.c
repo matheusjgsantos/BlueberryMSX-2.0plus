@@ -125,7 +125,8 @@ void archTrap(UInt8 value)
 void archQuit()
 {
 	doQuit = 1;
-    system("aconnect -x");
+	SDL_Quit();
+	system("sudo aconnect -x");
 }
 
 static int floppy1LedOn = 0;
