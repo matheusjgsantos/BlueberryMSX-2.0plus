@@ -178,11 +178,11 @@ static void handleEvent(SDL_Event* event)
         {
             if (inputEventGetState(EC_JOY_BUTTONL) * inputEventGetState(EC_JOY_BUTTONR))
                 actionQuit();
-			else if (inputEventGetState(EC_JOY_BUTTONL) * inputEventGetState(EC_JOY1_BUTTON3))
+			else if (inputEventGetState(EC_JOY_BUTTONL) * inputEventGetState(EC_JOY1_BUTTON4))	// plaire
 				actionToggleVideoColorMode();
 			else if (inputEventGetState(EC_JOY_BUTTONL) * inputEventGetState(EC_JOY1_BUTTON2))
 				actionToggleScanlinesEnable();
-            else if (inputEventGetState(EC_JOY_BUTTONL))
+            else if (inputEventGetState(EC_JOY_BUTTONR))	// plaire avoid key duplicate
                 actionDiskQuickChange();
         }
 		joystickButtonUpdate(event);
