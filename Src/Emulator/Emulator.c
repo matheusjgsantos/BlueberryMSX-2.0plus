@@ -83,8 +83,9 @@ static UInt32 emuUsageCurrent   = 0;
 static UInt32 emuCpuSpeed       = 0;
 static UInt32 emuCpuUsage       = 0;
 static int    enableSynchronousUpdate = 1;
+int archPollEvent();
 
-#if 0
+//#if 0
 
 #define LOG_SIZE (10 * 1000000)
 UInt32 logentry[LOG_SIZE];
@@ -145,10 +146,11 @@ void savelog()
     printf("\n");
     fclose(f);
 }
-#else
-#define clearlog()
-#define savelog()
-#endif
+//#else 
+//#define clearlog()
+//#define savelog()
+
+//#endif
 
 static void emuCalcCpuUsage() {
     static UInt32 oldSysTime = 0;
@@ -402,6 +404,7 @@ static void emulatorThread() {
     emuState = EMU_STOPPED;
 
 #ifndef WII
+    fprintf(stderr,"Emulator is calling archTimerDestroy\n");
     archTimerDestroy(emuTimer);
 #endif
 
@@ -450,6 +453,7 @@ void emulatorStart(const char* stateName) {
 #endif
     emuStartEvent = archEventCreate(0);
 #ifndef WII
+    fprintf(stderr,"Emulator is calling archCreateTimer\n");
     emuTimer = archCreateTimer(emulatorGetSyncPeriod(), timerCallback);
 #endif
 #endif
@@ -469,15 +473,19 @@ void emulatorStart(const char* stateName) {
 
 #ifdef SINGLE_THREADED
     emuState = EMU_RUNNING;
+    fprintf(stderr,"Emulator is calling emulatorThread()\n");
     emulatorThread();
 
     if (emulationStartFailure) {
+    	fprintf(stderr,"Emulator Start failed!\nEmulator is calling archEmulationStopNotification()\n");
         archEmulationStopNotification();
         emuState = EMU_STOPPED;
         archEmulationStartFailure();
     }
 #else
+    printf("Emulator is calling the archThreadCreate with the parameters %d\n", emulatorThread);
     emuThread = archThreadCreate(emulatorThread, THREAD_PRIO_HIGH);
+    printf("Emulator received archThreadCreate call: %d\n",emuThread);
 
     archEventWait(emuStartEvent, 3000);
 
@@ -520,9 +528,11 @@ void emulatorStop() {
     archEventSet(emuSyncEvent);
 #endif
     archSoundSuspend();
+    printf("I'm calling archThreadJoin here\n");
     archThreadJoin(emuThread, 3000);
     archMidiEnable(0);
     machineDestroy(machine);
+    printf("I'm calling archThreadDestroy here\n");
     archThreadDestroy(emuThread);
 #ifndef WII
     archEventDestroy(emuSyncEvent);
@@ -766,7 +776,8 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
     }
 
 #ifdef SINGLE_THREADED
-    emuExitFlag |= archPollEvent();
+    //emuExitFlag |= archPollEvent();
+    emuExitFlag = 1;
 #endif
 
     if (((++kbdPollCnt & 0x03) >> 1) == 0) {

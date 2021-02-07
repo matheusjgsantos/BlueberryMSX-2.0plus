@@ -1,4 +1,4 @@
-blueberryMSX
+blueberryMSX 2.0 Plus
 ============
 ![blueberryMSX](http://i.imgur.com/Tnq9vSY.png "blueberry")
 

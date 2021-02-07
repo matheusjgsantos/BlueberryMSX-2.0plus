@@ -36,13 +36,16 @@ ECHO  = @echo
 #
 # Flags
 #
-COMMON_FLAGS = -DUSE_EGL -DIS_RPI -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -DRASPI 
+COMMON_FLAGS = -DUSESDL2 -DUSESDL2Main -DUSE_EGL -DIS_RPI -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DRASPI 
 CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer $(COMMON_FLAGS)
 CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  =  
-LIBS     =  -lSDL -lz -lbcm_host -lbrcmEGL -lbrcmGLESv2 -lpthread -ludev -lbcm2835
+#####LIBS     =  -lSDL -lz -lbcm_host -lbrcmEGL -lbrcmGLESv2 -lpthread -ludev -lbcm2835
+#####LIBS     =  -lSDL2 -lz -lbcm_host -lbrcmEGL -lbrcmGLESv2 -lpthread -ludev -lbcm2835 -lgbm -ldrm
+LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -ldrm -lgbm -lEGL -lGL -lbcm2835 -I/usr/include/libdrm
 # Uncomment the following line to enable GPIO (requires wiring-pi)
 #CFLAGS   += -DRASPI_GPIO
+CFLAGS   += -DSINGLE_THREADED 
 
 ifdef RASPI_GPIO
 LIBS     += -lwiringPi
@@ -57,8 +60,8 @@ OUTPUT_OBJS = $(addprefix $(OUTPUT_DIR)/, $(OBJS))
 #
 # SDL specific flags
 #
-SDL_CFLAGS := $(shell sdl-config --cflags)
-SDL_LDFLAGS := $(shell sdl-config --libs)
+SDL_CFLAGS := $(shell sdl2-config --cflags)
+SDL_LDFLAGS := $(shell sdl2-config --libs)
 CFLAGS += $(SDL_CFLAGS)
 CPPFLAGS += $(SDL_CFLAGS)
 LDFLAGS += $(SDL_LDFLAGS)
@@ -76,7 +79,7 @@ DEPS := $(OBJS:.o=.d)
 # Include paths
 #
 INCLUDE = 
-INCLUDE += -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux
+INCLUDE += -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -I/usr/include/libdrm
 INCLUDE += -I$(BCM_INCDIR)
 INCLUDE += -I$(ROOT_DIR)/Src/Arch
 INCLUDE += -I$(ROOT_DIR)/Src/Bios
@@ -98,6 +101,7 @@ INCLUDE += -I$(ROOT_DIR)/Src/VideoRender
 INCLUDE += -I$(ROOT_DIR)/Src/Sdl
 INCLUDE += -I$(ROOT_DIR)/Src/Pi
 INCLUDE += -I$(ROOT_DIR)/Src/Z80
+INCLUDE += -I$(ROOT_DIR)/bcm2835-1.60/src/
 
 vpath % $(ROOT_DIR)/Src/Arch
 vpath % $(ROOT_DIR)/Src/Bios

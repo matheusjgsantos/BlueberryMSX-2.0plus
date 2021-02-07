@@ -35,7 +35,8 @@
 #include <stdio.h>
 #include <SDL.h>
 
-static int kbdTable[3][SDLK_LAST];
+//DEPRECATED in sdl2 -- static int kbdTable[3][SDLK_LAST];
+static int kbdTable[3][150];
 
 static int inputTypeScanStart = 0;
 static int inputTypeScanEnd = 1;
@@ -123,19 +124,31 @@ static void initKbdTable()
 	kbdTable[0][SDLK_KP_MINUS   ] = EC_NUMSUB;
 	kbdTable[0][SDLK_KP_PERIOD  ] = EC_NUMPER;
 	kbdTable[0][SDLK_PAGEDOWN   ] = EC_NUMCOM;
-	kbdTable[0][SDLK_KP0] = EC_NUM0;
-	kbdTable[0][SDLK_KP1] = EC_NUM1;
-	kbdTable[0][SDLK_KP2] = EC_NUM2;
-	kbdTable[0][SDLK_KP3] = EC_NUM3;
-	kbdTable[0][SDLK_KP4] = EC_NUM4;
-	kbdTable[0][SDLK_KP5] = EC_NUM5;
-	kbdTable[0][SDLK_KP6] = EC_NUM6;
-	kbdTable[0][SDLK_KP7] = EC_NUM7;
-	kbdTable[0][SDLK_KP8] = EC_NUM8;
-	kbdTable[0][SDLK_KP9] = EC_NUM9;
+	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP0] = EC_NUM0;
+	kbdTable[0][SDLK_KP_0] = EC_NUM0;
+	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP1] = EC_NUM1;
+	kbdTable[0][SDLK_KP_1] = EC_NUM1;
+	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP2] = EC_NUM2;
+	kbdTable[0][SDLK_KP_2] = EC_NUM2;
+	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP3] = EC_NUM3;
+	kbdTable[0][SDLK_KP_3] = EC_NUM3;
+	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP4] = EC_NUM4;
+	kbdTable[0][SDLK_KP_4] = EC_NUM4;
+	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP5] = EC_NUM5;
+	kbdTable[0][SDLK_KP_5] = EC_NUM5;
+	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP6] = EC_NUM6;
+	kbdTable[0][SDLK_KP_6] = EC_NUM6;
+	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP7] = EC_NUM7;
+	kbdTable[0][SDLK_KP_7] = EC_NUM7;
+	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP8] = EC_NUM8;
+	kbdTable[0][SDLK_KP_8] = EC_NUM8;
+	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP9] = EC_NUM9;
+	kbdTable[0][SDLK_KP_9] = EC_NUM9;
 
-	kbdTable[0][SDLK_LSUPER  ] = EC_TORIKE;
-	kbdTable[0][SDLK_RSUPER  ] = EC_JIKKOU;
+	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_LSUPER  ] = EC_TORIKE;
+	kbdTable[0][SDLK_LGUI  ] = EC_TORIKE;
+	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_RSUPER  ] = EC_JIKKOU;
+	kbdTable[0][SDLK_RGUI  ] = EC_JIKKOU;
 	kbdTable[0][SDLK_LSHIFT  ] = EC_LSHIFT;
 	kbdTable[0][SDLK_RSHIFT  ] = EC_RSHIFT;
 	kbdTable[0][SDLK_LCTRL   ] = EC_CTRL;
@@ -164,16 +177,26 @@ static void initKbdTable()
 	kbdTable[1][SDLK_MINUS       ] = EC_COLECO1_STAR;
 	kbdTable[1][SDLK_EQUALS      ] = EC_COLECO1_HASH;
 
-	kbdTable[2][SDLK_KP0     ] = EC_COLECO2_0;
-	kbdTable[2][SDLK_KP1     ] = EC_COLECO2_1;
-	kbdTable[2][SDLK_KP2     ] = EC_COLECO2_2;
-	kbdTable[2][SDLK_KP3     ] = EC_COLECO2_3;
-	kbdTable[2][SDLK_KP4     ] = EC_COLECO2_4;
-	kbdTable[2][SDLK_KP5     ] = EC_COLECO2_5;
-	kbdTable[2][SDLK_KP6     ] = EC_COLECO2_6;
-	kbdTable[2][SDLK_KP7     ] = EC_COLECO2_7;
-	kbdTable[2][SDLK_KP8     ] = EC_COLECO2_8;
-	kbdTable[2][SDLK_KP9     ] = EC_COLECO2_9;
+	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP0     ] = EC_COLECO2_0;
+	kbdTable[2][SDLK_KP_0     ] = EC_COLECO2_0;
+	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP1     ] = EC_COLECO2_1;
+	kbdTable[2][SDLK_KP_1     ] = EC_COLECO2_0;
+	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP2     ] = EC_COLECO2_2;
+	kbdTable[2][SDLK_KP_2     ] = EC_COLECO2_0;
+	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP3     ] = EC_COLECO2_3;
+	kbdTable[2][SDLK_KP_3     ] = EC_COLECO2_0;
+	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP4     ] = EC_COLECO2_4;
+	kbdTable[2][SDLK_KP_4     ] = EC_COLECO2_0;
+	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP5     ] = EC_COLECO2_5;
+	kbdTable[2][SDLK_KP_5     ] = EC_COLECO2_0;
+	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP6     ] = EC_COLECO2_6;
+	kbdTable[2][SDLK_KP_6     ] = EC_COLECO2_0;
+	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP7     ] = EC_COLECO2_7;
+	kbdTable[2][SDLK_KP_7     ] = EC_COLECO2_0;
+	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP8     ] = EC_COLECO2_8;
+	kbdTable[2][SDLK_KP_8     ] = EC_COLECO2_0;
+	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP9     ] = EC_COLECO2_9;
+	kbdTable[2][SDLK_KP_9     ] = EC_COLECO2_0;
 	kbdTable[2][SDLK_KP_MULTIPLY    ] = EC_COLECO2_STAR;
 	kbdTable[2][SDLK_KP_DIVIDE      ] = EC_COLECO2_HASH;
 }
@@ -225,18 +248,25 @@ void piInputResetMSXDevices(int realMice, int realJoysticks)
 
 void keyboardInit(Properties *properties)
 {
+	fprintf(stderr,"PiInput.c is executing keyboardInit function\n");
 	if (strncmp(properties->emulation.machineName, "COL", 3) == 0) {
 		inputTypeScanStart = 1;
 		inputTypeScanEnd = 2;
 		fprintf(stderr, "Initializing ColecoVision input\n");
 	}
-
+	fprintf(stderr,"PiInput.c is calling initKbdTable function\n");
 	initKbdTable();
+	fprintf(stderr, "initKbfTable() call ended\n");
+
+	fprintf(stderr,"PiInput.c is calling inputEventReset function\n");
 	inputEventReset();
+	fprintf(stderr, "inputEventReset() call ended\n");
+
 }
 
 void keyboardUpdate(SDL_KeyboardEvent *event)
 {
+	fprintf(stderr,"PiInput.c is executing keyboardUpdate function\n");
 	int i;
 	for (i = inputTypeScanStart; i <= inputTypeScanEnd; i++) {
 		if (event->keysym.scancode == 0x7A) {
@@ -260,6 +290,7 @@ void keyboardUpdate(SDL_KeyboardEvent *event)
 
 void joystickAxisUpdate(SDL_JoyAxisEvent *event)
 {
+	fprintf(stderr,"PiInput.c is executing joystickAxisUpdate function\n");
 	if (event->which == 0) {
 		if (event->axis == 0) {
 			// Left/right
@@ -317,6 +348,7 @@ void joystickAxisUpdate(SDL_JoyAxisEvent *event)
 
 void joystickButtonUpdate(SDL_JoyButtonEvent *event)
 {
+	fprintf(stderr,"PiInput.c is executing joystickButtonUpdate function\n");
 	if (event->type == SDL_JOYBUTTONDOWN) {
 		if (event->which == 0) {
 			if (event->button == 0) {

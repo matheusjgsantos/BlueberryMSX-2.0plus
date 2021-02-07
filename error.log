@@ -1,0 +1,30 @@
+Initializing window surface...
+Connecting context to surface...
+Initializing shaders...
+Initializing textures/buffers...
+Setting up screen...
+Initializing SDL video...
+udev initialized
+udev monitor starting
+PiMain.c is calling SDL_Event event
+Connection failed (Invalid argument)
+PiMain is calling keyboardInit with 65269496
+PiInput.c is executing keyboardInit function
+PiInput.c is calling initKbdTable function
+initKbfTable() call ended
+PiInput.c is calling inputEventReset function
+inputEventReset() call ended
+Emulator is calling archCreateTimer
+SdlTimer is executing archCreateTimer
+SDLTimer created a timer with id 1
+Emulator is calling emulatorThread()
+SdlTimer is executing timerCallBack
+PiMain.c is calling SDL_Event 
+PiMain.c SDL_Event returned 7
+PiMain.c pendingDisplayEvents is 0
+PiMain.c event.type is 32768
+SdlTimer is executing timerCallBack
+SdlTimer is executing timerCallBack
+Emulator is calling archTimerDestroy
+SdlTimer is executing archTimerDestroy
+archTimerDestroy call ended

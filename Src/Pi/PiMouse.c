@@ -174,7 +174,8 @@ void piMouseInit()
 {
     SDL_ShowCursor(SDL_DISABLE);
     mouse.hasFocus = 1;
-    SDL_WarpMouse(mouse.defX, mouse.defY);
+    //DEPRECATED in sdl2 -- SDL_WarpMouse(mouse.defX, mouse.defY);
+    SDL_WarpMouseGlobal(mouse.defX, mouse.defY);
 }
 
 void piMouseButton(int button, int pressed)
@@ -217,7 +218,8 @@ void piMouseMove(int x, int y)
         mouse.dx     += dx;
         mouse.dy     += dy;
 
-        SDL_WarpMouse(mouse.defX, mouse.defY);
+        // DEPRECATED in sdl2 -- SDL_WarpMouse(mouse.defX, mouse.defY);
+        SDL_WarpMouseGlobal(mouse.defX, mouse.defY);
     }
 }
 

@@ -81,7 +81,11 @@ static SDL_Joystick *joysticks[JOYSTICK_COUNT];
 
 int archUpdateEmuDisplay(int syncMode)
 {
+	fprintf(stderr,"PiMain.c is calling SDL_Event \n");
 	SDL_Event event;
+	fprintf(stderr,"PiMain.c SDL_Event returned %d\n",event);
+
+	fprintf(stderr,"PiMain.c pendingDisplayEvents is %d\n", pendingDisplayEvents);
 	if (pendingDisplayEvents > 1) {
 		return 1;
 	}
@@ -89,6 +93,8 @@ int archUpdateEmuDisplay(int syncMode)
 	pendingDisplayEvents++;
 
 	event.type = SDL_USEREVENT;
+	fprintf(stderr,"PiMain.c event.type is %d\n", event.type);
+
 	event.user.code = EVENT_UPDATE_DISPLAY;
 	event.user.data1 = NULL;
 	event.user.data2 = NULL;
@@ -198,7 +204,8 @@ static void handleEvent(SDL_Event* event)
 		keyboardUpdate(event);
 		shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
 		break;
-	case SDL_ACTIVEEVENT:
+	// DEPRECATED on sdl2 -- case SDL_ACTIVEEVENT:
+	case SDL_WINDOWEVENT_ENTER:
 		inputEventReset();
 		break;
 	case SDL_MOUSEBUTTONDOWN:
@@ -274,6 +281,7 @@ int main(int argc, char **argv)
 	SDL_ShowCursor(SDL_DISABLE);
 	SDL_JoystickEventState(SDL_ENABLE);
 
+	fprintf(stderr,"PiMain.c is calling SDL_Event event\n");
 	SDL_Event event;
 	char szLine[8192] = "";
 	int resetProperties;
@@ -324,6 +332,7 @@ int main(int argc, char **argv)
 
 	dpyUpdateAckEvent = archEventCreate(0);
 
+	fprintf(stderr,"PiMain is calling keyboardInit with %d\n",properties);
 	keyboardInit(properties);
 
 	// Larger buffers cause sound delay
@@ -474,6 +483,7 @@ int main(int argc, char **argv)
 
 	piDestroyVideo();
 	piDestroyUdev();
+	fprintf(stderr,"PiMain is calling SDL_Quit()");
 	SDL_Quit();
 #ifdef RPMC_FRONTLED
     frontled(0);

@@ -36,7 +36,7 @@
 
 void* archCreateTimer(int period, int (*timerCallback)(void*)) { return NULL; }
 void archTimerDestroy(void* timer) {}
-
+static SDL_TimerID *my_timer_id 
 
 // The only timer that is required is a high res timer. The resolution is
 // not super important, the higher the better, but one tick every 10ms is
@@ -60,6 +60,7 @@ static UInt32 lastTimeout;
 
 Uint32 timerCalback(Uint32 interval)
 {
+    fprintf(stderr,"SdlTimer is executing timerCallBack\n");
     if (timerCb) {
         UInt32 currentTime = archGetSystemUpTime(timerFreq);
 
@@ -73,23 +74,29 @@ Uint32 timerCalback(Uint32 interval)
 
 void* archCreateTimer(int period, int (*timerCallback)(void*)) 
 { 
+    fprintf(stderr,"SdlTimer is executing archCreateTimer\n");
     timerFreq = 1000 / period;
     lastTimeout = archGetSystemUpTime(timerFreq);
     timerCb  = timerCallback;
 
-    SDL_SetTimer(period, timerCalback);
+    // Deprecated on sdl2 -- SDL_SetTimer(period, timerCalback);
+    SDL_TimerID my_timer_id =  SDL_AddTimer(period, timerCalback, NULL);
+    fprintf(stderr,"SDLTimer created a timer with id %d\n",my_timer_id);
 
     return timerCallback;
 }
 
 void archTimerDestroy(void* timer) 
 {
+    fprintf(stderr,"SdlTimer is executing archTimerDestroy\n");
     if (timerCb != timer) {
         return;
     }
 
-    SDL_SetTimer(0, NULL);
+    //DEPRECATED in sdl2 -- SDL_SetTimer(0, NULL);
+    SDL_TimerID my_timer_id =  SDL_AddTimer(0, NULL, NULL);
     timerCb = NULL;
+    fprintf(stderr,"archTimerDestroy call ended\n");
 }
 
 UInt32 archGetSystemUpTime(UInt32 frequency) 

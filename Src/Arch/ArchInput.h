@@ -35,9 +35,9 @@ typedef enum { AM_DISABLE = 0, AM_ENABLE_MOUSE, AM_ENABLE_LASER } AmEnableMode;
 void  archMouseEmuEnable(AmEnableMode mode);
 void archMouseSetForceLock(int lock);
 void archMouseGetState(int* dx, int* dy);
-int  archMouseGetButtonState(int checkAlways);
+int archMouseGetButtonState(int checkAlways);
 
-int   archPollEvent();
+int archPollEvent();
 
 void  archPollInput();
 void  archKeyboardSetSelectedKey(int keyCode);

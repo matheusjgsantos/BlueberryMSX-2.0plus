@@ -40,7 +40,9 @@ static int threadEntry(void* data)
 
 
 void* archThreadCreate(void (*entryPoint)(), int priority) { 
-    SDL_Thread* sdlThread = SDL_CreateThread(threadEntry, entryPoint);
+    //DEPRECATED in sdl2 -- SDL_Thread* sdlThread = SDL_CreateThread(threadEntry, entryPoint);
+    SDL_Thread* sdlThread = SDL_CreateThread(threadEntry, entryPoint, NULL);
+    fprintf (stderr, "SdlThread is creating the thread %d\n", sdlThread);
     return sdlThread;
 }
 
@@ -53,9 +55,15 @@ void archThreadJoin(void* thread, int timeout)
 
 void  archThreadDestroy(void* thread) 
 {
+    int threadReturnValue;
     SDL_Thread* sdlThread = (SDL_Thread*)thread;
 
-    SDL_KillThread(sdlThread);
+    // DEPRECATED in sdl2 -- SDL_KillThread(sdlThread);
+    printf ("I'm killing the thread  %d\n", sdlThread);
+    SDL_WaitThread(sdlThread, &threadReturnValue);
+    printf ("Thread returned value %d\n", threadReturnValue);
+
+
 }
 
 void archThreadSleep(int milliseconds) 

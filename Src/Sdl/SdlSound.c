@@ -128,7 +128,8 @@ void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 c
     }
 
 	char driver_name[1024];
-	SDL_AudioDriverName(driver_name, 1024);
+	// DEPRECATED in sdl2 -- SDL_AudioDriverName(driver_name, 1024);
+	SDL_GetAudioDeviceName(driver_name, 1024);
 	printf("Audio driver: %s\n", driver_name);
 /*	
 	int i;

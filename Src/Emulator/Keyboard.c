@@ -472,6 +472,7 @@ UInt8* keyboardGetState() {
 
 void keyboardLoadState()
 {
+    pring("I'm starting keyboardLoadState\n");
     SaveState* state = saveStateOpenForRead("keyboard");
     keymapType = saveStateGet(state, "keymapType",  0);
     saveStateClose(state);
@@ -481,6 +482,7 @@ void keyboardLoadState()
 
 void keyboardSaveState()
 {
+    pring("I'm starting keyboardSaveState\n");
     SaveState* state = saveStateOpenForWrite("keyboard");
     saveStateSet(state, "keymapType",  keymapType);
     saveStateClose(state);

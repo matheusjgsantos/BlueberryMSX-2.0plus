@@ -7,10 +7,17 @@
 **
 ** Copyright (C) 2003-2006 Daniel Vik
 ** Copyright (C) 2014 Akop Karapetyan
+** Copyright (C) 2020 Matheus José Geraldini dos Santos
 **
 ** GLES code is based on
 ** https://sourceforge.net/projects/atari800/ and
 ** https://code.google.com/p/pisnes/
+**
+** DRM/BGM code for Raspberry Pi 4's VideoCore VI based on
+** https://www.raspberrypi.org/forums/viewtopic.php?t=243707
+** https://github.com/eyelash/tutorials/blob/master/drm-gbm.c
+** 
+** Requires: -ldrm -lgbm -lEGL -lGL -I/usr/include/libdrm
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -34,12 +41,23 @@
 
 #include "Properties.h"
 #include "VideoRender.h"
-
+/*
 #include <bcm_host.h>
 #include <interface/vchiq_arm/vchiq_if.h>
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
+#
+*/
+#include <xf86drm.h>
+#include <xf86drmMode.h>
+#include <gbm.h>
+#include <drm.h>
+#include <EGL/egl.h>
+#include <GL/gl.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <SDL.h>
+
 
 typedef	struct ShaderInfo {
 	GLuint program;
@@ -74,9 +92,8 @@ static void setOrtho(float m[4][4],
 	float left, float right, float bottom, float top,
 	float near, float far, float scaleX, float scaleY);
 
-static EGL_DISPMANX_WINDOW_T nativeWindow;
 static EGLDisplay display = NULL;
-static EGLSurface surface = NULL;
+static EGLSurface egl_surface = NULL;
 static EGLContext context = NULL;
 
 uint32_t screenWidth = 0;
@@ -91,6 +108,7 @@ static SDL_Surface *sdlScreen;
 char *msxScreen = NULL;
 int msxScreenPitch;
 int height;
+char result;
 
 static const char* vertexShaderSrc =
 	"uniform mat4 u_vp_matrix;\n"
@@ -99,8 +117,8 @@ static const char* vertexShaderSrc =
 	"attribute vec2 a_texcoord;\n"
 	"attribute vec4 in_Colour;\n"
 	"varying vec4 v_vColour;\n"
-	"varying mediump vec2 v_texcoord;\n"
 	"varying vec4 TEX0;\n"
+	"varying vec2 v_texcoord;\n"
 	"void main() {\n"
 	"	v_texcoord = a_texcoord;\n"
 	"	v_vColour = in_Colour;\n"
@@ -166,13 +184,116 @@ static const GLfloat vertices[] = {
 	+0.5f, +0.5f, 0.0f,
 	-0.5, +0.5f, 0.0f,
 };
+ // DRM/GBM settings
+static int device;
+static drmModeRes *resources;
+static drmModeConnector *connector;
+static uint32_t connector_id;
+static drmModeEncoder *encoder;
+static drmModeModeInfo mode_info;
+static drmModeCrtc *crtc;
+static struct gbm_device *gbm_device;
+static EGLDisplay display;
+static EGLContext context;
+static struct gbm_surface *gbm_surface;
+static EGLSurface egl_surface;
+       EGLConfig config;
+       EGLint num_config;
+       EGLint count=0;
+       EGLConfig *configs;
+       int config_index;
+       int i;
+       
+static struct gbm_bo *previous_bo = NULL;
+static uint32_t previous_fb;       
+
+static EGLint attributes[] = {
+		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+		EGL_RED_SIZE, 8,
+		EGL_GREEN_SIZE, 8,
+		EGL_BLUE_SIZE, 8,
+		EGL_ALPHA_SIZE, 0,
+		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+		EGL_NONE
+		};
+
+static const EGLint context_attribs[] = {
+		EGL_CONTEXT_CLIENT_VERSION, 2,
+		EGL_NONE
+	};
+
+struct gbm_bo *bo;	
+uint32_t handle;
+uint32_t pitch;
+int32_t fb;
+uint64_t modifier;
+
+static drmModeConnector *find_connector (drmModeRes *resources) {
+
+    for (int i=0; i<resources->count_connectors; i++) {
+        drmModeConnector *connector = drmModeGetConnector (device, resources->connectors[i]);
+        if (connector->connection == DRM_MODE_CONNECTED) {return connector;}
+        drmModeFreeConnector (connector);
+    }
+    return NULL; // if no connector found
+}
+
+static drmModeEncoder *find_encoder (drmModeRes *resources, drmModeConnector *connector) {
+
+    if (connector->encoder_id) {return drmModeGetEncoder (device, connector->encoder_id);}
+    return NULL; // if no encoder found
+}
+
+static void swap_buffers () {
+
+eglSwapBuffers (display, egl_surface);
+bo = gbm_surface_lock_front_buffer (gbm_surface);
+handle = gbm_bo_get_handle (bo).u32;
+pitch = gbm_bo_get_stride (bo);
+drmModeAddFB (device, mode_info.hdisplay, mode_info.vdisplay, 24, 32, pitch, handle, &fb);
+drmModeSetCrtc (device, crtc->crtc_id, fb, 0, 0, &connector_id, 1, &mode_info);
+if (previous_bo) {
+drmModeRmFB (device, previous_fb);
+gbm_surface_release_buffer (gbm_surface, previous_bo);
+}
+previous_bo = bo;
+previous_fb = fb;
+}
+
+static void draw (float progress) {
+
+glClearColor (1.0f-progress, progress, 0.0, 1.0);
+glClear (GL_COLOR_BUFFER_BIT);
+swap_buffers ();
+}
+
+static int match_config_to_visual(EGLDisplay egl_display, EGLint visual_id, EGLConfig *configs, int count) {
+
+EGLint id;
+for (int i = 0; i < count; ++i) {
+  if (!eglGetConfigAttrib(egl_display, configs[i], EGL_NATIVE_VISUAL_ID,&id)) continue;
+  if (id == visual_id) return i;
+  }
+return -1;
+}
 
 int piInitVideo()
 {
-	bcm_host_init();
-
 	// get an EGL display connection
-	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+
+    device = open ("/dev/dri/card0", O_RDWR);
+    resources = drmModeGetResources (device);
+    connector = find_connector (resources);
+    connector_id = connector->connector_id;
+    mode_info = connector->modes[0];
+    printf ("resolution: %ix%i\n", mode_info.hdisplay, mode_info.vdisplay);
+    encoder = find_encoder (resources, connector);
+    crtc = drmModeGetCrtc (device, encoder->crtc_id);
+    drmModeFreeEncoder (encoder);
+    drmModeFreeConnector (connector);
+    drmModeFreeResources (resources);
+    gbm_device = gbm_create_device (device);
+	display = eglGetDisplay(gbm_device);
 	if (display == EGL_NO_DISPLAY) {
 		fprintf(stderr, "eglGetDisplay() failed: EGL_NO_DISPLAY\n");
 		return 0;
@@ -186,7 +307,7 @@ int piInitVideo()
 	}
 
 	// get an appropriate EGL frame buffer configuration
-	EGLint numConfig;
+	/*EGLint numConfig;
 	EGLConfig config;
 	static const EGLint attributeList[] = {
 		EGL_RED_SIZE, 8,
@@ -195,14 +316,19 @@ int piInitVideo()
 		EGL_ALPHA_SIZE, 8,
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
 		EGL_NONE
-	};
-	result = eglChooseConfig(display, attributeList, &config, 1, &numConfig);
+	};*/
+
+    eglGetConfigs(display, NULL, 0, &count);
+    configs = malloc(count * sizeof *configs);
+    
+    result = eglChooseConfig (display, attributes, configs, count, &num_config);
 	if (result == EGL_FALSE) {
 		fprintf(stderr, "eglChooseConfig() failed: EGL_FALSE\n");
 		return 0;
 	}
-
-	result = eglBindAPI(EGL_OPENGL_ES_API);
+    config_index = match_config_to_visual(display,GBM_FORMAT_XRGB8888,configs,num_config);
+ 
+	result = eglBindAPI (EGL_OPENGL_API);
 	if (result == EGL_FALSE) {
 		fprintf(stderr, "eglBindAPI() failed: EGL_FALSE\n");
 		return 0;
@@ -213,24 +339,25 @@ int piInitVideo()
 		EGL_CONTEXT_CLIENT_VERSION, 2,
 		EGL_NONE
 	};
-	context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttributes);
+	context = eglCreateContext (display, configs[config_index], EGL_NO_CONTEXT, context_attribs);
 	if (context == EGL_NO_CONTEXT) {
 		fprintf(stderr, "eglCreateContext() failed: EGL_NO_CONTEXT\n");
 		return 0;
 	}
 
 	// create an EGL window surface
-	int32_t success = graphics_get_display_size(0, &screenWidth, &screenHeight);
+	/*int32_t success = graphics_get_display_size(0, &screenWidth, &screenHeight);
 	if (result < 0) {
 		fprintf(stderr, "graphics_get_display_size() failed: < 0\n");
 		return 0;
 	}
+	*/
 
 	printf( "Width/height: %d/%d\n", screenWidth, screenHeight);
 	if (screenHeight < 600 && video)
 		video->scanLinesEnable = 0;
 
-	VC_RECT_T dstRect;
+	/*VC_RECT_T dstRect;
 	dstRect.x = 0;
 	dstRect.y = 0;
 	dstRect.width = screenWidth;
@@ -241,30 +368,24 @@ int piInitVideo()
 	srcRect.y = 0;
 	srcRect.width = screenWidth << 16;
 	srcRect.height = screenHeight << 16;
-
-	DISPMANX_DISPLAY_HANDLE_T dispManDisplay = vc_dispmanx_display_open(0);
-	DISPMANX_UPDATE_HANDLE_T dispmanUpdate = vc_dispmanx_update_start(0);
-	DISPMANX_ELEMENT_HANDLE_T dispmanElement = vc_dispmanx_element_add(dispmanUpdate,
-		dispManDisplay, 0, &dstRect, 0, &srcRect,
-		DISPMANX_PROTECTION_NONE, NULL, NULL, DISPMANX_NO_ROTATE);
-
-	nativeWindow.element = dispmanElement;
-	nativeWindow.width = screenWidth;
-	nativeWindow.height = screenHeight;
-	vc_dispmanx_update_submit_sync(dispmanUpdate);
+	*/
 
 	fprintf(stderr, "Initializing window surface...\n");
 
-	surface = eglCreateWindowSurface(display, config, &nativeWindow, NULL);
-	if (surface == EGL_NO_SURFACE) {
+	egl_surface = eglCreateWindowSurface (display, configs[config_index], gbm_surface, NULL);
+	result = eglQuerySurface(display, egl_surface, NULL, NULL);
+	printf("egl_surface: %s - %s\n",egl_surface,result);
+        /*if (egl_surface == EGL_NO_SURFACE) {
 		fprintf(stderr, "eglCreateWindowSurface() failed: EGL_NO_SURFACE\n");
 		return 0;
 	}
+	*/
+        free(configs);
 
 	fprintf(stderr, "Connecting context to surface...\n");
 
 	// connect the context to the surface
-	result = eglMakeCurrent(display, surface, surface, context);
+	result = eglMakeCurrent (display, egl_surface, egl_surface, context);
 	if (result == EGL_FALSE) {
 		fprintf(stderr, "eglMakeCurrent() failed: EGL_FALSE\n");
 		return 0;
@@ -306,7 +427,7 @@ int piInitVideo()
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_DITHER);
 
-//	fprintf(stderr, "Setting up screen...\n");
+	fprintf(stderr, "Setting up screen...\n");
 
 	msxScreen = (char*)calloc(1, BIT_DEPTH / 8 * TEX_WIDTH * TEX_HEIGHT);
 	if (!msxScreen) {
@@ -319,8 +440,9 @@ int piInitVideo()
 	// We're doing our own video rendering - this is just so SDL-based keyboard
 	// can work
 	SDL_Init(SDL_INIT_EVERYTHING);
-//    SDL_VideoInit("fbdev", 0);
-	sdlScreen = SDL_SetVideoMode(0, 0, 0, 0);//SDL_ASYNCBLIT);
+	//    SDL_VideoInit("fbdev", 0);
+	// deprecated sdlScreen = SDL_SetVideoMode(0, 0, 0, 0);//SDL_ASYNCBLIT);
+	SDL_Window  *screen = SDL_CreateWindow("Blueberry MSX", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL);
     SDL_ShowCursor(SDL_DISABLE);
 	return 1;
 }
@@ -344,12 +466,11 @@ void piDestroyVideo()
 	// Release OpenGL resources
 	if (display) {
 		eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-		eglDestroySurface(display, surface);
+		eglDestroySurface(display, egl_surface);
 		eglDestroyContext(display, context);
 		eglTerminate(display);
 	}
 
-	bcm_host_deinit();
 }
 
 int width = -1;
@@ -430,7 +551,7 @@ void piUpdateEmuDisplay()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-	eglSwapBuffers(display, surface);
+	eglSwapBuffers(display, egl_surface);
 }
 
 static GLuint createShader(GLenum type, const char *shaderSrc)
@@ -454,7 +575,7 @@ static GLuint createShader(GLenum type, const char *shaderSrc)
 		if (infoLen > 1) {
 			char* infoLog = (char *)malloc(sizeof(char) * infoLen);
 			glGetShaderInfoLog(shader, infoLen, NULL, infoLog);
-			fprintf(stderr, "Error compiling shader:\n%s\n", infoLog);
+			fprintf(stderr, "Error compiling shader:\n%s\nInfolog:", infoLog);
 			free(infoLog);
 		}
 
