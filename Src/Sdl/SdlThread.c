@@ -31,18 +31,26 @@
 
 static int threadEntry(void* data) 
 {
+    fprintf(stderr,"SdlThread is executing threadEntry\n");
     void (*entryPoint)() = data;
 
+    fprintf(stderr,"SdlThread is about to call entryPoint() with data: %d\n",data);
+    if (data == 0x0) {
+    	fprintf(stderr,"SdlThread received invalid data: %d\n",data);
+	exit(1);
+    }
     entryPoint();
-    
     return 0;
 }
 
 
 void* archThreadCreate(void (*entryPoint)(), int priority) { 
     //DEPRECATED in sdl2 -- SDL_Thread* sdlThread = SDL_CreateThread(threadEntry, entryPoint);
-    SDL_Thread* sdlThread = SDL_CreateThread(threadEntry, entryPoint, NULL);
+    fprintf(stderr,"SdlThread archThreadCreate was invoked and is calling SDL_CreateThread with entrypoint %d and threadEntry %d\n", entryPoint, threadEntry);
+    //SDL_Thread* sdlThread = SDL_CreateThread(threadEntry, entryPoint, (void *)NULL);
+    SDL_Thread* sdlThread = SDL_CreateThread(threadEntry, (void *)NULL, entryPoint);
     fprintf (stderr, "SdlThread is creating the thread %d\n", sdlThread);
+    //fprintf (stderr, "SdlThread running SDL_GetError(): %d\n", SDL_GetError());
     return sdlThread;
 }
 

@@ -45,7 +45,7 @@ LDFLAGS  =
 LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -ldrm -lgbm -lEGL -lGL -lbcm2835 -I/usr/include/libdrm
 # Uncomment the following line to enable GPIO (requires wiring-pi)
 #CFLAGS   += -DRASPI_GPIO
-CFLAGS   += -DSINGLE_THREADED 
+#CFLAGS   += -DSINGLE_THREADED 
 
 ifdef RASPI_GPIO
 LIBS     += -lwiringPi

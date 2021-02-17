@@ -132,7 +132,7 @@ void archQuit()
 {
 	doQuit = 1;
 	SDL_Quit();
-	system("sudo aconnect -x");
+	//system("sudo aconnect -x");
 }
 
 static int floppy1LedOn = 0;
@@ -309,7 +309,7 @@ int main(int argc, char **argv)
 	strcat(path, archGetCurrentDirectory());
 	strcat(path, DIR_SEPARATOR "bluemsx.ini");
 	
-    system("aconnect 20:0 128:0");
+    //system("aconnect 20:0 128:0");
 	
 	properties = propCreate(resetProperties, 0, P_KBD_EUROPEAN, 0, "");
 

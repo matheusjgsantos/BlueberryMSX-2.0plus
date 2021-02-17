@@ -147,8 +147,8 @@ void savelog()
     fclose(f);
 }
 //#else 
-//#define clearlog()
-//#define savelog()
+#define clearlog()
+#define savelog()
 
 //#endif
 
@@ -404,8 +404,8 @@ static void emulatorThread() {
     emuState = EMU_STOPPED;
 
 #ifndef WII
-    fprintf(stderr,"Emulator is calling archTimerDestroy\n");
-    archTimerDestroy(emuTimer);
+    //fprintf(stderr,"Emulator is calling archTimerDestroy\n");
+    //archTimerDestroy(emuTimer);
 #endif
 
     if (!success) {
@@ -483,9 +483,9 @@ void emulatorStart(const char* stateName) {
         archEmulationStartFailure();
     }
 #else
-    printf("Emulator is calling the archThreadCreate with the parameters %d\n", emulatorThread);
+    fprintf(stderr,"Emulator is calling the archThreadCreate with the parameters %d\n", emulatorThread);
     emuThread = archThreadCreate(emulatorThread, THREAD_PRIO_HIGH);
-    printf("Emulator received archThreadCreate call: %d\n",emuThread);
+    fprintf(stderr,"Emulator called archThreadCreate with %d and received %d\n",emulatorThread, emuThread);
 
     archEventWait(emuStartEvent, 3000);
 
@@ -525,17 +525,17 @@ void emulatorStop() {
 
     emuExitFlag = 1;
 #ifndef WII
-    archEventSet(emuSyncEvent);
+    //archEventSet(emuSyncEvent);
 #endif
     archSoundSuspend();
-    printf("I'm calling archThreadJoin here\n");
+    fprintf(stderr,"Emulator is calling archThreadJoin with data: %d\n",emuThread);
     archThreadJoin(emuThread, 3000);
     archMidiEnable(0);
     machineDestroy(machine);
-    printf("I'm calling archThreadDestroy here\n");
+    fprintf(stderr,"Emulator is calling archThreadDestroy with data: %d\n",emuThread);
     archThreadDestroy(emuThread);
 #ifndef WII
-    archEventDestroy(emuSyncEvent);
+    //archEventDestroy(emuSyncEvent);
 #endif
     archEventDestroy(emuStartEvent);
 
@@ -776,8 +776,8 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
     }
 
 #ifdef SINGLE_THREADED
-    //emuExitFlag |= archPollEvent();
-    emuExitFlag = 1;
+    emuExitFlag |= archPollEvent();
+    //emuExitFlag = 1;
 #endif
 
     if (((++kbdPollCnt & 0x03) >> 1) == 0) {

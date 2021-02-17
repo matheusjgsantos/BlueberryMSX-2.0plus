@@ -60,9 +60,12 @@ static UInt32 lastTimeout;
 
 Uint32 timerCalback(Uint32 interval)
 {
-    fprintf(stderr,"SdlTimer is executing timerCallBack\n");
+    //fprintf(stderr,"SdlTimer is executing timerCallBack\n");
+    //fprintf(stderr,"SdlTimer is about to get currentTime \n");
+    //fprintf(stderr,"SdlTimer is about to get currentTime %d\n",archGetSystemUpTime(timerFreq));
     if (timerCb) {
         UInt32 currentTime = archGetSystemUpTime(timerFreq);
+    	//fprintf(stderr,"SdlTimer got currentTime %d\n",currentTime);
 
         while (lastTimeout != currentTime) {
             lastTimeout = currentTime;
@@ -74,33 +77,36 @@ Uint32 timerCalback(Uint32 interval)
 
 void* archCreateTimer(int period, int (*timerCallback)(void*)) 
 { 
-    fprintf(stderr,"SdlTimer is executing archCreateTimer\n");
+    //fprintf(stderr,"SdlTimer is executing archCreateTimer\n");
     timerFreq = 1000 / period;
     lastTimeout = archGetSystemUpTime(timerFreq);
     timerCb  = timerCallback;
 
     // Deprecated on sdl2 -- SDL_SetTimer(period, timerCalback);
     SDL_TimerID my_timer_id =  SDL_AddTimer(period, timerCalback, NULL);
-    fprintf(stderr,"SDLTimer created a timer with id %d\n",my_timer_id);
+    //fprintf(stderr,"SDLTimer created a timer with id %d\n",my_timer_id);
+    //fprintf(stderr,"SDLTimer will return timerCallback: %d\n",timerCallback);
 
     return timerCallback;
 }
 
 void archTimerDestroy(void* timer) 
 {
-    fprintf(stderr,"SdlTimer is executing archTimerDestroy\n");
+    //fprintf(stderr,"SdlTimer is executing archTimerDestroy\n");
     if (timerCb != timer) {
         return;
     }
 
     //DEPRECATED in sdl2 -- SDL_SetTimer(0, NULL);
-    SDL_TimerID my_timer_id =  SDL_AddTimer(0, NULL, NULL);
+    //SDL_TimerID my_timer_id =  SDL_AddTimer(0, NULL, NULL);
+    SDL_RemoveTimer(1);
     timerCb = NULL;
-    fprintf(stderr,"archTimerDestroy call ended\n");
+    //fprintf(stderr,"archTimerDestroy call ended\n");
 }
 
 UInt32 archGetSystemUpTime(UInt32 frequency) 
 {
+    //fprintf(stderr,"SdlTImer is about to return SDL_GetTicks() %d\n",SDL_GetTicks() / (1000 / frequency));
     return SDL_GetTicks() / (1000 / frequency);
 }
 

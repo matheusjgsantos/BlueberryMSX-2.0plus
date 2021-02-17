@@ -4,27 +4,31 @@ Initializing shaders...
 Initializing textures/buffers...
 Setting up screen...
 Initializing SDL video...
+error: XDG_RUNTIME_DIR not set in the environment.
+error: XDG_RUNTIME_DIR not set in the environment.
 udev initialized
+error: XDG_RUNTIME_DIR not set in the environment.
 udev monitor starting
 PiMain.c is calling SDL_Event event
-Connection failed (Invalid argument)
-PiMain is calling keyboardInit with 65269496
+PiMain is calling keyboardInit with 80014104
 PiInput.c is executing keyboardInit function
 PiInput.c is calling initKbdTable function
 initKbfTable() call ended
 PiInput.c is calling inputEventReset function
 inputEventReset() call ended
+SdlTImer is about to return SDL_GetTicks() 15
+SdlTImer is about to return SDL_GetTicks() 15
+SdlTImer is about to return SDL_GetTicks() 15
+SdlTImer is about to return SDL_GetTicks() 15
+SdlTImer is about to return SDL_GetTicks() 15
 Emulator is calling archCreateTimer
 SdlTimer is executing archCreateTimer
+SdlTImer is about to return SDL_GetTicks() 31
 SDLTimer created a timer with id 1
-Emulator is calling emulatorThread()
-SdlTimer is executing timerCallBack
-PiMain.c is calling SDL_Event 
-PiMain.c SDL_Event returned 7
-PiMain.c pendingDisplayEvents is 0
-PiMain.c event.type is 32768
-SdlTimer is executing timerCallBack
-SdlTimer is executing timerCallBack
-Emulator is calling archTimerDestroy
-SdlTimer is executing archTimerDestroy
-archTimerDestroy call ended
+SDLTimer will return timerCallback: 1048396
+Emulator is calling the archThreadCreate with the parameters 1048912
+SdlThread is creating the thread 80356256
+SdlThread running SDL_GetError(): 1995136276
+Emulator received archThreadCreate call: 80356256
+SdlThread is executing threadEntry
+SdlThread is about to call entryPoint() with data: 0
