@@ -36,13 +36,13 @@ ECHO  = @echo
 #
 # Flags
 #
-COMMON_FLAGS = -DUSESDL2 -DUSESDL2Main -DUSE_EGL -DIS_RPI -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DRASPI 
+COMMON_FLAGS = -DUSESDL2 -DUSESDL2Main -DUSE_EGL -DIS_RPI -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DRASPI -DUSESDL_egl -DUSE-GLESv2
 CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer $(COMMON_FLAGS)
 CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  =  
 #####LIBS     =  -lSDL -lz -lbcm_host -lbrcmEGL -lbrcmGLESv2 -lpthread -ludev -lbcm2835
 #####LIBS     =  -lSDL2 -lz -lbcm_host -lbrcmEGL -lbrcmGLESv2 -lpthread -ludev -lbcm2835 -lgbm -ldrm
-LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -ldrm -lgbm -lEGL -lGL -lbcm2835 -I/usr/include/libdrm
+LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm -lEGL -lGLESv2
 # Uncomment the following line to enable GPIO (requires wiring-pi)
 #CFLAGS   += -DRASPI_GPIO
 #CFLAGS   += -DSINGLE_THREADED 
@@ -60,8 +60,8 @@ OUTPUT_OBJS = $(addprefix $(OUTPUT_DIR)/, $(OBJS))
 #
 # SDL specific flags
 #
-###SDL_CFLAGS := $(shell sdl2-config --cflags)
-SDL_CFLAGS=-I/usr/local/include/SDL2 -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -D_REENTRANT
+SDL_CFLAGS := $(shell sdl2-config --cflags)
+###SDL_CFLAGS=-I/usr/local/include/SDL2 -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -D_REENTRANT
 SDL_LDFLAGS := $(shell sdl2-config --libs)
 CFLAGS += $(SDL_CFLAGS)
 CPPFLAGS += $(SDL_CFLAGS)

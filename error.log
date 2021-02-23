@@ -1,24 +1,14 @@
-Initializing window surface...
-Connecting context to surface...
-Initializing shaders...
 Initializing textures/buffers...
 Setting up screen...
 Initializing SDL video...
-udev initialized
 udev monitor starting
-PiMain is calling keyboardInit with 53196296
+udev initialized
+PiMain is calling keyboardInit with 61981080
 PiInput.c is executing keyboardInit function
 PiInput.c is calling initKbdTable function
 initKbfTable() call ended
 PiInput.c is calling inputEventReset function
 inputEventReset() call ended
-Emulator is calling archCreateTimer
-Emulator is calling the archThreadCreate with the parameters 1048528
-SdlThread archThreadCreate was invoked and is calling SDL_CreateThread with entrypoint 1048528 and threadEntry 113064
-SdlThread is executing threadEntry
-SdlThread is creating the thread 53493448
-Emulator called archThreadCreate with 1048528 and received 53493448
-SdlThread is about to call entryPoint() with data: 1048528
 Powering on
 PiInput.c is executing keyboardUpdate function
 PiInput.c is executing keyboardUpdate function
