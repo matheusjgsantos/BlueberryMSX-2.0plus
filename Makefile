@@ -60,7 +60,8 @@ OUTPUT_OBJS = $(addprefix $(OUTPUT_DIR)/, $(OBJS))
 #
 # SDL specific flags
 #
-SDL_CFLAGS := $(shell sdl2-config --cflags)
+###SDL_CFLAGS := $(shell sdl2-config --cflags)
+SDL_CFLAGS=-I/usr/local/include/SDL2 -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -D_REENTRANT
 SDL_LDFLAGS := $(shell sdl2-config --libs)
 CFLAGS += $(SDL_CFLAGS)
 CPPFLAGS += $(SDL_CFLAGS)

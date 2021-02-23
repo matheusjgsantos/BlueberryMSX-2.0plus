@@ -19,6 +19,9 @@
 ** 
 ** Requires: -ldrm -lgbm -lEGL -lGL -I/usr/include/libdrm
 **
+** KMSDRM is not enabled by default for SDL2 on raspberrypi, requiring the steps
+** from https://stackoverflow.com/questions/57672568/sdl2-on-raspberry-pi-without-x
+**
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
@@ -439,7 +442,10 @@ int piInitVideo()
 
 	// We're doing our own video rendering - this is just so SDL-based keyboard
 	// can work
-	SDL_Init(SDL_INIT_EVERYTHING);
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
+		fprintf(stderr,"PiVideo SDL_Init failed with error %s\n",SDL_GetError());
+		exit(1);
+	}
 	//    SDL_VideoInit("fbdev", 0);
 	// deprecated sdlScreen = SDL_SetVideoMode(0, 0, 0, 0);//SDL_ASYNCBLIT);
 	SDL_Window  *screen = SDL_CreateWindow("Blueberry MSX", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL);

@@ -81,11 +81,11 @@ static SDL_Joystick *joysticks[JOYSTICK_COUNT];
 
 int archUpdateEmuDisplay(int syncMode)
 {
-	fprintf(stderr,"PiMain.c is calling SDL_Event \n");
+	//fprintf(stderr,"PiMain.c is calling SDL_Event \n");
 	SDL_Event event;
-	fprintf(stderr,"PiMain.c SDL_Event returned %d\n",event);
+	//fprintf(stderr,"PiMain.c SDL_Event returned %d\n",event);
 
-	fprintf(stderr,"PiMain.c pendingDisplayEvents is %d\n", pendingDisplayEvents);
+	//fprintf(stderr,"PiMain.c pendingDisplayEvents is %d\n", pendingDisplayEvents);
 	if (pendingDisplayEvents > 1) {
 		return 1;
 	}
@@ -93,7 +93,7 @@ int archUpdateEmuDisplay(int syncMode)
 	pendingDisplayEvents++;
 
 	event.type = SDL_USEREVENT;
-	fprintf(stderr,"PiMain.c event.type is %d\n", event.type);
+	//fprintf(stderr,"PiMain.c event.type is %d\n", event.type);
 
 	event.user.code = EVENT_UPDATE_DISPLAY;
 	event.user.data1 = NULL;
@@ -277,11 +277,15 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	
-	SDL_Init(SDL_INIT_EVERYTHING);
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
+		fprintf(stderr,"PiMain SDL_Init failed: %s\n", SDL_GetError());
+		SDL_Quit();
+		exit(1);
+	}
 	SDL_ShowCursor(SDL_DISABLE);
 	SDL_JoystickEventState(SDL_ENABLE);
 
-	fprintf(stderr,"PiMain.c is calling SDL_Event event\n");
+	//fprintf(stderr,"PiMain.c is calling SDL_Event event\n");
 	SDL_Event event;
 	char szLine[8192] = "";
 	int resetProperties;
