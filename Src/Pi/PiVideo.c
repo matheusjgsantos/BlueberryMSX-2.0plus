@@ -50,15 +50,73 @@
 #include <xf86drmMode.h>
 #include <gbm.h>
 
-//#define GL_GLEXT_PROTOTYPES 1
+#define GL_GLEXT_PROTOTYPES 1
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_egl.h>
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
+#include <GL/gl.h>
+#include <GL/glext.h>
+//#include <GLES2/gl2.h>
+//#include <GLES2/gl2ext.h>
+//#include <GLES3/gl3.h>
+//#include <GLES3/gl3ext.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
 #include <assert.h>
+
+// Get the EGL error back as a string. Useful for debugging.
+static const char *eglGetErrorStr()
+{
+    switch (eglGetError())
+    {
+    case EGL_SUCCESS:
+        return "The last function succeeded without error.";
+    case EGL_NOT_INITIALIZED:
+        return "EGL is not initialized, or could not be initialized, for the "
+               "specified EGL display connection.";
+    case EGL_BAD_ACCESS:
+        return "EGL cannot access a requested resource (for example a context "
+               "is bound in another thread).";
+    case EGL_BAD_ALLOC:
+        return "EGL failed to allocate resources for the requested operation.";
+    case EGL_BAD_ATTRIBUTE:
+        return "An unrecognized attribute or attribute value was passed in the "
+               "attribute list.";
+    case EGL_BAD_CONTEXT:
+        return "An EGLContext argument does not name a valid EGL rendering "
+               "context.";
+    case EGL_BAD_CONFIG:
+        return "An EGLConfig argument does not name a valid EGL frame buffer "
+               "configuration.";
+    case EGL_BAD_CURRENT_SURFACE:
+        return "The current surface of the calling thread is a window, pixel "
+               "buffer or pixmap that is no longer valid.";
+    case EGL_BAD_DISPLAY:
+        return "An EGLDisplay argument does not name a valid EGL display "
+               "connection.";
+    case EGL_BAD_SURFACE:
+        return "An EGLSurface argument does not name a valid surface (window, "
+               "pixel buffer or pixmap) configured for GL rendering.";
+    case EGL_BAD_MATCH:
+        return "Arguments are inconsistent (for example, a valid context "
+               "requires buffers not supplied by a valid surface).";
+    case EGL_BAD_PARAMETER:
+        return "One or more argument values are invalid.";
+    case EGL_BAD_NATIVE_PIXMAP:
+        return "A NativePixmapType argument does not refer to a valid native "
+               "pixmap.";
+    case EGL_BAD_NATIVE_WINDOW:
+        return "A NativeWindowType argument does not refer to a valid native "
+               "window.";
+    case EGL_CONTEXT_LOST:
+        return "A power management event has occurred. The application must "
+               "destroy all contexts and reinitialise OpenGL ES state and "
+               "objects to continue rendering.";
+    default:
+        break;
+    }
+    return "Unknown error!";
+}
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 typedef EGLDisplay (EGLAPIENTRYP PFNEGLGETPLATFORMDISPLAYEXTPROC) (EGLenum platform, void *native_display, const EGLint *attrib_list);
@@ -126,9 +184,9 @@ static void setOrtho(float m[4][4],
 	float left, float right, float bottom, float top,
 	float near, float far, float scaleX, float scaleY);
 
-static EGLDisplay display = NULL;
-static EGLSurface egl_surface = NULL;
-static EGLContext context = NULL;
+//static EGLDisplay display = NULL;
+//static EGLSurface egl_surface = NULL;
+//static EGLContext context = NULL;
 
 uint32_t screenWidth = 0;
 uint32_t screenHeight = 0;
@@ -301,9 +359,17 @@ static drmModeEncoder *find_encoder (drmModeRes *resources, drmModeConnector *co
     return NULL; // if no encoder found
 }
 
+static void gbmClean()
+{
+    // set the previous crtc
+
+    gbm_surface_destroy(gbm.surface);
+    gbm_device_destroy(gbm.dev);
+}
+
 static void swap_buffers () {
 
-eglSwapBuffers (display, egl_surface);
+eglSwapBuffers (gl.display, gl.surface);
 bo = gbm_surface_lock_front_buffer (gbm.surface);
 handle = gbm_bo_get_handle (bo).u32;
 pitch = gbm_bo_get_stride (bo);
@@ -344,7 +410,7 @@ static int init_drm(void)
 	drmModeEncoder *encoder = NULL;
 	int i, area;
 
-	drm.fd = open("/dev/dri/card0", O_RDWR);
+	drm.fd = open("/dev/dri/card1", O_RDWR);
 
 	if (drm.fd < 0) {
 		printf("could not open drm device\n");
@@ -438,6 +504,20 @@ static int init_gbm(void)
 	return 0;
 }
 
+
+static int matchConfigToVisual(EGLDisplay display, EGLint visualId, EGLConfig *configs, int count)
+{
+    EGLint id;
+    for (int i = 0; i < count; ++i)
+    {
+        if (!eglGetConfigAttrib(display, configs[i], EGL_NATIVE_VISUAL_ID, &id))
+            continue;
+        if (id == visualId)
+            return i;
+    }
+    return -1;
+}
+
 static int init_gl(void)
 {
 	EGLint major, minor, n;
@@ -469,6 +549,8 @@ static int init_gl(void)
 	if (!eglInitialize(gl.display, &major, &minor)) {
 		printf("failed to initialize\n");
 		return -1;
+	} else {
+		fprintf(stderr,"eglInitialize successfully: %lu\n",eglGetDisplay( gl.display ));
 	}
 
 	printf("Using display %p with EGL version %d.%d\n",
@@ -481,23 +563,54 @@ static int init_gl(void)
 	if (!eglBindAPI(EGL_OPENGL_ES_API)) {
 		printf("failed to bind api EGL_OPENGL_ES_API\n");
 		return -1;
+	} else {
+		fprintf(stderr,"EGL bound sucessfully\n");
 	}
 
-	if (!eglChooseConfig(gl.display, config_attribs, &gl.config, 1, &n) || n != 1) {
+	/*if (!eglChooseConfig(gl.display, config_attribs, &gl.config, 1, &n) || n != 1) {
 		printf("failed to choose config: %d\n", n);
 		return -1;
+	} else {
+		fprintf(stderr,"EGL config chosen: %lu\n",gl.config);
+	}*/
+
+	EGLint count;
+	EGLint numConfigs;
+	eglGetConfigs(gl.display, NULL, 0, &count);
+	EGLConfig *configs = malloc(count * sizeof(configs));
+
+	if (!eglChooseConfig(gl.display, config_attribs, configs, count, &numConfigs))
+	{
+		fprintf(stderr, "Failed to get EGL configs! Error: %s\n",
+			eglGetErrorStr());
+		eglTerminate(gl.display);
+		gbmClean();
+		return EXIT_FAILURE;
 	}
 
-	gl.context = eglCreateContext(gl.display, gl.config,
-			EGL_NO_CONTEXT, context_attribs);
+	int configIndex = matchConfigToVisual(gl.display, GBM_FORMAT_XRGB8888, configs, numConfigs);
+	if (configIndex < 0)
+	{
+		fprintf(stderr, "Failed to find matching EGL config! Error: %s\n",
+			eglGetErrorStr());
+		eglTerminate(gl.display);
+		gbm_surface_destroy(gbm.surface);
+		gbm_device_destroy(gbm.dev);
+		return EXIT_FAILURE;
+	}
+
+	gl.context = eglCreateContext(gl.display, gl.config, EGL_NO_CONTEXT, context_attribs);
 	if (gl.context == NULL) {
 		printf("failed to create context\n");
 		return -1;
+	} else {
+		fprintf(stderr,"eglCreateContext executed sucessfully: %lu\n",gl.context);
 	}
 
-	gl.surface = eglCreateWindowSurface(gl.display, gl.config, gbm.surface, NULL);
+	//gl.surface = eglCreateWindowSurface(gl.display, gl.config, gbm.surface, NULL);
+	gl.surface = eglCreateWindowSurface(gl.display, configs[configIndex], gbm.surface, NULL);
 	if (gl.surface == EGL_NO_SURFACE) {
-		printf("failed to create egl surface\n");
+		printf("failed to create egl surface %s: %d\n",gl.surface,eglGetError());
 		return -1;
 	}
 
@@ -566,6 +679,19 @@ static void page_flip_handler(int fd, unsigned int frame,
 
 int piInitVideo()
 {
+	/*SDL_Init(0);
+	fprintf(stderr,"%s - ",SDL_GetError());
+	if ( SDL_Init(SDL_INIT_EVERYTHING) < 0 ) {
+		fprintf(stderr,"SDL_INIT_EVERYTHING executed sucessfully. Using video driver %s\n",SDL_GetCurrentVideoDriver());
+	} else {
+		fprintf(stderr,"%s - ",SDL_GetError());
+		fprintf(stderr,"SDL_INIT_EVERYTHING failed for driver %s \n",SDL_GetCurrentVideoDriver());
+	}
+
+	sdlScreen = SDL_CreateWindow("BlueberryMSX", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_OPENGL);
+	SDL_Renderer* renderer = SDL_CreateRenderer( sdlScreen, -1, SDL_RENDERER_ACCELERATED );
+    	SDL_ShowCursor(SDL_DISABLE);*/
+
 	fd_set fds;
 	drmEventContext evctx = {
 			.version = DRM_EVENT_CONTEXT_VERSION,
@@ -580,6 +706,8 @@ int piInitVideo()
 	if (ret) {
 		printf("failed to initialize DRM\n");
 		return ret;
+	} else {
+		fprintf(stderr,"DRM initialized successfully\n");
 	}
 
 	FD_ZERO(&fds);
@@ -590,12 +718,16 @@ int piInitVideo()
 	if (ret) {
 		printf("failed to initialize GBM\n");
 		return ret;
+	} else {
+		fprintf(stderr,"GBM initialized successfully\n");
 	}
 
 	ret = init_gl();
 	if (ret) {
 		printf("failed to initialize EGL\n");
 		return ret;
+	} else {
+		fprintf(stderr,"EGL initialized successfully\n");
 	}
 
 	/* clear the color buffer */
@@ -619,6 +751,8 @@ int piInitVideo()
 	if (!shader.program) {
 		fprintf(stderr, "createProgram() failed\n");
 		return 0;
+	} else {
+		fprintf(stderr, "CreateProgram executed successfully %lu\n",shader.program);
 	}
 
 	fprintf(stderr, "Initializing textures/buffers...\n");
@@ -659,11 +793,13 @@ int piInitVideo()
 
 	// We're doing our own video rendering - this is just so SDL-based keyboard
 	// can work
-	SDL_Init(SDL_INIT_EVERYTHING);
+	//SDL_Init(0);
+	//SDL_Init(SDL_INIT_EVERYTHING);
+	SDL_VideoInit("KMSDRM");
 	//SDL_VideoInit("fbdev", 0);
 	//sdlScreen = SDL_SetVideoMode(0, 0, 0, 0);//SDL_ASYNCBLIT);
-	sdlScreen = SDL_CreateWindow("BlueberryMSX", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_SHOWN);
-    	SDL_ShowCursor(SDL_DISABLE);
+	sdlScreen = SDL_CreateWindow("BlueberryMSX", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_OPENGL);
+    	//SDL_ShowCursor(SDL_DISABLE);
 	return 1;
 }
 
@@ -684,11 +820,11 @@ void piDestroyVideo()
 	}
 	
 	// Release OpenGL resources
-	if (display) {
-		eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-		eglDestroySurface(display, egl_surface);
-		eglDestroyContext(display, context);
-		eglTerminate(display);
+	if (gl.display) {
+		eglMakeCurrent(gl.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+		eglDestroySurface(gl.display, gl.surface);
+		eglDestroyContext(gl.display, gl.context);
+		eglTerminate(gl.display);
 	}
 
 }
@@ -702,6 +838,7 @@ void piUpdateEmuDisplay()
 	int w = 0;
 	if (!shader.program) {
 		fprintf(stderr, "Shader not initialized\n");
+		exit(1);
 		return;
 	}
 
@@ -771,7 +908,7 @@ void piUpdateEmuDisplay()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-	eglSwapBuffers(display, egl_surface);
+	eglSwapBuffers(gl.display, gl.surface);
 }
 
 static GLuint createShader(GLenum type, const char *shaderSrc)

@@ -1,474 +1,944 @@
+/*****************************************************************************
+**
+** blueberryMSX
+** https://github.com/pokebyte/blueberryMSX
+**
+** An MSX Emulator for Raspberry Pi based on blueMSX
+**
+** Copyright (C) 2003-2006 Daniel Vik
+** Copyright (C) 2014 Akop Karapetyan
+** Copyright (C) 2020 Matheus José Geraldini dos Santos
+**
+** GLES code is based on
+** https://sourceforge.net/projects/atari800/ and
+** https://code.google.com/p/pisnes/
+**
+** DRM/BGM code for Raspberry Pi 4's VideoCore VI based on
+** https://www.raspberrypi.org/forums/viewtopic.php?t=243707
+** https://github.com/eyelash/tutorials/blob/master/drm-gbm.c
+** 
+** Requires: -ldrm -lgbm -lEGL -lGL -I/usr/include/libdrm
+**
+** EGL reimplementation based on code from Miouyouyou/Linux_DRM_OpenGLES.c 
+** https://gist.github.com/Miouyouyou/89e9fe56a2c59bce7d4a18a858f389ef
+** This program is free software; you can redistribute it and/or modify
+** it under the terms of the GNU General Public License as published by
+** the Free Software Foundation; either version 2 of the License, or
+** (at your option) any later version.
+**
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License
+** along with this program; if not, write to the Free Software
+** Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+**
+******************************************************************************
+*/
 
-####################################################
-# MakeFile and blueMSX.mak created by Roger Filipe #
-#                                                  #
-# 02/01/2004 - v1.0 - Initial Version              #
-# 20/01/2004 - v1.1 - Improved many things         #
-####################################################
+#include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+#include "Properties.h"
+#include "VideoRender.h"
+#include <fcntl.h>
+#include <unistd.h>
 
-#
-# Comment out if verbose comilation is wanted
-#
-#SILENT = @
+#include <xf86drm.h>
+#include <xf86drmMode.h>
+#include <gbm.h>
 
-#
-# Directories
-#
-ROOT_DIR   = .
-OUTPUT_DIR = objs
+#define GL_GLEXT_PROTOTYPES 1
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_egl.h>
+#include <GL/gl.h>
+#include <GL/glext.h>
+//#include <GLES2/gl2.h>
+//#include <GLES2/gl2ext.h>
+//#include <GLES3/gl3.h>
+//#include <GLES3/gl3ext.h>
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
 
-BCM_INCDIR= /opt/vc/include
+#include <assert.h>
 
-X11_LIBDIR= /usr/X11R6/libx
-BCM_LIBDIR= /opt/vc/lib
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+typedef EGLDisplay (EGLAPIENTRYP PFNEGLGETPLATFORMDISPLAYEXTPROC) (EGLenum platform, void *native_display, const EGLint *attrib_list);
+#define EGL_PLATFORM_GBM_KHR              0x31D7
+static SDL_Surface *sdlScreen;
 
-#
-# Tools
-#
-CC    = $(SILENT)gcc
-CXX   = $(SILENT)g++
-LD    = $(SILENT)g++ 
-RM    = $(SILENT)-rm -f
-RMDIR = $(SILENT)-rm -rf
-MKDIR = $(SILENT)-mkdir
-ECHO  = @echo
+static struct {
+	EGLDisplay display;
+	EGLConfig config;
+	EGLContext context;
+	EGLSurface surface;
+	GLuint program;
+	GLint modelviewmatrix, modelviewprojectionmatrix, normalmatrix;
+	GLuint vbo;
+	GLuint positionsoffset, colorsoffset, normalsoffset;
+} gl;
 
-#
-# Flags
-#
-COMMON_FLAGS = -DUSESDL2 -DUSESDL2Main -DUSE_EGL -DIS_RPI -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DRASPI -DUSESDL_egl
-CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer $(COMMON_FLAGS)
-CPPFLAGS = -g $(COMMON_FLAGS)
-LDFLAGS  =  
-#####LIBS     =  -lSDL -lz -lbcm_host -lbrcmEGL -lbrcmGLESv2 -lpthread -ludev -lbcm2835
-#####LIBS     =  -lSDL2 -lz -lbcm_host -lbrcmEGL -lbrcmGLESv2 -lpthread -ludev -lbcm2835 -lgbm -ldrm
-LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm -lEGL -lGLESv2
-# Uncomment the following line to enable GPIO (requires wiring-pi)
-#CFLAGS   += -DRASPI_GPIO
-#CFLAGS   += -DSINGLE_THREADED 
+static struct {
+	struct gbm_device *dev;
+	struct gbm_surface *surface;
+} gbm;
 
-ifdef RASPI_GPIO
-LIBS     += -lwiringPi
-endif
+static struct {
+	int fd;
+	drmModeModeInfo *mode;
+	uint32_t crtc_id;
+	uint32_t connector_id;
+} drm;
 
-TARGET   = bluemsx-pi
+struct drm_fb {
+	struct gbm_bo *bo;
+	uint32_t fb_id;
+};
 
-SRCS        = $(SOURCE_FILES)
-OBJS        = $(patsubst %.rc,%.res,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cc,%.o,$(patsubst %.c,%.o,$(filter %.c %.cc %.cpp %.cxx %.rc,$(SRCS)))))))
-OUTPUT_OBJS = $(addprefix $(OUTPUT_DIR)/, $(OBJS))
+typedef	struct ShaderInfo {
+	GLuint program;
+	GLint a_position;
+	GLint a_texcoord;
+	GLint u_vp_matrix;
+	GLint u_texture;
+	GLboolean scanline;
+} ShaderInfo;
 
-#
-# SDL specific flags
-#
-###SDL_CFLAGS := $(shell sdl2-config --cflags)
-SDL_CFLAGS=-I/usr/local/include/SDL2 -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -D_REENTRANT
-SDL_LDFLAGS := $(shell sdl2-config --libs)
-CFLAGS += $(SDL_CFLAGS)
-CPPFLAGS += $(SDL_CFLAGS)
-LDFLAGS += $(SDL_LDFLAGS)
+#define	TEX_WIDTH  600
+#define	TEX_HEIGHT 480
 
-DEPS := $(OBJS:.o=.d)
+#define BIT_DEPTH       16
+#define BYTES_PER_PIXEL (BIT_DEPTH >> 3)
+#define ZOOM            1
+#define	WIDTH           544
+#define	HEIGHT          480
 
--include $(DEPS)
+#define	minU 0.0f
+#define	maxU ((float)WIDTH / TEX_WIDTH)	
+#define	minV 0.0f
+#define	maxV ((float)HEIGHT / TEX_HEIGHT)
 
-%.o: %.c
-	$(CC) $(CFLAGS) -MM -MF $(patsubst %.o,%.d,$@) -o $@ $<
+extern Video *video;
+extern Properties *properties;
 
+static void drawQuad(const ShaderInfo *sh);
+static GLuint createShader(GLenum type, const char *shaderSrc);
+static GLuint createProgram(const char *vertexShaderSrc, const char *fragmentShaderSrc);
+static void setOrtho(float m[4][4],
+	float left, float right, float bottom, float top,
+	float near, float far, float scaleX, float scaleY);
+
+//static EGLDisplay display = NULL;
+//static EGLSurface egl_surface = NULL;
+//static EGLContext context = NULL;
+
+uint32_t screenWidth = 0;
+uint32_t screenHeight = 0;
+
+static ShaderInfo shader;
+static GLuint buffers[3];
+static GLuint textures[2];
+
+char *msxScreen = NULL;
+int msxScreenPitch;
+int height;
+
+static const char* vertexShaderSrc =
+	"#version 100\n"
+	"uniform mat4 u_vp_matrix;\n"
+	"uniform bool scanline;\n"
+	"attribute vec4 a_position;\n"
+	"attribute vec2 a_texcoord;\n"
+	"attribute vec4 in_Colour;\n"
+	"varying vec4 v_vColour;\n"
+	"varying vec4 TEX0;\n"
+	"varying mediump vec2 v_texcoord;\n"
+	"void main() {\n"
+	"	v_texcoord = a_texcoord;\n"
+	"	v_vColour = in_Colour;\n"
+	"   if (scanline)\n"
+	"	{\n"
+	"   	gl_Position = a_position.x*u_vp_matrix[0] + a_position.y*u_vp_matrix[1] + a_position.z*u_vp_matrix[2] + a_position.w*u_vp_matrix[3];\n"
+	"   	TEX0.xy = a_position.xy;\n"
+	"	} else {"
+	"		gl_Position = u_vp_matrix * a_position;\n"
+	"	}\n"
+	"}\n";
+	
+static const char* fragmentShaderSrc =
+	"#version 100\n"
+	"varying mediump vec2 v_texcoord;\n"
+	"uniform bool scanline;\n"
+	"uniform sampler2D u_texture;\n"
+	"varying mediump vec4 TEX0;\n"
+	"uniform mediump vec2 TextureSize;\n"
+	"void main() {\n"
+	"   if (scanline)\n"
+	"	{\n"
+	"  		mediump vec3 col;\n"
+	"  		mediump float x = TEX0.x * TextureSize.x;\n"
+	"  		mediump float y = floor(gl_FragCoord.y / 3.0) + 0.5;\n"
+	"  		mediump float ymod = mod(gl_FragCoord.y, 3.0);\n"
+	"  		mediump vec2 f0 = vec2(x, y);\n"
+	"  		mediump vec2 uv0 = f0 / TextureSize.xy;\n"
+ 	"  		mediump vec3 t0 = texture2D(u_texture, v_texcoord).xyz;\n"
+	"  		if (ymod > 2.0) {\n"
+	"    		mediump vec2 f1 = vec2(x, y + 1.0);\n"
+	"    		mediump vec2 uv1 = f1 / TextureSize.xy;\n"
+	"    		mediump vec3 t1 = texture2D(u_texture, uv1).xyz * 0.1;\n"
+	"    		col = (t0 + t1) / 1.6;\n"
+	"  		} else {\n"
+	"    		col = t0;\n"
+	"  		} \n"
+	"  		gl_FragColor = vec4(col, 1.0);\n"
+	"	} else {"
+	"		gl_FragColor = texture2D(u_texture, v_texcoord);\n"
+	"	}\n"
+	"}\n";
+
+static const GLfloat uvs[] = {
+	minU, minV,
+	maxU, minV,
+	maxU, maxV,
+	minU, maxV,
+};
+
+static const GLushort indices[] = {
+	0, 1, 2,
+	0, 2, 3,
+};
+
+static const int kVertexCount = 4;
+static const int kIndexCount = 6;
+
+static float projection[4][4];
+
+static const GLfloat vertices[] = {
+	-0.5, -0.5f, 0.0f,
+	+0.5f, -0.5f, 0.0f,
+	+0.5f, +0.5f, 0.0f,
+	-0.5, +0.5f, 0.0f,
+};
+ // DRM/GBM settings
+static int device;
+
+static uint32_t find_crtc_for_encoder(const drmModeRes *resources,
+				      const drmModeEncoder *encoder) {
+	int i;
+
+	for (i = 0; i < resources->count_crtcs; i++) {
+		/* possible_crtcs is a bitmask as described here:
+		 * https://dvdhrm.wordpress.com/2012/09/13/linux-drm-mode-setting-api
+		 */
+		const uint32_t crtc_mask = 1 << i;
+		const uint32_t crtc_id = resources->crtcs[i];
+		if (encoder->possible_crtcs & crtc_mask) {
+			return crtc_id;
+		}
+	}
+
+	/* no match found */
+	return -1;
+}
+
+static uint32_t find_crtc_for_connector(const drmModeRes *resources,
+					const drmModeConnector *connector) {
+	int i;
+
+	for (i = 0; i < connector->count_encoders; i++) {
+		const uint32_t encoder_id = connector->encoders[i];
+		drmModeEncoder *encoder = drmModeGetEncoder(drm.fd, encoder_id);
+
+		if (encoder) {
+			const uint32_t crtc_id = find_crtc_for_encoder(resources, encoder);
+
+			drmModeFreeEncoder(encoder);
+			if (crtc_id != 0) {
+				return crtc_id;
+			}
+		}
+	}
+
+	/* no match found */
+	return -1;
+} 
+
+static struct gbm_bo *previous_bo = NULL;
+static uint32_t previous_fb;       
+
+static EGLint attributes[] = {
+		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+		EGL_RED_SIZE, 8,
+		EGL_GREEN_SIZE, 8,
+		EGL_BLUE_SIZE, 8,
+		EGL_ALPHA_SIZE, 0,
+		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+		EGL_NONE
+		};
+
+static const EGLint context_attribs[] = {
+		EGL_CONTEXT_CLIENT_VERSION, 2,
+		EGL_NONE
+	};
+
+struct gbm_bo *bo;	
+uint32_t handle;
+uint32_t pitch;
+int32_t fb;
+uint64_t modifier;
+
+static drmModeConnector *find_connector (drmModeRes *resources) {
+    int i;
+    for (i=0; i<resources->count_connectors; i++) {
+        drmModeConnector *connector = drmModeGetConnector (device, resources->connectors[i]);
+        if (connector->connection == DRM_MODE_CONNECTED) {return connector;}
+        drmModeFreeConnector (connector);
+    }
+    return NULL; // if no connector found
+}
+
+static drmModeEncoder *find_encoder (drmModeRes *resources, drmModeConnector *connector) {
+
+    if (connector->encoder_id) {return drmModeGetEncoder (device, connector->encoder_id);}
+    return NULL; // if no encoder found
+}
+
+static void swap_buffers () {
+
+eglSwapBuffers (gl.display, gl.surface);
+bo = gbm_surface_lock_front_buffer (gbm.surface);
+handle = gbm_bo_get_handle (bo).u32;
+pitch = gbm_bo_get_stride (bo);
+static drmModeModeInfo mode_info;
+drmModeAddFB (device, mode_info.hdisplay, mode_info.vdisplay, 24, 32, pitch, handle, &fb);
+//drmModeSetCrtc (device, crtc->crtc_id, fb, 0, 0, &connector_id, 1, &mode_info);
+drmModeSetCrtc (device, drm.crtc_id, fb, 0, 0, &drm.connector_id, 1, &mode_info);
+if (previous_bo) {
+drmModeRmFB (device, previous_fb);
+gbm_surface_release_buffer (gbm.surface, previous_bo);
+}
+previous_bo = bo;
+previous_fb = fb;
+}
+
+static void draw (float progress) {
+
+glClearColor (1.0f-progress, progress, 0.0, 1.0);
+glClear (GL_COLOR_BUFFER_BIT);
+swap_buffers ();
+}
+
+static int match_config_to_visual(EGLDisplay egl_display, EGLint visual_id, EGLConfig *configs, int count) {
+
+EGLint id;
+int i;
+for (i = 0; i < count; ++i) {
+  if (!eglGetConfigAttrib(egl_display, configs[i], EGL_NATIVE_VISUAL_ID,&id)) continue;
+  if (id == visual_id) return i;
+  }
+return -1;
+}
+
+static int init_drm(void)
+{
+	drmModeRes *resources;
+	drmModeConnector *connector = NULL;
+	drmModeEncoder *encoder = NULL;
+	int i, area;
+
+	drm.fd = open("/dev/dri/card1", O_RDWR);
+
+	if (drm.fd < 0) {
+		printf("could not open drm device\n");
+		return -1;
+	}
+
+	resources = drmModeGetResources(drm.fd);
+	if (!resources) {
+		printf("drmModeGetResources failed: %s\n", strerror(errno));
+		return -1;
+	}
+
+	/* find a connected connector: */
+	for (i = 0; i < resources->count_connectors; i++) {
+		connector = drmModeGetConnector(drm.fd, resources->connectors[i]);
+		if (connector->connection == DRM_MODE_CONNECTED) {
+			/* it's connected, let's use this! */
+			break;
+		}
+		drmModeFreeConnector(connector);
+		connector = NULL;
+	}
+
+	if (!connector) {
+		/* we could be fancy and listen for hotplug events and wait for
+		 * a connector..
+		 */
+		printf("no connected connector!\n");
+		return -1;
+	}
+
+	/* find prefered mode or the highest resolution mode: */
+	for (i = 0, area = 0; i < connector->count_modes; i++) {
+		drmModeModeInfo *current_mode = &connector->modes[i];
+
+		if (current_mode->type & DRM_MODE_TYPE_PREFERRED) {
+			drm.mode = current_mode;
+		}
+
+		int current_area = current_mode->hdisplay * current_mode->vdisplay;
+		if (current_area > area) {
+			drm.mode = current_mode;
+			area = current_area;
+		}
+	}
+
+	if (!drm.mode) {
+		printf("could not find mode!\n");
+		return -1;
+	}
+
+	/* find encoder: */
+	for (i = 0; i < resources->count_encoders; i++) {
+		encoder = drmModeGetEncoder(drm.fd, resources->encoders[i]);
+		if (encoder->encoder_id == connector->encoder_id)
+			break;
+		drmModeFreeEncoder(encoder);
+		encoder = NULL;
+	}
+
+	if (encoder) {
+		drm.crtc_id = encoder->crtc_id;
+	} else {
+		uint32_t crtc_id = find_crtc_for_connector(resources, connector);
+		if (crtc_id == 0) {
+			printf("no crtc found!\n");
+			return -1;
+		}
+
+		drm.crtc_id = crtc_id;
+	}
+
+	drm.connector_id = connector->connector_id;
+
+	return 0;
+}
+
+static int init_gbm(void)
+{
+	gbm.dev = gbm_create_device(drm.fd);
+
+	gbm.surface = gbm_surface_create(gbm.dev,
+			drm.mode->hdisplay, drm.mode->vdisplay,
+			GBM_FORMAT_XRGB8888,
+			GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
+	if (!gbm.surface) {
+		printf("failed to create gbm surface\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+static int init_gl(void)
+{
+	EGLint major, minor, n;
+	GLuint vertex_shader, fragment_shader;
+	GLint ret;
+
+	static const EGLint context_attribs[] = {
+		EGL_CONTEXT_CLIENT_VERSION, 2,
+		EGL_NONE
+	};
+
+	static const EGLint config_attribs[] = {
+		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+		EGL_RED_SIZE, 1,
+		EGL_GREEN_SIZE, 1,
+		EGL_BLUE_SIZE, 1,
+		EGL_ALPHA_SIZE, 0,
+		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+		EGL_NONE
+	};
+
+	PFNEGLGETPLATFORMDISPLAYEXTPROC get_platform_display = NULL;
+	get_platform_display =
+		(void *) eglGetProcAddress("eglGetPlatformDisplayEXT");
+	assert(get_platform_display != NULL);
+
+	gl.display = get_platform_display(EGL_PLATFORM_GBM_KHR, gbm.dev, NULL);
+
+	if (!eglInitialize(gl.display, &major, &minor)) {
+		printf("failed to initialize\n");
+		return -1;
+	} else {
+		fprintf(stderr,"eglInitialize successfully: %lu\n",eglGetDisplay( gl.display ));
+	}
+
+	printf("Using display %p with EGL version %d.%d\n",
+			gl.display, major, minor);
+
+	printf("EGL Version \"%s\"\n", eglQueryString(gl.display, EGL_VERSION));
+	printf("EGL Vendor \"%s\"\n", eglQueryString(gl.display, EGL_VENDOR));
+	printf("EGL Extensions \"%s\"\n", eglQueryString(gl.display, EGL_EXTENSIONS));
+
+	if (!eglBindAPI(EGL_OPENGL_ES_API)) {
+		printf("failed to bind api EGL_OPENGL_ES_API\n");
+		return -1;
+	} else {
+		fprintf(stderr,"EGL bound sucessfully\n");
+	}
+
+	if (!eglChooseConfig(gl.display, config_attribs, &gl.config, 1, &n) || n != 1) {
+		printf("failed to choose config: %d\n", n);
+		return -1;
+	} else {
+		fprintf(stderr,"EGL config chosen: %lu\n",gl.config);
+	}
+
+	gl.context = eglCreateContext(gl.display, gl.config, EGL_NO_CONTEXT, context_attribs);
+	if (gl.context == NULL) {
+		printf("failed to create context\n");
+		return -1;
+	} else {
+		fprintf(stderr,"eglCreateContext executed sucessfully: %lu\n",gl.context);
+	}
+
+	//gl.surface = eglCreateWindowSurface(gl.display, gl.config, gbm.surface, NULL);
+	gl.surface = eglCreateWindowSurface(gl.display, gl.config, gbm.surface, NULL);
+	if (gl.surface == EGL_NO_SURFACE) {
+		printf("failed to create egl surface %lu\n",gl.surface);
+		return -1;
+	}
+
+	/* connect the context to the surface */
+	eglMakeCurrent(gl.display, gl.surface, gl.surface, gl.context);
+
+	printf("GL Extensions: \"%s\"\n", glGetString(GL_EXTENSIONS));
+
+	return 0;
+}
+
+/* Draw code here 
+static void draw(uint32_t i)
+{
+	glClear(GL_COLOR_BUFFER_BIT);
+	glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
+}*/
+
+static void
+drm_fb_destroy_callback(struct gbm_bo *bo, void *data)
+{
+	struct drm_fb *fb = data;
+	struct gbm_device *gbm = gbm_bo_get_device(bo);
+
+	if (fb->fb_id)
+		drmModeRmFB(drm.fd, fb->fb_id);
+
+	free(fb);
+}
+
+static struct drm_fb * drm_fb_get_from_bo(struct gbm_bo *bo)
+{
+	struct drm_fb *fb = gbm_bo_get_user_data(bo);
+	uint32_t width, height, stride, handle;
+	int ret;
+
+	if (fb)
+		return fb;
+
+	fb = calloc(1, sizeof *fb);
+	fb->bo = bo;
+
+	width = gbm_bo_get_width(bo);
+	height = gbm_bo_get_height(bo);
+	stride = gbm_bo_get_stride(bo);
+	handle = gbm_bo_get_handle(bo).u32;
+
+	ret = drmModeAddFB(drm.fd, width, height, 24, 32, stride, handle, &fb->fb_id);
+	if (ret) {
+		printf("failed to create fb: %s\n", strerror(errno));
+		free(fb);
+		return NULL;
+	}
+
+	gbm_bo_set_user_data(bo, fb, drm_fb_destroy_callback);
+
+	return fb;
+}
+
+static void page_flip_handler(int fd, unsigned int frame,
+		  unsigned int sec, unsigned int usec, void *data)
+{
+	int *waiting_for_flip = data;
+	*waiting_for_flip = 0;
+}
+
+int piInitVideo()
+{
+	if ( SDL_VideoInit (SDL_GetVideoDriver(0)) < 0 ) {
+		fprintf(stderr,"SDL_Init executed sucessfully. Using video driver %s\n",SDL_GetVideoDriver(2));
+	} else {
+		fprintf(stderr,"SDL_Init failed: %s\n",SDL_GetError());
+	}
+	sdlScreen = SDL_CreateWindow("BlueberryMSX", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_SHOWN);
+    	SDL_ShowCursor(SDL_DISABLE);
+
+	/*int drivers=SDL_GetNumVideoDrivers();
+	int ii = 0;
+    	while( ii >= 0)
+    	{
+		SDL_VideoInit(SDL_GetVideoDriver(ii));
+		if (SDL_GetVideoDriver(ii)) {
+       			fprintf(stderr,"Using driver %s with ID %d\n",SDL_GetVideoDriver(ii),ii);
+			ii++;
+		} else {
+			ii = -1;
+		}
+		if (SDL_GetVideoDriver(ii) == "KMSDRM") {
+			ii = -1;
+		} else {
+        		SDL_VideoQuit();
+		}
+    	}
+
+	SDL_VideoInit ("3");*/
+
+	fd_set fds;
+	drmEventContext evctx = {
+			.version = DRM_EVENT_CONTEXT_VERSION,
+			.page_flip_handler = page_flip_handler,
+	};
+	struct gbm_bo *bo;
+	struct drm_fb *fb;
+	uint32_t i = 0;
+	int ret;
+
+	ret = init_drm();
+	if (ret) {
+		printf("failed to initialize DRM\n");
+		return ret;
+	} else {
+		fprintf(stderr,"DRM initialized successfully\n");
+	}
+
+	FD_ZERO(&fds);
+	FD_SET(0, &fds);
+	FD_SET(drm.fd, &fds);
+
+	ret = init_gbm();
+	if (ret) {
+		printf("failed to initialize GBM\n");
+		return ret;
+	} else {
+		fprintf(stderr,"GBM initialized successfully\n");
+	}
+
+	ret = init_gl();
+	if (ret) {
+		printf("failed to initialize EGL\n");
+		return ret;
+	} else {
+		fprintf(stderr,"EGL initialized successfully\n");
+	}
+
+	/* clear the color buffer */
+	glClearColor(0.5, 0.5, 0.5, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	eglSwapBuffers(gl.display, gl.surface);
+	bo = gbm_surface_lock_front_buffer(gbm.surface);
+	fb = drm_fb_get_from_bo(bo);
+
+	/* set mode: */
+	ret = drmModeSetCrtc(drm.fd, drm.crtc_id, fb->fb_id, 0, 0,
+			&drm.connector_id, 1, drm.mode);
+	if (ret) {
+		printf("failed to set mode: %s\n", strerror(errno));
+		return ret;
+	}
+
+	// Init shader resources
+	memset(&shader, 0, sizeof(ShaderInfo));
+	shader.program = createProgram(vertexShaderSrc, fragmentShaderSrc);
+	if (!shader.program) {
+		fprintf(stderr, "createProgram() failed\n");
+		return 0;
+	} else {
+		fprintf(stderr, "CreateProgram executed successfully %lu\n",shader.program);
+	}
+
+	fprintf(stderr, "Initializing textures/buffers...\n");
+
+	shader.a_position	= glGetAttribLocation(shader.program,	"a_position");
+	shader.a_texcoord	= glGetAttribLocation(shader.program,	"a_texcoord");
+	shader.u_vp_matrix	= glGetUniformLocation(shader.program,	"u_vp_matrix");
+	shader.u_texture	= glGetUniformLocation(shader.program,	"u_texture");
+	shader.scanline		= glGetUniformLocation(shader.program,  "scanline");
+	
+	glGenTextures(1, textures);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TEX_WIDTH, TEX_HEIGHT, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, NULL);
+
+	glGenBuffers(3, buffers);
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+	glBufferData(GL_ARRAY_BUFFER, kVertexCount * sizeof(GLfloat) * 3, vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
+	glBufferData(GL_ARRAY_BUFFER, kVertexCount * sizeof(GLfloat) * 2, uvs, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[2]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, kIndexCount * sizeof(GL_UNSIGNED_SHORT), indices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_DITHER);
+
+	fprintf(stderr, "Setting up screen...\n");
+
+	msxScreen = (char*)calloc(1, BIT_DEPTH / 8 * TEX_WIDTH * TEX_HEIGHT);
+	if (!msxScreen) {
+		fprintf(stderr, "Error allocating screen texture\n");
+		return 0;
+	}
+
+	fprintf(stderr, "Initializing SDL video...\n");
+
+	// We're doing our own video rendering - this is just so SDL-based keyboard
+	// can work
+	//SDL_Init(SDL_INIT_EVERYTHING);
+	//SDL_VideoInit("KMSDRM");
+	//SDL_VideoInit("fbdev", 0);
+	//sdlScreen = SDL_SetVideoMode(0, 0, 0, 0);//SDL_ASYNCBLIT);
+	//sdlScreen = SDL_CreateWindow("BlueberryMSX", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_SHOWN);
+    	//SDL_ShowCursor(SDL_DISABLE);
+	return 1;
+}
+
+void piDestroyVideo()
+{
+	if (sdlScreen) {
+		SDL_FreeSurface(sdlScreen);
+	}
+	if (msxScreen) {
+		free(msxScreen);
+	}
+
+	// Destroy shader resources
+	if (shader.program) {
+		glDeleteProgram(shader.program);
+		glDeleteBuffers(3, buffers);
+		glDeleteTextures(1, textures);
+	}
+	
+	// Release OpenGL resources
+	if (gl.display) {
+		eglMakeCurrent(gl.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+		eglDestroySurface(gl.display, gl.surface);
+		eglDestroyContext(gl.display, gl.context);
+		eglTerminate(gl.display);
+	}
+
+}
+
+int width = -1;
+int lines = -1;
+int interlace = -1;
+
+void piUpdateEmuDisplay()
+{
+	int w = 0;
+	if (!shader.program) {
+		fprintf(stderr, "Shader not initialized\n");
+		exit(1);
+		return;
+	}
+
+	glClear(GL_COLOR_BUFFER_BIT);
+	if (properties->video.force4x3ratio)
+		w = (screenWidth - (screenHeight*4/3.0f));
+	if (w < 0) w = 0;
+	glViewport(w/2, 0, screenWidth-w, screenHeight);
+
+	ShaderInfo *sh = &shader;
+
+	glDisable(GL_BLEND);
+	glUseProgram(sh->program);
+
+	FrameBuffer* frameBuffer;
+	frameBuffer = frameBufferFlipViewFrame(properties->emulation.syncMethod == P_EMU_SYNCTOVBLANKASYNC);
+	if (frameBuffer == NULL) {
+		frameBuffer = frameBufferGetWhiteNoiseFrame();
+	}
+	videoRender(video, 	frameBuffer, BIT_DEPTH, 1, msxScreen, 0, msxScreenPitch*2, -1);
+//	int borderWidth = ((int)((WIDTH - frameBuffer->maxWidth)  * ZOOM)) >> 1;
+//	if (borderWidth < 0)
+//		borderWidth = 0;
 
 	
-#
-# Include paths
-#
-INCLUDE = 
-INCLUDE += -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -I/usr/include/libdrm
-INCLUDE += -I$(BCM_INCDIR)
-INCLUDE += -I$(ROOT_DIR)/Src/Arch
-INCLUDE += -I$(ROOT_DIR)/Src/Bios
-INCLUDE += -I$(ROOT_DIR)/Src/Board
-INCLUDE += -I$(ROOT_DIR)/Src/Common
-INCLUDE += -I$(ROOT_DIR)/Src/Debugger
-INCLUDE += -I$(ROOT_DIR)/Src/Emulator
-INCLUDE += -I$(ROOT_DIR)/Src/IoDevice
-INCLUDE += -I$(ROOT_DIR)/Src/Input
-INCLUDE += -I$(ROOT_DIR)/Src/Language
-INCLUDE += -I$(ROOT_DIR)/Src/Media
-INCLUDE += -I$(ROOT_DIR)/Src/Memory
-INCLUDE += -I$(ROOT_DIR)/Src/SoundChips
-INCLUDE += -I$(ROOT_DIR)/Src/TinyXML
-INCLUDE += -I$(ROOT_DIR)/Src/Unzip
-INCLUDE += -I$(ROOT_DIR)/Src/Utils
-INCLUDE += -I$(ROOT_DIR)/Src/VideoChips
-INCLUDE += -I$(ROOT_DIR)/Src/VideoRender
-INCLUDE += -I$(ROOT_DIR)/Src/Sdl
-INCLUDE += -I$(ROOT_DIR)/Src/Pi
-INCLUDE += -I$(ROOT_DIR)/Src/Z80
-INCLUDE += -I$(ROOT_DIR)/bcm2835-1.60/src/
+//	videoRender(video, frameBuffer, BIT_DEPTH, 1,
+//				msxScreen + borderWidth * BYTES_PER_PIXEL, 0, msxScreenPitch, -1);
 
-vpath % $(ROOT_DIR)/Src/Arch
-vpath % $(ROOT_DIR)/Src/Bios
-vpath % $(ROOT_DIR)/Src/Board
-vpath % $(ROOT_DIR)/Src/Common
-vpath % $(ROOT_DIR)/Src/Debugger
-vpath % $(ROOT_DIR)/Src/Emulator
-vpath % $(ROOT_DIR)/Src/IoDevice
-vpath % $(ROOT_DIR)/Src/Input
-vpath % $(ROOT_DIR)/Src/Language
-vpath % $(ROOT_DIR)/Src/Media
-vpath % $(ROOT_DIR)/Src/Memory
-vpath % $(ROOT_DIR)/Src/SoundChips
-vpath % $(ROOT_DIR)/Src/TinyXML
-vpath % $(ROOT_DIR)/Src/Unzip
-vpath % $(ROOT_DIR)/Src/Utils
-vpath % $(ROOT_DIR)/Src/VideoChips
-vpath % $(ROOT_DIR)/Src/VideoRender
-vpath % $(ROOT_DIR)/Src/Sdl
-vpath % $(ROOT_DIR)/Src/Pi
-vpath % $(ROOT_DIR)/Src/Z80
+	glUniform1i(shader.scanline, video->scanLinesEnable);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
 
-#
-# Source files
-#
-SOURCE_FILES  =
+	// if (borderWidth > 0) {
+	// 	int h = height;
+	// 	while (h--) {
+	// 		memset(dpyData, 0, borderWidth * BYTES_PER_PIXEL);
+	// 		memset(dpyData + (width - borderWidth) * BYTES_PER_PIXEL, 0, borderWidth * BYTES_PER_PIXEL);
+	// 		dpyData += msxScreenPitch;
+	// 	}
+	// }
 
-SOURCE_FILES += PiMain.c
-ifdef RASPI_GPIO
-SOURCE_FILES += PiGpio.c
-endif
-SOURCE_FILES += PiVideo.c
-SOURCE_FILES += PiVideoRender.c
-SOURCE_FILES += PiNotifications.c
-SOURCE_FILES += PiShortcuts.c
-SOURCE_FILES += PiEvent.c
-SOURCE_FILES += PiInput.c
-SOURCE_FILES += PiMouse.c
-SOURCE_FILES += PiUdev.c
-SOURCE_FILES += SdlPrinter.c
-SOURCE_FILES += SdlUart.c
-SOURCE_FILES += SdlDialog.c
-SOURCE_FILES += SdlMidi.c
-SOURCE_FILES += SdlMenu.c
-SOURCE_FILES += SdlEth.c
-SOURCE_FILES += SdlFile.c
-SOURCE_FILES += SdlGlob.c
-SOURCE_FILES += SdlTimer.c
-SOURCE_FILES += SdlSound.c
-SOURCE_FILES += SdlThread.c
-SOURCE_FILES += SdlVideoIn.c
-SOURCE_FILES += SdlCdrom.c
+//	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT,
+//					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
 
-SOURCE_FILES += Patch.c 
+	glTexSubImage2D(GL_TEXTURE_2D, 0, (WIDTH-msxScreenPitch)/2, 0, msxScreenPitch, height, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
+//	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, msxScreenPitch, lines, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, msxScreen);
+	if (frameBufferGetDoubleWidth(frameBuffer, 0) != width || height != frameBuffer->lines)
+	{
+		width = frameBufferGetDoubleWidth(frameBuffer, 0);
+		height = frameBuffer->lines;
+		msxScreenPitch = frameBuffer->maxWidth * (width+1);//(256+16)*(width+1);
+		interlace = frameBuffer->interlace;
+		float sx = 1.0f * msxScreenPitch/WIDTH;
+		float sy = 1.0f * height / HEIGHT;
+//		printf("screen = %x, width = %d, height = %d, double = %d, interlaced = %d\n", msxScreen, msxScreenPitch, height, width, interlace);
+//		printf("sx=%f,sy=%f\n", sx, sy);
+		fflush(stdin);
+		if (sy == 1.0f)
+			setOrtho(projection, -sx/2, sx/2,  sy/2, -sy/2, -0.5f, +0.5f,1,1);		
+		else
+			setOrtho(projection, -sx/2, sx/2,    0,   -sy, -0.5f, +0.5f,1,1);		
+		//setOrtho(projection, -1, 1,    1,   -1, -0.5f, +0.5f,1,1);		
+		glUniformMatrix4fv(sh->u_vp_matrix, 1, GL_FALSE, projection);
+	}					
+	drawQuad(sh);
 
-SOURCE_FILES += ziphelper.c 
-SOURCE_FILES += ZipFromMem.c
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-SOURCE_FILES += adler32.c
-SOURCE_FILES += compress.c
-SOURCE_FILES += crc32.c
-SOURCE_FILES += gzio.c
-SOURCE_FILES += uncompr.c
-SOURCE_FILES += deflate.c
-SOURCE_FILES += trees.c
-SOURCE_FILES += zutil.c
-SOURCE_FILES += inflate.c
-SOURCE_FILES += infback.c
-SOURCE_FILES += inftrees.c
-SOURCE_FILES += inffast.c
+	eglSwapBuffers(gl.display, gl.surface);
+}
 
-SOURCE_FILES += unzip.c
-SOURCE_FILES += ioapi.c
-SOURCE_FILES += zip.c
+static GLuint createShader(GLenum type, const char *shaderSrc)
+{
+	GLuint shader = glCreateShader(type);
+	if (!shader) {
+		fprintf(stderr, "glCreateShader() failed: %d\n", glGetError());
+		return 0;
+	}
 
-SOURCE_FILES += AmdFlash.c
-SOURCE_FILES += AtmelPerom.c
-SOURCE_FILES += DeviceManager.c
-SOURCE_FILES += IoPort.c
-SOURCE_FILES += MegaromCartridge.c
-SOURCE_FILES += MegaSCSIsub.c
-SOURCE_FILES += ram1kBMirrored.c
-SOURCE_FILES += ramMapper.c
-SOURCE_FILES += ramMapperIo.c
-SOURCE_FILES += ramNormal.c
-SOURCE_FILES += RomLoader.c
-SOURCE_FILES += romMapperArc.c
-SOURCE_FILES += romMapperASCII16.c
-SOURCE_FILES += romMapperASCII16nf.c
-SOURCE_FILES += romMapperASCII16sram.c
-SOURCE_FILES += romMapperASCII8.c
-SOURCE_FILES += romMapperASCII8sram.c
-SOURCE_FILES += romMapperBasic.c
-SOURCE_FILES += romMapperBeerIDE.c
-SOURCE_FILES += romMapperBunsetu.c
-SOURCE_FILES += romMapperCasette.c
-SOURCE_FILES += romMapperCrossBlaim.c
-SOURCE_FILES += romMapperCvMegaCart.c
-SOURCE_FILES += romMapperActivisionPcb.c
-SOURCE_FILES += romMapperDisk.c
-SOURCE_FILES += romMapperDumas.c
-SOURCE_FILES += romMapperF4device.c
-SOURCE_FILES += romMapperFmDas.c
-SOURCE_FILES += romMapperFMPAC.c
-SOURCE_FILES += romMapperFMPAK.c
-SOURCE_FILES += romMapperGameMaster2.c
-SOURCE_FILES += romMapperGameReader.c
-SOURCE_FILES += romMapperGIDE.c
-SOURCE_FILES += romMapperGoudaSCSI.c
-SOURCE_FILES += romMapperHalnote.c
-SOURCE_FILES += romMapperHarryFox.c
-SOURCE_FILES += romMapperHolyQuran.c
-SOURCE_FILES += romMapperJoyrexPsg.c
-SOURCE_FILES += romMapperKanji.c
-SOURCE_FILES += romMapperKanji12.c
-SOURCE_FILES += romMapperKoei.c
-SOURCE_FILES += romMapperKonami4.c
-SOURCE_FILES += romMapperKonami4nf.c
-SOURCE_FILES += romMapperKonami5.c
-SOURCE_FILES += romMapperKonamiKeyboardMaster.c
-SOURCE_FILES += romMapperKonamiSynth.c
-SOURCE_FILES += romMapperKonamiWordPro.c
-SOURCE_FILES += romMapperKorean126.c
-SOURCE_FILES += romMapperKorean90.c
-SOURCE_FILES += romMapperKorean80.c
-SOURCE_FILES += romMapperLodeRunner.c
-SOURCE_FILES += romMapperMajutsushi.c
-SOURCE_FILES += romMapperMatraINK.c
-SOURCE_FILES += romMapperMegaFlashRomScc.c
-SOURCE_FILES += romMapperMegaRAM.c
-SOURCE_FILES += romMapperMicrosol.c
-SOURCE_FILES += romMapperMicrosolVmx80.c
-SOURCE_FILES += romMapperMoonsound.c
-SOURCE_FILES += romMapperMsxAudio.c
-SOURCE_FILES += romMapperMsxDos2.c
-SOURCE_FILES += romMapperMsxMusic.c
-SOURCE_FILES += romMapperMsxPrn.c
-SOURCE_FILES += romMapperNational.c
-SOURCE_FILES += romMapperNationalFdc.c
-SOURCE_FILES += romMapperNet.c
-SOURCE_FILES += romMapperNettouYakyuu.c
-SOURCE_FILES += romMapperNms8280VideoDa.c
-SOURCE_FILES += romMapperNms1210Rs232.c
-SOURCE_FILES += romMapperNormal.c
-SOURCE_FILES += romMapperNoWind.c
-SOURCE_FILES += romMapperObsonet.c
-SOURCE_FILES += romMapperOpcodePsg.c
-SOURCE_FILES += romMapperOpcodeMegaRam.c
-SOURCE_FILES += romMapperOpcodeSlotManager.c
-SOURCE_FILES += romMapperOpcodeSaveRam.c
-SOURCE_FILES += romMapperOpcodeBios.c
-SOURCE_FILES += romMapperPAC.c
-SOURCE_FILES += romMapperPanasonic.c
-SOURCE_FILES += romMapperPhilipsFdc.c
-SOURCE_FILES += romMapperPlain.c
-SOURCE_FILES += romMapperRType.c
-SOURCE_FILES += romMapperS1990.c
-SOURCE_FILES += romMapperSCCplus.c
-SOURCE_FILES += romMapperSegaBasic.c
-SOURCE_FILES += romMapperSf7000Ipl.c
-SOURCE_FILES += romMapperSfg05.c
-SOURCE_FILES += romMapperSg1000.c
-SOURCE_FILES += romMapperSg1000Castle.c
-SOURCE_FILES += romMapperSonyHBI55.c
-SOURCE_FILES += romMapperSonyHBIV1.c
-SOURCE_FILES += romMapperStandard.c
-SOURCE_FILES += romMapperSunriseIDE.c
-SOURCE_FILES += romMapperSvi328Fdc.c
-SOURCE_FILES += romMapperSvi328Prn.c
-SOURCE_FILES += romMapperSvi328Rs232.c
-SOURCE_FILES += romMapperSvi328RsIDE.c
-SOURCE_FILES += romMapperSvi727.c
-SOURCE_FILES += romMapperSvi738Fdc.c
-SOURCE_FILES += romMapperSvi80Col.c
-SOURCE_FILES += romMapperTC8566AF.c
-SOURCE_FILES += romMapperTurboRPcm.c
-SOURCE_FILES += romMapperTurboRTimer.c
-SOURCE_FILES += SlotManager.c
-SOURCE_FILES += sramLoader.c
-SOURCE_FILES += sramMapperMatsuchita.c
-SOURCE_FILES += sramMapperS1985.c
-SOURCE_FILES += romMapperPlayBall.c
-SOURCE_FILES += sramMapperEseSCC.c
-SOURCE_FILES += sramMapperMegaSCSI.c
-SOURCE_FILES += romMapperForteII.c
-SOURCE_FILES += romMapperDRAM.c
-SOURCE_FILES += romMapperA1FM.c
-SOURCE_FILES += romMapperA1FMModem.c
-SOURCE_FILES += romMapperSvi707Fdc.c
-SOURCE_FILES += romMapperSg1000RamExpander.c
-SOURCE_FILES += romMapperDooly.c
-SOURCE_FILES += romMapperMuPack.c
-SOURCE_FILES += romMapperMsxBus.c
+	// Load and compile the shader source
+	glShaderSource(shader, 1, &shaderSrc, NULL);
+	glCompileShader(shader);
 
-SOURCE_FILES += Crc32Calc.c
-SOURCE_FILES += MediaDb.cpp
-SOURCE_FILES += Sha1.cpp 
+	// Check the compile status
+	GLint compiled = 0;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+	if (!compiled) {
+		GLint infoLen = 0;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
+		if (infoLen > 1) {
+			char* infoLog = (char *)malloc(sizeof(char) * infoLen);
+			glGetShaderInfoLog(shader, infoLen, NULL, infoLog);
+			fprintf(stderr, "Error compiling shader:\n%s\nInfolog:", infoLog);
+			free(infoLog);
+		}
 
-SOURCE_FILES += CRTC6845.c 
-SOURCE_FILES += FrameBuffer.c 
-SOURCE_FILES += VDP.c 
-SOURCE_FILES += V9938.c 
-SOURCE_FILES += VideoManager.c 
+		glDeleteShader(shader);
+		return 0;
+	}
 
-SOURCE_FILES += hq2x.c 
-SOURCE_FILES += hq3x.c 
-SOURCE_FILES += Scalebit.c 
+	return shader;
+}
 
-SOURCE_FILES += R800.c 
-SOURCE_FILES += R800Debug.c
-SOURCE_FILES += R800Dasm.c 
-SOURCE_FILES += R800SaveState.c 
+static GLuint createProgram(const char *vertexShaderSrc, const char *fragmentShaderSrc)
+{
+	GLuint vertexShader = createShader(GL_VERTEX_SHADER, vertexShaderSrc);
+	if (!vertexShader) {
+		fprintf(stderr, "createShader(GL_VERTEX_SHADER) failed\n");
+		return 0;
+	}
 
-SOURCE_FILES += Casette.c 
-SOURCE_FILES += DirAsDisk.c 
-SOURCE_FILES += Disk.c 
-SOURCE_FILES += FdcAudio.c
-SOURCE_FILES += GameReader.c
-SOURCE_FILES += MsxBusPi.c
-SOURCE_FILES += HarddiskIDE.c
-SOURCE_FILES += I8250.c
-SOURCE_FILES += I8251.c
-SOURCE_FILES += I8254.c
-SOURCE_FILES += I8255.c
-SOURCE_FILES += sl811hs.c
-SOURCE_FILES += Led.c 
-SOURCE_FILES += Microwire93Cx6.c
-SOURCE_FILES += Microchip24x00.c
-SOURCE_FILES += MidiIO.c 
-SOURCE_FILES += MSXMidi.c 
-SOURCE_FILES += MsxPPI.c 
-SOURCE_FILES += NEC765.c 
-SOURCE_FILES += PrinterIO.c 
-SOURCE_FILES += RTC.c 
-SOURCE_FILES += rtl8019.c
-SOURCE_FILES += SunriseIDE.c 
-SOURCE_FILES += SviPPI.c 
-SOURCE_FILES += Sc3000PPI.c 
-SOURCE_FILES += Sf7000PPI.c 
-SOURCE_FILES += Switches.c 
-SOURCE_FILES += TC8566AF.c 
-SOURCE_FILES += TurboRIO.c 
-SOURCE_FILES += UartIO.c
-SOURCE_FILES += WD2793.c
-SOURCE_FILES += wd33c93.c
-SOURCE_FILES += WDCRC.c
-SOURCE_FILES += MB89352.c
-SOURCE_FILES += ScsiDevice.c
-SOURCE_FILES += ft245.c
-SOURCE_FILES += Z8530.c
-SOURCE_FILES += MsxBus.cpp
+	GLuint fragmentShader = createShader(GL_FRAGMENT_SHADER, fragmentShaderSrc);
+	if (!fragmentShader) {
+		fprintf(stderr, "createShader(GL_FRAGMENT_SHADER) failed\n");
+		glDeleteShader(vertexShader);
+		return 0;
+	}
 
-SOURCE_FILES += LanguageMinimal.c
+	GLuint programObject = glCreateProgram();
+	if (!programObject) {
+		fprintf(stderr, "glCreateProgram() failed: %d\n", glGetError());
+		return 0;
+	}
 
-SOURCE_FILES += tinystr.cpp 
-SOURCE_FILES += tinyxml.cpp 
-SOURCE_FILES += tinyxmlerror.cpp 
-SOURCE_FILES += tinyxmlparser.cpp 
- 
-SOURCE_FILES += AudioMixer.c
-SOURCE_FILES += AY8910.c
-SOURCE_FILES += DAC.c 
-SOURCE_FILES += Fmopl.c 
-SOURCE_FILES += KeyClick.c 
-SOURCE_FILES += MameVLM5030.c 
-SOURCE_FILES += MameYM2151.c 
-SOURCE_FILES += Moonsound.c 
-SOURCE_FILES += MsxPsg.c
-SOURCE_FILES += OpenMsxYM2413.cpp 
-SOURCE_FILES += OpenMsxYM2413_2.cpp 
-SOURCE_FILES += OpenMsxYMF262.cpp 
-SOURCE_FILES += OpenMsxYMF278.cpp 
-SOURCE_FILES += SamplePlayer.c
-SOURCE_FILES += SCC.c 
-SOURCE_FILES += SN76489.c 
-SOURCE_FILES += VLM5030.c 
-SOURCE_FILES += Y8950.c 
-SOURCE_FILES += ym2151.c
-SOURCE_FILES += YM2413.cpp 
-SOURCE_FILES += Ymdeltat.c 
+	glAttachShader(programObject, vertexShader);
+	glAttachShader(programObject, fragmentShader);
 
-SOURCE_FILES += Actions.c 
-SOURCE_FILES += CommandLine.c 
-SOURCE_FILES += Emulator.c 
-SOURCE_FILES += FileHistory.c 
-SOURCE_FILES += LaunchFile.c 
-SOURCE_FILES += Properties.c 
-SOURCE_FILES += AppConfig.c 
+	// Link the program
+	glLinkProgram(programObject);
 
-SOURCE_FILES += IsFileExtension.c 
-SOURCE_FILES += SaveState.c 
-SOURCE_FILES += StrcmpNoCase.c 
-SOURCE_FILES += TokenExtract.c 
-SOURCE_FILES += IniFileParser.c 
-SOURCE_FILES += ArrayList.c 
+	// Check the link status
+	GLint linked = 0;
+	glGetProgramiv(programObject, GL_LINK_STATUS, &linked);
+	if (!linked) {
+		GLint infoLen = 0;
+		glGetProgramiv(programObject, GL_INFO_LOG_LENGTH, &infoLen);
+		if (infoLen > 1) {
+			char* infoLog = (char *)malloc(infoLen);
+			glGetProgramInfoLog(programObject, infoLen, NULL, infoLog);
+			fprintf(stderr, "Error linking program: %s\n", infoLog);
+			free(infoLog);
+		}
 
-SOURCE_FILES += Board.c 
-SOURCE_FILES += Machine.c 
-SOURCE_FILES += MSX.c 
-SOURCE_FILES += SVI.c 
-SOURCE_FILES += Adam.c 
-SOURCE_FILES += Coleco.c 
-SOURCE_FILES += SG1000.c 
+		glDeleteProgram(programObject);
+		return 0;
+	}
 
-SOURCE_FILES += ColecoJoystick.c 
-SOURCE_FILES += ColecoSteeringWheel.c 
-SOURCE_FILES += ColecoSuperAction.c 
-SOURCE_FILES += InputEvent.c 
-SOURCE_FILES += JoystickPort.c 
-SOURCE_FILES += MagicKeyDongle.c 
-SOURCE_FILES += MsxAsciiLaser.c 
-SOURCE_FILES += MsxGunstick.c 
-SOURCE_FILES += MsxJoystick.c 
-SOURCE_FILES += MsxMouse.c 
-SOURCE_FILES += MsxArkanoidPad.c 
-SOURCE_FILES += MsxTetrisDongle.c 
-SOURCE_FILES += Sg1000Joystick.c 
-SOURCE_FILES += SviJoystick.c
-SOURCE_FILES += SviJoyIo.c 
-SOURCE_FILES += Sg1000JoyIo.c 
-SOURCE_FILES += CoinDevice.c
+	// Delete these here because they are attached to the program object.
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
 
-SOURCE_FILES += DebugDeviceManager.c
-SOURCE_FILES += Debugger.c 
+	return programObject;
+}
 
-HEADER_FILES  =
+static void setOrtho(float m[4][4],
+	float left, float right, float bottom, float top,
+	float near, float far, float scaleX, float scaleY)
+{
+	memset(m, 0, 4 * 4 * sizeof(float));
+	m[0][0] = 2.0f / (right - left) * scaleX;
+	m[1][1] = 2.0f / (top - bottom) * scaleY;
+	m[2][2] = 0;//-2.0f / (far - near);
+	m[3][0] = -(right + left) / (right - left);
+	m[3][1] = -(top + bottom) / (top - bottom);
+	m[3][2] = 0;//-(far + near) / (far - near);
+	m[3][3] = 1;
+}
 
+static void drawQuad(const ShaderInfo *sh)
+{
+	glUniform1i(sh->u_texture, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-#
-# Rules
-#
-all: $(OUTPUT_DIR) $(TARGET)
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+	glVertexAttribPointer(sh->a_position, 3, GL_FLOAT,
+		GL_FALSE, 3 * sizeof(GLfloat), NULL);
+	glEnableVertexAttribArray(sh->a_position);
 
-clean: clean_$(TARGET)	
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
+	glVertexAttribPointer(sh->a_texcoord, 2, GL_FLOAT,
+		GL_FALSE, 2 * sizeof(GLfloat), NULL);
+	glEnableVertexAttribArray(sh->a_texcoord);
 
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[2]);
 
-$(TARGET): $(OUTPUT_OBJS)
-	$(ECHO) Linking $@...
-	$(LD) -L$(X11_LIBDIR) -L$(BCM_LIBDIR) $(LDFLAGS) -o $@ $(OUTPUT_OBJS) $(LIBS)
-	#cp $(TARGET) ~/blueMSX
+	glDrawElements(GL_TRIANGLES, kIndexCount, GL_UNSIGNED_SHORT, 0);
+}
 
-clean_$(TARGET):
-	$(ECHO) Cleaning files ...
-	$(RMDIR) -rf $(OUTPUT_DIR)
-	$(RM) -f $(TARGET)
-
-$(OUTPUT_DIR):
-	$(ECHO) Creating directory $@...
-	@$(MKDIR) $(OUTPUT_DIR)
-
-$(OUTPUT_DIR)/%.o: %.c  $(HEADER_FILES)
-	$(ECHO) Compiling $<...
-	@$(CC) $(CFLAGS) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
-$(OUTPUT_DIR)/%.o: %.cc  $(HEADER_FILES)
-	$(ECHO) Compiling $<...
-	@$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
-$(OUTPUT_DIR)/%.o: %.cpp  $(HEADER_FILES)
-	$(ECHO) Compiling $<...
-	@$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
-$(OUTPUT_DIR)/%.o: %.cxx  $(HEADER_FILES)
-	$(ECHO) Compiling $<...
-	@$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
-$(OUTPUT_DIR)/%.res: %.rc $(HEADER_FILES)
-	$(ECHO) Compiling $<...
-	@$(RC) $(CPPFLAGS) $(INCLUDE) -o $@ -i $<

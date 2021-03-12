@@ -42,7 +42,8 @@ CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  =  
 #####LIBS     =  -lSDL -lz -lbcm_host -lbrcmEGL -lbrcmGLESv2 -lpthread -ludev -lbcm2835
 #####LIBS     =  -lSDL2 -lz -lbcm_host -lbrcmEGL -lbrcmGLESv2 -lpthread -ludev -lbcm2835 -lgbm -ldrm
-LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm -lEGL -lGLESv2
+#LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm -lEGL -lGLESv2
+LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm  -lGL -lEGL
 # Uncomment the following line to enable GPIO (requires wiring-pi)
 #CFLAGS   += -DRASPI_GPIO
 #CFLAGS   += -DSINGLE_THREADED 
