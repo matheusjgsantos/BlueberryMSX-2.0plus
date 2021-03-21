@@ -1,3 +1,0 @@
-#!/bin/bash
-cd /home/pi/blueMSX
-./bluemsx-pi /machine "MSX - Daewoo DPC-200"  /romtype2 msxbus $@

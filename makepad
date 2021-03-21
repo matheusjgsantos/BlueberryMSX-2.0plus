@@ -1,2 +1,0 @@
-#/bin/bash
-gcc -o padstregth pad.c -lbcm2835

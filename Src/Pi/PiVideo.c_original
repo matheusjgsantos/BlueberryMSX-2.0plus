@@ -176,13 +176,15 @@ int piInitVideo()
 	if (display == EGL_NO_DISPLAY) {
 		fprintf(stderr, "eglGetDisplay() failed: EGL_NO_DISPLAY\n");
 		return 0;
+	} else {
+		fprintf(stderr, "eglDisplay() returned %lu\n",display);
 	}
 
 	// initialize the EGL display connection
 	EGLBoolean result = eglInitialize(display, NULL, NULL);
 	if (result == EGL_FALSE) {
-		fprintf(stderr, "eglInitialize() failed: EGL_FALSE\n");
-		return 0;
+		fprintf(stderr, "eglInitialize() failed: EGL_FALSE %lu\n",eglGetError());
+		//return 0;
 	}
 
 	// get an appropriate EGL frame buffer configuration
@@ -319,9 +321,9 @@ int piInitVideo()
 	// We're doing our own video rendering - this is just so SDL-based keyboard
 	// can work
 	SDL_Init(SDL_INIT_EVERYTHING);
-//    SDL_VideoInit("fbdev", 0);
+        //SDL_VideoInit("fbdev", 0);
 	sdlScreen = SDL_SetVideoMode(0, 0, 0, 0);//SDL_ASYNCBLIT);
-    SDL_ShowCursor(SDL_DISABLE);
+        SDL_ShowCursor(SDL_DISABLE);
 	return 1;
 }
 

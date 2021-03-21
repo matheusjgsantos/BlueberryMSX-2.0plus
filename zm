@@ -1,4 +1,0 @@
-#!/bin/bash
-tput civis
-clear
-python3 zemmix.py > /dev/null 2>&1
