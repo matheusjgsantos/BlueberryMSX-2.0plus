@@ -37,13 +37,14 @@ ECHO  = @echo
 # Flags
 #
 COMMON_FLAGS = -DUSESDL2 -DUSESDL2Main -DUSE_EGL -DIS_RPI -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DRASPI -DUSESDL_egl -DUSE-GLESv2
-CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer $(COMMON_FLAGS)
+CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer -finstrument-functions $(COMMON_FLAGS)
 CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  =  
 #####LIBS     =  -lSDL -lz -lbcm_host -lbrcmEGL -lbrcmGLESv2 -lpthread -ludev -lbcm2835
 #####LIBS     =  -lSDL2 -lz -lbcm_host -lbrcmEGL -lbrcmGLESv2 -lpthread -ludev -lbcm2835 -lgbm -ldrm
 #LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm -lEGL -lGLESv2
-LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm  -lGL -lEGL
+#LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm  -lGL -lEGL
+LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm  -lGLESv2 -lEGL 
 # Uncomment the following line to enable GPIO (requires wiring-pi)
 #CFLAGS   += -DRASPI_GPIO
 #CFLAGS   += -DSINGLE_THREADED 
@@ -82,7 +83,7 @@ DEPS := $(OBJS:.o=.d)
 #
 INCLUDE = 
 INCLUDE += -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -I/usr/include/libdrm
-INCLUDE += -I$(BCM_INCDIR)
+#INCLUDE += -I$(BCM_INCDIR)
 INCLUDE += -I$(ROOT_DIR)/Src/Arch
 INCLUDE += -I$(ROOT_DIR)/Src/Bios
 INCLUDE += -I$(ROOT_DIR)/Src/Board
