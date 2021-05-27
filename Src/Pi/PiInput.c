@@ -36,7 +36,7 @@
 #include <SDL.h>
 
 //DEPRECATED in sdl2 -- static int kbdTable[3][SDLK_LAST];
-static int kbdTable[3][150];
+static int kbdTable[3][500];
 
 static int inputTypeScanStart = 0;
 static int inputTypeScanEnd = 1;
@@ -266,7 +266,7 @@ void keyboardInit(Properties *properties)
 
 void keyboardUpdate(SDL_KeyboardEvent *event)
 {
-	fprintf(stderr,"PiInput.c is executing keyboardUpdate function\n");
+	//fprintf(stderr,"PiInput.c is executing keyboardUpdate function\n");
 	int i;
 	for (i = inputTypeScanStart; i <= inputTypeScanEnd; i++) {
 		if (event->keysym.scancode == 0x7A) {
@@ -280,6 +280,7 @@ void keyboardUpdate(SDL_KeyboardEvent *event)
 			else
 				inputEventUnset(kbdTable[i][event->keysym.sym]);
 		} else if (event->type == SDL_KEYDOWN) {
+			fprintf(stderr,"Key pressed: %p\n",event->keysym.sym);
 			if (event->keysym.sym == 0 && event->keysym.scancode == 58)
 				inputEventSet(kbdTable[i][SDLK_CAPSLOCK]);
 			else

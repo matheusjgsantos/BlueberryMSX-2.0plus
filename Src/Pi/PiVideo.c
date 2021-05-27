@@ -147,8 +147,8 @@ EGLContext context;
 
 //uint32_t screenWidth = 0;
 //uint32_t screenHeight = 0;
-uint32_t screenWidth = 640;
-uint32_t screenHeight = 480;
+uint32_t screenWidth = 800;
+uint32_t screenHeight = 600;
 
 static ShaderInfo shader;
 static GLuint buffers[3];
@@ -388,7 +388,7 @@ int piInitVideo()
 
     //EGLDisplay display;
     //You can try chaning this to "card0" if "card1" does not work.
-    device = open("/dev/dri/card1", O_RDWR | O_CLOEXEC);
+    device = open("/dev/dri/card0", O_RDWR | O_CLOEXEC);
     if (getDisplay(&display) != 0)
     {
         fprintf(stderr, "Unable to get EGL display\n");
@@ -400,8 +400,8 @@ int piInitVideo()
     //We will use the screen resolution as the desired width and height for the viewport.
     //int desiredWidth = mode.hdisplay;
     //int desiredHeight = mode.vdisplay;
-    int desiredWidth = 640;
-    int desiredHeight = 480;
+    int desiredWidth = 800;
+    int desiredHeight = 600;
 
     // Other variables we will need further down the code.
     int major, minor;
@@ -463,7 +463,7 @@ int piInitVideo()
     //EGLSurface surface =
     EGLint attribList[] = 
     {
-	    EGL_RENDER_BUFFER, EGL_SINGLE_BUFFER,
+	    EGL_RENDER_BUFFER, EGL_BACK_BUFFER,
 	    EGL_NONE
     };
     //surface = eglCreateWindowSurface(display, configs[configIndex], gbmSurface, NULL);
@@ -682,7 +682,7 @@ int piInitVideo()
 
 	// We're doing our own video rendering - this is just so SDL-based keyboard
 	// can work
-	//SDL_Init(SDL_INIT_EVERYTHING);
+	SDL_Init(SDL_INIT_EVERYTHING);
         //SDL_VideoInit("fbdev", 0);
 	//sdlScreen = SDL_SetVideoMode(0, 0, 0, 0);//SDL_ASYNCBLIT);
 
