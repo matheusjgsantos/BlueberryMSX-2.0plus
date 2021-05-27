@@ -145,8 +145,10 @@ EGLSurface surface;
 //static EGLContext context = NULL;
 EGLContext context;
 
-uint32_t screenWidth = 0;
-uint32_t screenHeight = 0;
+//uint32_t screenWidth = 0;
+//uint32_t screenHeight = 0;
+uint32_t screenWidth = 640;
+uint32_t screenHeight = 480;
 
 static ShaderInfo shader;
 static GLuint buffers[3];
@@ -326,16 +328,15 @@ static uint32_t previousFb;
 
 static void gbmSwapBuffers(EGLDisplay *display, EGLSurface *surface)
 {
-    fprintf(stderr,"display: %p, surface: %p\n",display, surface);
+    //fprintf(stderr,"display: %p, surface: %p\n",display, surface);
     eglSwapBuffers(*display, *surface);
-    fprintf(stderr,"eglSwapBufffer returned %s\n",
-		    eglGetErrorStr());
+    //fprintf(stderr,"eglSwapBufffer returned %s\n", eglGetErrorStr());
     struct gbm_bo *bo = gbm_surface_lock_front_buffer(gbmSurface);
-    fprintf(stderr,"gbm_surface_lock_front returned %lu\n",bo);
+    //fprintf(stderr,"gbm_surface_lock_front returned %lu\n",bo);
     uint32_t handle = gbm_bo_get_handle(bo).u32;
-    fprintf(stderr,"gbm_bo_get_handle returned %lu\n",handle);
+    //fprintf(stderr,"gbm_bo_get_handle returned %lu\n",handle);
     uint32_t pitch = gbm_bo_get_stride(bo);
-    fprintf(stderr,"gbm_bo_get_pitch returned %lu\n",pitch);
+    //fprintf(stderr,"gbm_bo_get_pitch returned %lu\n",pitch);
     uint32_t fb;
     drmModeAddFB(device, mode.hdisplay, mode.vdisplay, 24, 32, pitch, handle, &fb);
     // for tests purpose - drmModeAddFB(device, mode.hdisplay, mode.vdisplay, 24, 32, 3328, 1, &fb);
@@ -460,7 +461,13 @@ int piInitVideo()
     }
 
     //EGLSurface surface =
-    surface = eglCreateWindowSurface(display, configs[configIndex], gbmSurface, NULL);
+    EGLint attribList[] = 
+    {
+	    EGL_RENDER_BUFFER, EGL_SINGLE_BUFFER,
+	    EGL_NONE
+    };
+    //surface = eglCreateWindowSurface(display, configs[configIndex], gbmSurface, NULL);
+    surface = eglCreateWindowSurface(display, configs[configIndex], gbmSurface, attribList);
     if (surface == EGL_NO_SURFACE)
     {
         fprintf(stderr, "Failed to create EGL surface! Error: %s\n",
@@ -644,9 +651,27 @@ int piInitVideo()
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_DITHER);
+	
+	float sx = 1.0f;
+	float sy = 1.0f;
+	float zoom = (float)ZOOM;
 
-//	fprintf(stderr, "Setting up screen...\n");
+	// Screen aspect ratio adjustment
+	float a = (float)screenWidth / screenHeight;
+	float a0 = (float)WIDTH / (float)HEIGHT;
 
+	if (a > a0) {
+		sx = a0/a;
+	} else {
+		sy = a/a0;
+	}
+
+	setOrtho(projection, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f,
+		sx * zoom, sy * zoom);
+
+	fprintf(stderr, "Setting up screen...\n");
+
+	msxScreenPitch = WIDTH * BIT_DEPTH / 8;
 	msxScreen = (char*)calloc(1, BIT_DEPTH / 8 * TEX_WIDTH * TEX_HEIGHT);
 	if (!msxScreen) {
 		fprintf(stderr, "Error allocating screen texture\n");
@@ -661,8 +686,9 @@ int piInitVideo()
         //SDL_VideoInit("fbdev", 0);
 	//sdlScreen = SDL_SetVideoMode(0, 0, 0, 0);//SDL_ASYNCBLIT);
 
-	SDL_VideoInit("KMSDRM");
+	//SDL_VideoInit("KMSDRM");
 
+        //sdlScreen = SDL_CreateWindow("BlueberryMSX", 0, 0, 0, 0, NULL);
         /*sdlScreen = SDL_CreateWindow("BlueberryMSX", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_OPENGL);
 
 	fprintf(stderr,"After SDL_CreateWindow\n");
@@ -698,7 +724,7 @@ void piDestroyVideo()
 		eglDestroySurface(display, surface);
 		eglDestroyContext(display, context);
 		eglTerminate(display);
-		//Added gmc clean up
+		//Added gbm clean up
 		gbmClean();
 	}
  
@@ -733,7 +759,7 @@ void piUpdateEmuDisplay()
 	if (frameBuffer == NULL) {
 		frameBuffer = frameBufferGetWhiteNoiseFrame();
 	}
-	videoRender(video, 	frameBuffer, BIT_DEPTH, 1, msxScreen, 0, msxScreenPitch*2, -1);
+	videoRender(video, frameBuffer, BIT_DEPTH, 1, msxScreen, 0, msxScreenPitch*2, -1);
 //	int borderWidth = ((int)((WIDTH - frameBuffer->maxWidth)  * ZOOM)) >> 1;
 //	if (borderWidth < 0)
 //		borderWidth = 0;
@@ -780,13 +806,11 @@ void piUpdateEmuDisplay()
 	}					
 	drawQuad(sh);
 
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	//Replaced by gbmSwapBuffers - eglSwapBuffers(display, surface);
-	fprintf(stderr,"Calling gbmSwapBuffers using %p as display and %p as surface\n",&display,&surface);
+	//fprintf(stderr,"Calling gbmSwapBuffers using %p as display and %p as surface\n",&display,&surface);
 	gbmSwapBuffers(&display, &surface);
 }
 
