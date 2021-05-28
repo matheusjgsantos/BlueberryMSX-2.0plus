@@ -388,7 +388,7 @@ int piInitVideo()
 
     //EGLDisplay display;
     //You can try chaning this to "card0" if "card1" does not work.
-    device = open("/dev/dri/card0", O_RDWR | O_CLOEXEC);
+    device = open("/dev/dri/card1", O_RDWR | O_CLOEXEC);
     if (getDisplay(&display) != 0)
     {
         fprintf(stderr, "Unable to get EGL display\n");

@@ -46,12 +46,12 @@ LDFLAGS  =
 #LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm  -lGL -lEGL
 LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm  -lGLESv2 -lEGL 
 # Uncomment the following line to enable GPIO (requires wiring-pi)
-#CFLAGS   += -DRASPI_GPIO
+CFLAGS   += -DRASPI_GPIO
 #CFLAGS   += -DSINGLE_THREADED 
 
-ifdef RASPI_GPIO
+#ifdef RASPI_GPIO
 LIBS     += -lwiringPi
-endif
+#endif
 
 TARGET   = bluemsx-pi
 
@@ -133,9 +133,9 @@ vpath % $(ROOT_DIR)/Src/Z80
 SOURCE_FILES  =
 
 SOURCE_FILES += PiMain.c
-ifdef RASPI_GPIO
+#ifdef RASPI_GPIO
 SOURCE_FILES += PiGpio.c
-endif
+#endif
 SOURCE_FILES += PiVideo.c
 SOURCE_FILES += PiVideoRender.c
 SOURCE_FILES += PiNotifications.c
