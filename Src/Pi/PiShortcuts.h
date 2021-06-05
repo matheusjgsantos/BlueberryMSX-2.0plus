@@ -48,7 +48,9 @@ void shortcutsSetDirectory(char* directory);
 
 Shortcuts* shortcutsCreate();
 void shortcutsDestroy(Shortcuts* shortcuts);
-void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym);
-void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym);
+//void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym);
+//void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym);
+void shortcutCheckDown(Shortcuts* s, int type, int mods, long keySym);
+void shortcutCheckUp(Shortcuts* s, int type, int mods, long keySym);
 
 #endif

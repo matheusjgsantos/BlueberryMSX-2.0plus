@@ -388,14 +388,19 @@ int piInitVideo()
 
     //EGLDisplay display;
     //You can try chaning this to "card0" if "card1" does not work.
-    device = open("/dev/dri/card1", O_RDWR | O_CLOEXEC);
+    device = open("/dev/dri/card0", O_RDWR | O_CLOEXEC);
     if (getDisplay(&display) != 0)
     {
-        fprintf(stderr, "Unable to get EGL display\n");
         close(device);
-        return -1;
+        fprintf(stderr, "Unable to get EGL display using /dev/dri/card0, trying next\n");
+    	device = open("/dev/dri/card1", O_RDWR | O_CLOEXEC);
+    	if (getDisplay(&display) != 0)
+    	{
+        	fprintf(stderr, "Unable to get EGL display using /dev/dri/card0, trying next\n");
+		close(device);
+		return EXIT_FAILURE;
+	}
     }
-
 
     //We will use the screen resolution as the desired width and height for the viewport.
     //int desiredWidth = mode.hdisplay;

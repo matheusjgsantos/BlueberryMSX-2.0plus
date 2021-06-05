@@ -413,5 +413,6 @@ static UInt8 getKeyState(int row)
         break;
     }
 
+    fprintf(stderr,"keystate %s\n");
     return ~keyState;
 }

@@ -29,6 +29,7 @@
 #include "ArchInput.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 static char* eventNames[256];
 int   eventMap[256];
@@ -47,16 +48,16 @@ static void initKeyNameTable()
     eventNames[EC_INS    ] = "ins";
     eventNames[EC_DEL    ] = "del";
     eventNames[EC_ESC    ] = "esc";
-    eventNames[EC_1      ] = "1";
-    eventNames[EC_2      ] = "2";
-    eventNames[EC_3      ] = "3";
-    eventNames[EC_4      ] = "4";
-    eventNames[EC_5      ] = "5";
-    eventNames[EC_6      ] = "6";
-    eventNames[EC_7      ] = "7";
-    eventNames[EC_8      ] = "8";
-    eventNames[EC_9      ] = "9";
-    eventNames[EC_0      ] = "0";
+    eventNames[EC_1] = "1";
+    eventNames[EC_2] = "2";
+    eventNames[EC_3] = "3";
+    eventNames[EC_4] = "4";
+    eventNames[EC_5] = "5";
+    eventNames[EC_6] = "6";
+    eventNames[EC_7] = "7";
+    eventNames[EC_8] = "8";
+    eventNames[EC_9] = "9";
+    eventNames[EC_0] = "0";
     eventNames[EC_NEG    ] = "neg";
     eventNames[EC_CIRCFLX] = "circomflex";
     eventNames[EC_BKSLASH] = "backslash";

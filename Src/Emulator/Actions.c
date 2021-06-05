@@ -1429,6 +1429,7 @@ void actionSetVolumeStereo(int value) {
 void actionKeyPress(int keyCode, int pressed)
 {
     if (pressed) {
+	fprintf(stderr,"Keycode: %d, Key pressed: %d\n",keyCode,pressed);
         inputEventSet(keyCode);
         archKeyboardSetSelectedKey(keyCode);
     }

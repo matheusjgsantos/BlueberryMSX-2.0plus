@@ -25,15 +25,14 @@
 ******************************************************************************
 */
 
-//#define DEBUG
-
 #include "PiShortcuts.h"
 #include <SDL.h>
-// DEPRECATED on sdl2 -- #include <SDL_keysym.h>
+//#include <SDL_keysym.h>
 #include <SDL_keycode.h>
 #include "IniFileParser.h"
 #include "StrcmpNoCase.h"
 #include "Actions.h"
+
 
 static int sdlkeys[256] = {
     0,
@@ -78,10 +77,8 @@ static int sdlkeys[256] = {
     SDLK_RIGHT,
     SDLK_DOWN,
     0,//SDLK_SELECT,
-    0,//DEPRECATED on sdl2 -- SDLK_PRINT,
     SDLK_PRINTSCREEN,
     0,//SDLK_EXECUTE,
-    0,//DEPRECATED on sdl2 -- SDLK_PRINT,
     SDLK_PRINTSCREEN,
     SDLK_INSERT,
     SDLK_DELETE,
@@ -129,40 +126,28 @@ static int sdlkeys[256] = {
     'X',
     'Y',
     'Z',
-    //DEPRECATED on sdl2 -- SDLK_LMETA ,
     SDLK_LGUI,
-    //DEPRECATED on sdl2 -- SDLK_RMETA ,
     SDLK_RGUI,
     0,//SDLK_APPLICATION ,
     0,
     0,//SDLK_SLEEP,
-    //DEPRECATED on sdl2 -- SDLK_KP0,
     SDLK_KP_0,
-    //DEPRECATED on sdl2 -- SDLK_KP1,
     SDLK_KP_1,
-    //DEPRECATED on sdl2 -- SDLK_KP2,
     SDLK_KP_2,
-    //DEPRECATED on sdl2 -- SDLK_KP3,
     SDLK_KP_3,
-    //DEPRECATED on sdl2 -- SDLK_KP4,
     SDLK_KP_4,
-    //DEPRECATED on sdl2 -- SDLK_KP5,
     SDLK_KP_5,
-    //DEPRECATED on sdl2 -- SDLK_KP6,
     SDLK_KP_6,
-    //DEPRECATED on sdl2 -- SDLK_KP7,
     SDLK_KP_7,
-    //DEPRECATED on sdl2 -- SDLK_KP8,
     SDLK_KP_8,
-    //DEPRECATED on sdl2 -- SDLK_KP9,
     SDLK_KP_9,
-    SDLK_KP_MULTIPLY ,
+    SDLK_KP_MULTIPLY,
     SDLK_KP_PLUS,
     0,
-    SDLK_KP_MINUS ,
+    SDLK_KP_MINUS,
     SDLK_KP_PERIOD,
     SDLK_KP_DIVIDE,
-    SDLK_F1 ,
+    SDLK_F1,
     SDLK_F2,
     SDLK_F3,
     SDLK_F4,
@@ -571,16 +556,16 @@ static char shortcutsDir[512];
 
 extern Properties *properties;
 
-typedef struct {
-    unsigned type : 7;
-    unsigned mods : 9;
+/*typedef struct {
+    unsigned type : 8;
+    unsigned mods : 8;
     unsigned key  : 16;
-} ShortcutHotkey0;
+} ShortcutHotkey;*/
 
 typedef struct {
-    unsigned type : 4;
-    unsigned mods : 12;
-    unsigned key  : 16;
+    unsigned type : 8;
+    unsigned mods : 8;
+    long key  : 8;
 } ShortcutHotkey;
 
 struct IniFile
@@ -624,9 +609,7 @@ static const ShortcutHotkey toggleScanline = {
 static const ShortcutHotkey toggleAspectRatio = {
     HOTKEY_TYPE_KEYBOARD, KMOD_LCTRL, SDLK_F10,	
 };
-static const ShortcutHotkey toggleColorMode = {
-    HOTKEY_TYPE_KEYBOARD, KMOD_LALT, SDLK_F11,
-};
+
 
 struct Shortcuts {
     ShortcutHotkey quit;
@@ -672,7 +655,6 @@ struct Shortcuts {
     ShortcutHotkey windowSizeFullscreenToggle;
 	ShortcutHotkey scanlinesToggle;
     ShortcutHotkey aspectRatioToggle;
-	ShortcutHotkey videoColorModeToggle;
     struct {
         int maxSpeedIsSet;
     } state;
@@ -696,9 +678,7 @@ ShortcutHotkey toSDLhotkey(ShortcutHotkey hotkey)
 			if (hotkey.mods & KBD_RSHIFT)  sdlmod |= KMOD_RSHIFT;
 			if (hotkey.mods & KBD_LALT)    sdlmod |= KMOD_LALT;
 			if (hotkey.mods & KBD_RALT)    sdlmod |= KMOD_RALT;
-			//DEPRECATED on sdl2 -- if (hotkey.mods & KBD_LWIN)    sdlmod |= KMOD_LMETA;
 			if (hotkey.mods & KBD_LWIN)    sdlmod |= KMOD_LGUI;
-			//DEPRECATED on sdl2 -- if (hotkey.mods & KBD_RWIN)    sdlmod |= KMOD_RMETA; 
 			if (hotkey.mods & KBD_RWIN)    sdlmod |= KMOD_RGUI; 
 			key = sdlkeys[hotkey.key];
 			break;
@@ -706,24 +686,8 @@ ShortcutHotkey toSDLhotkey(ShortcutHotkey hotkey)
 			break;
 	}
 	hotkey.mods = sdlmod;
-	hotkey.key = sdlkeys[hotkey.key];
+	hotkey.key = key;
 	return hotkey;
-}
-
-int getMods(int mods)
-{
-	int mods0 = 0;
-	if (mods & KMOD_LCTRL) 	 mods0 |= KBD_LCTRL;
-	if (mods & KMOD_RCTRL)   mods0 |= KBD_RCTRL;
-	if (mods & KMOD_LSHIFT)  mods0 |= KBD_LSHIFT;
-	if (mods & KMOD_RSHIFT)  mods0 |= KBD_RSHIFT;
-	if (mods & KMOD_LALT)    mods0 |= KBD_LALT;
-	if (mods & KMOD_RALT)    mods0 |= KBD_RALT;
-	//DEPRECATED on sdl2 -- if (mods & KMOD_LMETA)   mods0 |= KBD_LWIN;
-	if (mods & KMOD_LGUI)   mods0 |= KBD_LWIN;
-	//DEPRECATED on sdl2 -- if (mods & KMOD_RMETA)   mods0 |= KBD_RWIN; 
-	if (mods & KMOD_RGUI)   mods0 |= KBD_RWIN; 
-	return mods0;
 }
 
 char* shortcutsToString(ShortcutHotkey hotkey) 
@@ -731,6 +695,7 @@ char* shortcutsToString(ShortcutHotkey hotkey)
     static char buf[64];
         
     buf[0] = 0;
+
     switch (hotkey.type) {
     case HOTKEY_TYPE_KEYBOARD:
         if (hotkey.mods & KBD_LCTRL)    { strcat(buf, *buf ? "+" : ""); strcat(buf, "LCtrl"); }
@@ -755,9 +720,9 @@ static int stringToHotkey(const char* name)
 {
     int i;
 
-    //DEPRECATED in sdl2 -- for (i = 0; i < SDLK_LAST; i++) {
     for (i = 0; i < SDLK_AUDIOFASTFORWARD; i++) {
         char* sdlName = SDL_GetKeyName(i);
+	//fprintf(stderr,"sdlName: %s\n");
         if (0 == strcmpnocase(name, sdlName)) {
             return i;
         }
@@ -785,8 +750,10 @@ static ShortcutHotkey int2hotkey(int* hotkey) {
 
 static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 {
-	char buffer[2048];
-	ShortcutHotkey0 key;
+    char buffer[512];
+    char* token, *value;
+    int key;
+    
     hotkey->type = HOTKEY_TYPE_NONE;
     hotkey->mods = 0;
     hotkey->key  = 0;
@@ -795,17 +762,31 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 //		printf("shortcut:%s - not assigned\n", name);
         return;
     }
-    sscanf(buffer, "%X", &key);
-	hotkey->type = key.type;
-	hotkey->mods = key.mods;
-	hotkey->key  = key.key;
+// #if 0
+    // token = strtok(buffer, "|");
+    // if (token == NULL) {
+        // return;
+    // }
+    // key = stringToHotkey(token);
+    // if (key >= 0) {
+        // hotkey->key  = key;
+        // hotkey->type = HOTKEY_TYPE_KEYBOARD;
+    // }
+    
+    // while (token = strtok(NULL, "|")) {
+        // hotkey->mods |= stringToMod(token);
+    // }
+// #else
+//	sscanf(strtok(buffer, "="), "%"SCNx32, hotkey);	
+    sscanf(buffer, "%X", hotkey);
+	toSDLhotkey(*hotkey);
+//#endifma	
+	//printf("shortcut:%s - %s,%08x -> %08x\n", name, shortcutsToString(*hotkey), *hotkey, toSDLhotkey(*hotkey));
 	*hotkey = toSDLhotkey(*hotkey);
-#ifdef DEBUG
-	printf("shortcut:%s=%s - %08x->%08x\n", name, shortcutsToString(*hotkey), key, *hotkey);
-#endif
 }
 
 void shortcutsSetDirectory(char* directory)
+			//fprintf(stderr,"ShortcurHotkey = %d\n",key);
 {
     strcpy(shortcutsDir, directory);
 }
@@ -819,6 +800,7 @@ Shortcuts* shortcutsCreate()
 
     IniFile *iniFile = iniFileOpen(filename);
 	
+	printf("shortcut file:%s, %d\n", filename, iniFile);
 
 	if (iniFile->iniBuffer) {
 		LOAD_SHORTCUT(switchMsxAudio);
@@ -836,8 +818,8 @@ Shortcuts* shortcutsCreate()
 		LOAD_SHORTCUT(cartRemove[1]);
 		LOAD_SHORTCUT(cartAutoReset);
 		
-//		LOAD_SHORTCUT(diskRemove[0]);
-//		LOAD_SHORTCUT(diskRemove[1]);
+		LOAD_SHORTCUT(diskRemove[0]);
+		LOAD_SHORTCUT(diskRemove[1]);
 		LOAD_SHORTCUT(diskChange[0]);
 		LOAD_SHORTCUT(diskAutoReset);
 
@@ -867,14 +849,12 @@ Shortcuts* shortcutsCreate()
 		LOAD_SHORTCUT(captureScreenshot);
 		LOAD_SHORTCUT(scanlinesToggle);
 		LOAD_SHORTCUT(aspectRatioToggle);
-		LOAD_SHORTCUT(videoColorModeToggle);
 	}
 	iniFileClose(iniFile);
 	shortcuts->resetSoft = resetHard;
 	shortcuts->captureScreenshot = screenShot;
 	shortcuts->scanlinesToggle = toggleScanline;
 	shortcuts->aspectRatioToggle = toggleAspectRatio;
-        shortcuts->videoColorModeToggle = toggleColorMode;
 	
     return shortcuts;
 }
@@ -884,9 +864,13 @@ void shortcutsDestroy(Shortcuts* shortcuts)
     free(shortcuts);
 }
 
-void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym)
+void shortcutCheckDown(Shortcuts* s, int type, int mods, long keySym)
 {
     ShortcutHotkey key = { type, mods, keySym };
+    	/*printf("type=%08x -",type);
+	printf("mods=%08x -",mods);
+    	printf("keySym=%08x -",keySym);
+	printf("key=%016x\n", key);*/
 
     if (HOTKEY_EQ(key, s->emuSpeedFull)) {
         if (s->state.maxSpeedIsSet == 0) {
@@ -896,12 +880,13 @@ void shortcutCheckDown(Shortcuts* s, int type, int mods, int keySym)
     }
 }
 
-void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
+void shortcutCheckUp(Shortcuts* s, int type, int mods, long keySym)
 {
     ShortcutHotkey key = { type, mods, keySym };
-#ifdef DEBUG	
-    printf("key=%08x,type=%02x,mod=%02x,keySym=%04x\n", key,type, mods, keySym);
-#endif
+    	/*printf("type=%08x -",type);
+	printf("mods=%08x -",mods);
+    	printf("keySym=%08x -",keySym);
+	printf("key=%016x\n", key);*/
     if (s->state.maxSpeedIsSet) {
         actionMaxSpeedRelease();
         s->state.maxSpeedIsSet = 0;
@@ -937,8 +922,8 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
     if (HOTKEY_EQ(key, s->cartAutoReset))                actionToggleCartAutoReset();
 
     if (HOTKEY_EQ(key, s->diskChange[0]))              	 actionDiskQuickChange();
-//  if (HOTKEY_EQ(key, s->diskRemove[0]))                actionDiskRemoveA();
-//  if (HOTKEY_EQ(key, s->diskRemove[1]))                actionDiskRemoveB();
+    if (HOTKEY_EQ(key, s->diskRemove[0]))                actionDiskRemoveA();
+    if (HOTKEY_EQ(key, s->diskRemove[1]))                actionDiskRemoveB();
     if (HOTKEY_EQ(key, s->diskAutoReset))                actionToggleDiskAutoReset();
 
     if (HOTKEY_EQ(key, s->casRewind))                    actionCasRewind();
@@ -948,7 +933,7 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
     if (HOTKEY_EQ(key, s->casSave))                      actionCasSave();
 
     if (HOTKEY_EQ(key, s->emulationRunPause))            actionEmuTogglePause();
-//  if (HOTKEY_EQ(key, s->emulationStop))                actionEmuStop();
+    if (HOTKEY_EQ(key, s->emulationStop))                actionEmuStop();
     if (HOTKEY_EQ(key, s->emuSpeedNormal))               actionEmuSpeedNormal();
     if (HOTKEY_EQ(key, s->emuSpeedInc))                  actionEmuSpeedIncrease();
     if (HOTKEY_EQ(key, s->emuSpeedDec))                  actionEmuSpeedDecrease();
@@ -958,14 +943,13 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, int keySym)
     if (HOTKEY_EQ(key, s->resetClean))                   actionEmuResetClean();
     if (HOTKEY_EQ(key, s->volumeIncrease))               actionVolumeIncrease();
     if (HOTKEY_EQ(key, s->volumeDecrease))               actionVolumeDecrease();
-//  if (HOTKEY_EQ(key, s->volumeMute))                   actionMuteToggleMaster();
+    if (HOTKEY_EQ(key, s->volumeMute))                   actionMuteToggleMaster();
     if (HOTKEY_EQ(key, s->volumeStereo))                 actionVolumeToggleStereo();
     if (HOTKEY_EQ(key, s->windowSizeNormal))             actionWindowSizeNormal();
     if (HOTKEY_EQ(key, s->windowSizeFullscreen))         actionWindowSizeFullscreen();
     if (HOTKEY_EQ(key, s->windowSizeFullscreenToggle))   actionFullscreenToggle();
 	if (HOTKEY_EQ(key, s->scanlinesToggle))	 			 actionToggleScanlinesEnable();
 	if (HOTKEY_EQ(key, s->aspectRatioToggle))	 		 actionToggleVideoSetForce4x3ratio();
-	if (HOTKEY_EQ(key, s->videoColorModeToggle))		 actionToggleVideoColorMode();
 }
 
 

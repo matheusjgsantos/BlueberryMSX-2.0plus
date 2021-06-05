@@ -366,7 +366,8 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->sound.MidiIn.desc[0]          = 0;
     properties->sound.MidiOut.type            = P_MIDI_FILE;
     properties->sound.MidiOut.name[0]         = 0;
-    strcpy(properties->sound.MidiOut.fileName, "/dev/snd/midiC1D0");
+    //strcpy(properties->sound.MidiOut.fileName, "/dev/snd/midiC1D0");
+    strcpy(properties->sound.MidiOut.fileName, "/dev/snd/midiC3D0");
     properties->sound.MidiOut.desc[0]         = 0;
     properties->sound.MidiOut.mt32ToGm        = 0;
     

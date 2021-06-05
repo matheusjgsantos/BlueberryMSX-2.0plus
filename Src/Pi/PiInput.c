@@ -26,17 +26,16 @@
 ******************************************************************************
 */
 #include "ArchInput.h"
-
-
 #include "Language.h"
 #include "Properties.h"
 #include "InputEvent.h"
 #include "JoystickPort.h"
 #include <stdio.h>
 #include <SDL.h>
+#include <SDL_keyboard.h>
 
-//DEPRECATED in sdl2 -- static int kbdTable[3][SDLK_LAST];
-static int kbdTable[3][500];
+//static int kbdTable[3][SDLK_LAST];
+static long kbdTable[3][0x00000000];
 
 static int inputTypeScanStart = 0;
 static int inputTypeScanEnd = 1;
@@ -124,30 +123,18 @@ static void initKbdTable()
 	kbdTable[0][SDLK_KP_MINUS   ] = EC_NUMSUB;
 	kbdTable[0][SDLK_KP_PERIOD  ] = EC_NUMPER;
 	kbdTable[0][SDLK_PAGEDOWN   ] = EC_NUMCOM;
-	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP0] = EC_NUM0;
 	kbdTable[0][SDLK_KP_0] = EC_NUM0;
-	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP1] = EC_NUM1;
 	kbdTable[0][SDLK_KP_1] = EC_NUM1;
-	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP2] = EC_NUM2;
 	kbdTable[0][SDLK_KP_2] = EC_NUM2;
-	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP3] = EC_NUM3;
 	kbdTable[0][SDLK_KP_3] = EC_NUM3;
-	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP4] = EC_NUM4;
 	kbdTable[0][SDLK_KP_4] = EC_NUM4;
-	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP5] = EC_NUM5;
 	kbdTable[0][SDLK_KP_5] = EC_NUM5;
-	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP6] = EC_NUM6;
 	kbdTable[0][SDLK_KP_6] = EC_NUM6;
-	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP7] = EC_NUM7;
 	kbdTable[0][SDLK_KP_7] = EC_NUM7;
-	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP8] = EC_NUM8;
 	kbdTable[0][SDLK_KP_8] = EC_NUM8;
-	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_KP9] = EC_NUM9;
 	kbdTable[0][SDLK_KP_9] = EC_NUM9;
 
-	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_LSUPER  ] = EC_TORIKE;
 	kbdTable[0][SDLK_LGUI  ] = EC_TORIKE;
-	//DEPRECATED in sdl2 -- kbdTable[0][SDLK_RSUPER  ] = EC_JIKKOU;
 	kbdTable[0][SDLK_RGUI  ] = EC_JIKKOU;
 	kbdTable[0][SDLK_LSHIFT  ] = EC_LSHIFT;
 	kbdTable[0][SDLK_RSHIFT  ] = EC_RSHIFT;
@@ -158,7 +145,7 @@ static void initKbdTable()
 	kbdTable[0][SDLK_KP_ENTER] = EC_PAUSE;
 	kbdTable[0][SDLK_SYSREQ  ] = EC_PRINT;
 
-	kbdTable[1][SDLK_SPACE       ] = EC_JOY1_BUTTON1;
+	/*kbdTable[1][SDLK_SPACE       ] = EC_JOY1_BUTTON1;
 	kbdTable[1][SDLK_LCTRL       ] = EC_JOY1_BUTTON2;
 	kbdTable[1][SDLK_LEFT        ] = EC_JOY1_LEFT;
 	kbdTable[1][SDLK_UP          ] = EC_JOY1_UP;
@@ -177,28 +164,18 @@ static void initKbdTable()
 	kbdTable[1][SDLK_MINUS       ] = EC_COLECO1_STAR;
 	kbdTable[1][SDLK_EQUALS      ] = EC_COLECO1_HASH;
 
-	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP0     ] = EC_COLECO2_0;
 	kbdTable[2][SDLK_KP_0     ] = EC_COLECO2_0;
-	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP1     ] = EC_COLECO2_1;
-	kbdTable[2][SDLK_KP_1     ] = EC_COLECO2_0;
-	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP2     ] = EC_COLECO2_2;
-	kbdTable[2][SDLK_KP_2     ] = EC_COLECO2_0;
-	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP3     ] = EC_COLECO2_3;
-	kbdTable[2][SDLK_KP_3     ] = EC_COLECO2_0;
-	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP4     ] = EC_COLECO2_4;
-	kbdTable[2][SDLK_KP_4     ] = EC_COLECO2_0;
-	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP5     ] = EC_COLECO2_5;
-	kbdTable[2][SDLK_KP_5     ] = EC_COLECO2_0;
-	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP6     ] = EC_COLECO2_6;
-	kbdTable[2][SDLK_KP_6     ] = EC_COLECO2_0;
-	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP7     ] = EC_COLECO2_7;
-	kbdTable[2][SDLK_KP_7     ] = EC_COLECO2_0;
-	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP8     ] = EC_COLECO2_8;
-	kbdTable[2][SDLK_KP_8     ] = EC_COLECO2_0;
-	//DEPRECATED in sdl2 -- kbdTable[2][SDLK_KP9     ] = EC_COLECO2_9;
-	kbdTable[2][SDLK_KP_9     ] = EC_COLECO2_0;
+	kbdTable[2][SDLK_KP_1     ] = EC_COLECO2_1;
+	kbdTable[2][SDLK_KP_2     ] = EC_COLECO2_2;
+	kbdTable[2][SDLK_KP_3     ] = EC_COLECO2_3;
+	kbdTable[2][SDLK_KP_4     ] = EC_COLECO2_4;
+	kbdTable[2][SDLK_KP_5     ] = EC_COLECO2_5;
+	kbdTable[2][SDLK_KP_6     ] = EC_COLECO2_6;
+	kbdTable[2][SDLK_KP_7     ] = EC_COLECO2_7;
+	kbdTable[2][SDLK_KP_8     ] = EC_COLECO2_8;
+	kbdTable[2][SDLK_KP_9     ] = EC_COLECO2_9;
 	kbdTable[2][SDLK_KP_MULTIPLY    ] = EC_COLECO2_STAR;
-	kbdTable[2][SDLK_KP_DIVIDE      ] = EC_COLECO2_HASH;
+	kbdTable[2][SDLK_KP_DIVIDE      ] = EC_COLECO2_HASH;*/
 }
 
 void piInputResetJoysticks()
@@ -248,50 +225,53 @@ void piInputResetMSXDevices(int realMice, int realJoysticks)
 
 void keyboardInit(Properties *properties)
 {
-	fprintf(stderr,"PiInput.c is executing keyboardInit function\n");
 	if (strncmp(properties->emulation.machineName, "COL", 3) == 0) {
 		inputTypeScanStart = 1;
 		inputTypeScanEnd = 2;
 		fprintf(stderr, "Initializing ColecoVision input\n");
 	}
-	fprintf(stderr,"PiInput.c is calling initKbdTable function\n");
+
 	initKbdTable();
-	fprintf(stderr, "initKbfTable() call ended\n");
-
-	fprintf(stderr,"PiInput.c is calling inputEventReset function\n");
 	inputEventReset();
-	fprintf(stderr, "inputEventReset() call ended\n");
-
 }
 
 void keyboardUpdate(SDL_KeyboardEvent *event)
 {
-	//fprintf(stderr,"PiInput.c is executing keyboardUpdate function\n");
 	int i;
 	for (i = inputTypeScanStart; i <= inputTypeScanEnd; i++) {
+		//fprintf(stderr,"keysym.scancode=%16x\n",event->keysym.scancode);
+		//fprintf(stderr,"keysym.sym=%16x\n",event->keysym.sym);
 		if (event->keysym.scancode == 0x7A) {
 			if (event->type == SDL_KEYUP) 
 				inputEventUnset(kbdTable[i][SDLK_RALT]);
 			else if (event->type == SDL_KEYDOWN)
 				inputEventSet(kbdTable[i][SDLK_RALT]);
 		} else if (event->type == SDL_KEYUP) {
-			if (event->keysym.sym == 0 && event->keysym.scancode == 58)
-				inputEventUnset(kbdTable[i][SDLK_CAPSLOCK]);
-			else
+			if (event->keysym.scancode == 0x2e) {
+				inputEventUnset(EC_CIRCFLX);
+			} else if (event->keysym.scancode == 0x3b) {
+				inputEventUnset(EC_F2);
+			} else {
 				inputEventUnset(kbdTable[i][event->keysym.sym]);
+			}
 		} else if (event->type == SDL_KEYDOWN) {
-			fprintf(stderr,"Key pressed: %p\n",event->keysym.sym);
-			if (event->keysym.sym == 0 && event->keysym.scancode == 58)
-				inputEventSet(kbdTable[i][SDLK_CAPSLOCK]);
-			else
-				inputEventSet(kbdTable[i][event->keysym.sym]);
+			if (event->keysym.scancode == 0x2e) {
+				//inputEventSet(kbdTable[i][SDLK_EQUALS]);
+				inputEventSet(EC_CIRCFLX);
+				//fprintf(stderr,"BYPASSING: keysym:%16x, kbdTable entry:%16x\n",event->keysym.sym,kbdTable[0][SDLK_EQUALS]);
+			} else if (event->keysym.scancode == 0x3b) {
+				inputEventSet(EC_F2);
+				//fprintf(stderr,"BYPASSING: keysym:%16x, kbdTable entry:%16x\n",event->keysym.sym,kbdTable[0][event->keysym.sym]);
+			} else {
+			inputEventSet(kbdTable[i][event->keysym.sym]);
+			//fprintf(stderr,"keysym:%16x, kbdTable entry:%16x\n",event->keysym.sym,kbdTable[0][event->keysym.sym]);
+			}
 		}
 	}
 }
 
 void joystickAxisUpdate(SDL_JoyAxisEvent *event)
 {
-	fprintf(stderr,"PiInput.c is executing joystickAxisUpdate function\n");
 	if (event->which == 0) {
 		if (event->axis == 0) {
 			// Left/right
@@ -349,37 +329,18 @@ void joystickAxisUpdate(SDL_JoyAxisEvent *event)
 
 void joystickButtonUpdate(SDL_JoyButtonEvent *event)
 {
-	fprintf(stderr,"PiInput.c is executing joystickButtonUpdate function\n");
 	if (event->type == SDL_JOYBUTTONDOWN) {
 		if (event->which == 0) {
 			if (event->button == 0) {
 				inputEventSet(EC_JOY1_BUTTON1);
 			} else if (event->button == 1) {
 				inputEventSet(EC_JOY1_BUTTON2);
-			} else if (event->button == 2) {
-				inputEventSet(EC_JOY1_BUTTON1);
-			} else if (event->button == 3) {
-				inputEventSet(EC_JOY1_BUTTON2);
-				inputEventSet(EC_JOY1_BUTTON4);
-			} else if (event->button == 8) {
-                		inputEventSet(EC_JOY_BUTTONL);
-            		} else if (event->button == 9) {
-                		inputEventSet(EC_JOY_BUTTONR);
-            		}
+			}
 		} else if (event->which == 1) {
 			if (event->button == 0) {
 				inputEventSet(EC_JOY2_BUTTON1);
 			} else if (event->button == 1) {
 				inputEventSet(EC_JOY2_BUTTON2);
-			} else if (event->button == 2) {
-				inputEventSet(EC_JOY2_BUTTON1);
-			} else if (event->button == 3) {
-				inputEventSet(EC_JOY2_BUTTON2);
-				inputEventSet(EC_JOY2_BUTTON4);
-			} else if (event->button == 8) {
-                		inputEventSet(EC_JOY_BUTTONL);
-            		} else if (event->button == 9) {
-                		inputEventSet(EC_JOY_BUTTONR);
 			}
 		}
 	} else if (event->type == SDL_JOYBUTTONUP) {
@@ -388,30 +349,12 @@ void joystickButtonUpdate(SDL_JoyButtonEvent *event)
 				inputEventUnset(EC_JOY1_BUTTON1);
 			} else if (event->button == 1) {
 				inputEventUnset(EC_JOY1_BUTTON2);
-			} else if (event->button == 2) {
-				inputEventUnset(EC_JOY1_BUTTON1);
-			} else if (event->button == 3) {
-				inputEventUnset(EC_JOY1_BUTTON2);
-				inputEventUnset(EC_JOY1_BUTTON4);
-			} else if (event->button == 8) {
-                		inputEventUnset(EC_JOY_BUTTONL);
-            		} else if (event->button == 9) {
-                		inputEventUnset(EC_JOY_BUTTONR);
 			}
 		} else if (event->which == 1) {
 			if (event->button == 0) {
 				inputEventUnset(EC_JOY2_BUTTON1);
 			} else if (event->button == 1) {
 				inputEventUnset(EC_JOY2_BUTTON2);
-			} else if (event->button == 2) {
-				inputEventUnset(EC_JOY2_BUTTON1);
-			} else if (event->button == 3) {
-				inputEventUnset(EC_JOY2_BUTTON2);
-				inputEventUnset(EC_JOY2_BUTTON4);
-			} else if (event->button == 8) {
-                		inputEventUnset(EC_JOY_BUTTONL);
-            		} else if (event->button == 9) {
-                		inputEventUnset(EC_JOY_BUTTONR);
 			}
 		}
 	}
