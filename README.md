@@ -38,7 +38,7 @@ How to install on a new SD card image:
 
  - Install git and required libraries: SDL2, GLES, EGL, KMS/DRM and GBM:
 
-  `$ sudo apt install -y git libsdl2-2.0-0 libdrm2 libgbm1 libgles2 libegl1 libegl1-mesa-dri`
+  `$ sudo apt install -y git libsdl2-2.0-0 libdrm2 libgbm1 libgles2 libegl1 libgl1-mesa-dri`
 
  - Clone the WiringPi repo for GPIO support:
 
