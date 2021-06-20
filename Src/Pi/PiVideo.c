@@ -145,10 +145,10 @@ EGLSurface surface;
 //static EGLContext context = NULL;
 EGLContext context;
 
-//uint32_t screenWidth = 0;
-//uint32_t screenHeight = 0;
-uint32_t screenWidth = 800;
-uint32_t screenHeight = 600;
+uint32_t screenWidth;
+uint32_t screenHeight;
+//uint32_t screenWidth = 1024;
+//uint32_t screenHeight = 768;
 
 static ShaderInfo shader;
 static GLuint buffers[3];
@@ -403,10 +403,12 @@ int piInitVideo()
     }
 
     //We will use the screen resolution as the desired width and height for the viewport.
-    //int desiredWidth = mode.hdisplay;
-    //int desiredHeight = mode.vdisplay;
-    int desiredWidth = 800;
-    int desiredHeight = 600;
+    int desiredWidth = mode.hdisplay;
+    int desiredHeight = mode.vdisplay;
+    //int desiredWidth = 640;
+    //int desiredHeight = 480;
+    screenWidth = mode.hdisplay;
+    screenHeight = mode.vdisplay;
 
     // Other variables we will need further down the code.
     int major, minor;
