@@ -29,9 +29,9 @@
 #include <stdio.h>
 #include <SDL.h>
 
-#ifdef RASPI_GPIO
+//#ifdef RASPI_GPIO
 #include "PiGpio.h"
-#endif
+//#endif
 
 #include "CommandLine.h"
 #include "Properties.h"
@@ -140,7 +140,7 @@ static int floppy2LedOn = 0;
 
 static void updateLeds()
 {
-#ifdef RASPI_GPIO
+//#ifdef RASPI_GPIO
 	int floppy1LedNow = ledGetFdd1();
 	if (floppy1LedNow != floppy1LedOn) {
 		floppy1LedOn = floppy1LedNow;
@@ -151,7 +151,7 @@ static void updateLeds()
 		floppy2LedOn = floppy2LedNow;
 		//gpioToggleFloppyLed(1, floppy2LedOn);
 	}
-#endif
+//#endif
 }
 
 extern uint32_t screenWidth;
@@ -262,9 +262,10 @@ static void setDefaultPaths(const char* rootDir)
 
 int main(int argc, char **argv)
 {
-#ifdef RASPI_GPIO
+//#ifdef RASPI_GPIO
+	//fprintf(stderr,"PiMain is calling gpioInit()\n");
 	gpioInit();
-#endif
+//#endif
 
 	if (!piInitVideo()) {
 		fprintf(stderr, "piInitVideo() failed");
@@ -461,10 +462,6 @@ int main(int argc, char **argv)
 	
 	fprintf(stderr, "Powering on\n");
 
-#ifdef RASPI_GPIO
-	//gpioTogglePowerLed(1);
-#endif
-
 	while (!doQuit) {
 		SDL_WaitEvent(&event);
 		do {
@@ -480,6 +477,7 @@ int main(int argc, char **argv)
 	propDestroy(properties);
 	archSoundDestroy();
 	mixerDestroy(mixer);
+	gpioShutdown();
 
 #ifdef RASPI_GPIO
 	//gpioTogglePowerLed(0);

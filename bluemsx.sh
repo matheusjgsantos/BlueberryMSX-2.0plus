@@ -5,4 +5,4 @@
 #export SDL_RENDER_DRIVER=software 
 #export SDL_RENDER_DRIVER=opengles2 
 #export SDL_RENDER_DRIVER=opengles2
-./bluemsx-pi -romtype1 msxbus -romtype2 msxbus
+./bluemsx-pi /romtype1 msxbus /romtype2 msxbus $@

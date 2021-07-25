@@ -32,11 +32,11 @@
 
 #include "Led.h"
 
-#ifdef RASPI_GPIO
+//#ifdef RASPI_GPIO
 
-#define CLOCK 1
-#define LATCH 0
-#define DATA  3
+#define CLOCK 3 // 23 in BCM - Header 15 - GPIO. 3
+#define LATCH 4 // 22 in BCM - Header 16 - GPIO .4
+#define DATA  25 // 26 in BCM - Header 37 - GPIO.25
 
 #define POWER 0x80
 #define FDD0  0x40
@@ -55,6 +55,7 @@ void gpioInit()
 	pinMode(DATA,  OUTPUT) ;
 
 	ledBitMap = POWER;
+	//fprintf(stderr,"Calling gpioShiftLeds\n");
 	gpioShiftLeds();
 }
 
@@ -87,9 +88,10 @@ void gpioUpdateLeds()
 
 static void gpioShiftLeds()
 {
+	//fprintf(stderr,"Executing gpioShiftLeds()\n");
 	digitalWrite(LATCH, LOW);
 	shiftOut(DATA, CLOCK, LSBFIRST, ledBitMap);
 	digitalWrite(LATCH, HIGH);
 }
 
-#endif
+//#endif
