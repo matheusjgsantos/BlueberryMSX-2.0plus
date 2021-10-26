@@ -79,7 +79,6 @@ How to build from source:
 
 Known issues:
 -------
- - Slot 2 is not working yet, probably the first thing to fix next
  - Keyboard mapping code is **garbage** because SDL2.0 introduced ***very long values*** for the key ids causing [segmentation faults](https://stackoverflow.com/questions/30815857/sdl-keycodes-are-too-big-for-storage) just by looking at it. Need complete rework
  - Emulator only works on HDMI0, I need to add logic to make DRM "discover" which HDMI port is in use and enable it. Zero idea how to do this
  - Sometimes the emulator gets upset and decides to disable sound. Check bluemsx.ini for `sound.masterEnable=yes` entry and fix it if changed to `no`
@@ -89,3 +88,4 @@ Resolved issues:
 -------
  - Screen resolution code is odd, opens a 800x600 screen even when the desired configuration is 640x480. Need to figure out what is happening - **FIXED**
  - RPMC power led
+ - Slot 2 is now working, but I need to test what happens with 2 cartridges inserted
