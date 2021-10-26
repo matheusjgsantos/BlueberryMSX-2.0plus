@@ -28,7 +28,7 @@ Everything that depended on the [DispmanX](https://raspberry-projects.com/pi/pro
 How to install on a new SD card image:
 --------
 
- - Download and write the latest [RaspiOS Lite image](https://www.raspberrypi.org/software/operating-systems/) in a 2GB+ Sd Card. I'm using the `2021-05-07-raspios-buster-armhf-lite.img` image file to write this instructions
+ - Download and write the latest [RaspiOS Lite image](https://www.raspberrypi.org/software/operating-systems/) in a 2GB+ Sd Card. I'm using the `2021-05-07-raspios-buster-armhf-lite.img` image file to write these instructions
 
  - Boot the RPI4/400 with the SD card then configure the internet connection (wireless or wired, your choice)
 

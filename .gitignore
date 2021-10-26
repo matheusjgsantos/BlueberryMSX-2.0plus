@@ -14,3 +14,5 @@ bluemsx-pi
 tmp/pulse
 bootDisk.dsk
 bluemsx-pi-original
+./tmp/*
+.vscode/*

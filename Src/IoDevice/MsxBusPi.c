@@ -109,6 +109,7 @@ volatile unsigned *gclk_base;
 #define SLTSL3_PIN	RA9
 #define SLTSL1_PIN 	RA8
 //#define CS12_PIN 	RA9
+#define CS12_PIN 	RA9
 #define CS1_PIN		RA10
 #define CS2_PIN 	RA11
 #define RD_PIN		RA12
@@ -130,6 +131,7 @@ volatile unsigned *gclk_base;
 #define MSX_CS1	(1 << CS1_PIN)
 #define MSX_CS2 (1 << CS2_PIN)
 //#define MSX_CS12 (1 << CS12_PIN)
+#define MSX_CS12 (1 << CS12_PIN)
 #define MSX_RD	(1 << RD_PIN)
 #define MSX_WR  (1 << WR_PIN)
 #define MSX_IORQ  (1 << IORQ_PIN)
@@ -216,7 +218,7 @@ void SetAddress(unsigned short addr)
 	GPIO_CLR = LE_C | 0xffff | DAT_DIR;
 	GPIO_SET = LE_A | LE_D | addr;
 	GPIO_SET = LE_A;
-    GPIO_CLR = LE_A;
+        GPIO_CLR = LE_A;
 	GPIO_SET = LE_C | MSX_CONTROLS;
 	GPIO_CLR = LE_D | 0xff;
 }	
