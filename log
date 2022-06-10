@@ -1,0 +1,116 @@
+./Src/IoDevice/I8251.c:66:22: error: unknown type name ‘I8251’
+ static void onRxPoll(I8251* i8251, UInt32 time);
+                      ^~~~~
+./Src/IoDevice/I8251.c:115:5: error: unknown type name ‘I8251Transmit’
+     I8251Transmit transmit;
+     ^~~~~~~~~~~~~
+./Src/IoDevice/I8251.c:116:5: error: unknown type name ‘I8251Signal’
+     I8251Signal   signal;
+     ^~~~~~~~~~~
+./Src/IoDevice/I8251.c:117:5: error: unknown type name ‘I8251Set’
+     I8251Set      setDataBits;
+     ^~~~~~~~
+./Src/IoDevice/I8251.c:118:5: error: unknown type name ‘I8251Set’
+     I8251Set      setStopBits;
+     ^~~~~~~~
+./Src/IoDevice/I8251.c:119:5: error: unknown type name ‘I8251Set’
+     I8251Set      setParity;
+     ^~~~~~~~
+./Src/IoDevice/I8251.c:120:5: error: unknown type name ‘I8251Set’
+     I8251Set      setRxReady;
+     ^~~~~~~~
+./Src/IoDevice/I8251.c:121:5: error: unknown type name ‘I8251Set’
+     I8251Set      setDtr;
+     ^~~~~~~~
+./Src/IoDevice/I8251.c:122:5: error: unknown type name ‘I8251Set’
+     I8251Set      setRts;
+     ^~~~~~~~
+./Src/IoDevice/I8251.c:123:5: error: unknown type name ‘I8251Get’
+     I8251Get      getDtr;
+     ^~~~~~~~
+./Src/IoDevice/I8251.c:124:5: error: unknown type name ‘I8251Get’
+     I8251Get      getRts;
+     ^~~~~~~~
+./Src/IoDevice/I8251.c:159:21: error: unknown type name ‘I8251’
+ static void setMode(I8251* i8251, UInt8 value)
+                     ^~~~~
+./Src/IoDevice/I8251.c:232:26: error: unknown type name ‘I8251’
+ static void writeCommand(I8251* i8251, UInt8 value)
+                          ^~~~~
+./Src/IoDevice/I8251.c:264:25: error: unknown type name ‘I8251’
+ static UInt8 readStatus(I8251* i8251)
+                         ^~~~~
+./Src/IoDevice/I8251.c:273:24: error: unknown type name ‘I8251’
+ static UInt8 readTrans(I8251* i8251)
+                        ^~~~~
+./Src/IoDevice/I8251.c:280:24: error: unknown type name ‘I8251’
+ static void writeTrans(I8251* i8251, UInt8 value)
+                        ^~~~~
+./Src/IoDevice/I8251.c:298:21: error: unknown type name ‘I8251’
+ static void onTrans(I8251* i8251, UInt32 time)
+                     ^~~~~
+./Src/IoDevice/I8251.c:316:17: error: unknown type name ‘I8251’
+ UInt8 i8251Peek(I8251* i8251, UInt16 port)
+                 ^~~~~
+./Src/IoDevice/I8251.c:327:17: error: unknown type name ‘I8251’
+ UInt8 i8251Read(I8251* i8251, UInt16 port)
+                 ^~~~~
+./Src/IoDevice/I8251.c:338:17: error: unknown type name ‘I8251’
+ void i8251Write(I8251* i8251, UInt16 port, UInt8 value)
+                 ^~~~~
+./Src/IoDevice/I8251.c:381:21: error: unknown type name ‘I8251’
+ void i8251LoadState(I8251* i8251)
+                     ^~~~~
+./Src/IoDevice/I8251.c:417:21: error: unknown type name ‘I8251’
+ void i8251SaveState(I8251* i8251)
+                     ^~~~~
+./Src/IoDevice/I8251.c:444:17: error: unknown type name ‘I8251’
+ void i8251Reset(I8251* i8251)
+                 ^~~~~
+./Src/IoDevice/I8251.c:455:22: error: unknown type name ‘I8251’
+ static void onRxPoll(I8251* i8251, UInt32 time)
+                      ^~~~~
+./Src/IoDevice/I8251.c:485:20: error: unknown type name ‘I8251’
+ static void onRecv(I8251* i8251, UInt32 time)
+                    ^~~~~
+./Src/IoDevice/I8251.c:494:18: error: unknown type name ‘I8251’
+ void i8251RxData(I8251* i8251, UInt8 value)
+                  ^~~~~
+./Src/IoDevice/I8251.c:509:19: error: unknown type name ‘I8251’
+ void i8251Destroy(I8251* i8251)
+                   ^~~~~
+./Src/IoDevice/I8251.c:520:1: error: unknown type name ‘I8251’; use ‘struct’ keyword to refer to the type
+ I8251* i8251Create(I8251Transmit transmit,    I8251Signal   signal,
+ ^~~~~
+ struct 
+./Src/IoDevice/I8251.c:520:20: error: unknown type name ‘I8251Transmit’
+ I8251* i8251Create(I8251Transmit transmit,    I8251Signal   signal,
+                    ^~~~~~~~~~~~~
+./Src/IoDevice/I8251.c:520:47: error: unknown type name ‘I8251Signal’
+ I8251* i8251Create(I8251Transmit transmit,    I8251Signal   signal,
+                                               ^~~~~~~~~~~
+./Src/IoDevice/I8251.c:521:20: error: unknown type name ‘I8251Set’
+                    I8251Set      setDataBits, I8251Set      setStopBits,
+                    ^~~~~~~~
+./Src/IoDevice/I8251.c:521:47: error: unknown type name ‘I8251Set’
+                    I8251Set      setDataBits, I8251Set      setStopBits,
+                                               ^~~~~~~~
+./Src/IoDevice/I8251.c:522:20: error: unknown type name ‘I8251Set’
+                    I8251Set      setParity,   I8251Set      setRxReady,
+                    ^~~~~~~~
+./Src/IoDevice/I8251.c:522:47: error: unknown type name ‘I8251Set’
+                    I8251Set      setParity,   I8251Set      setRxReady,
+                                               ^~~~~~~~
+./Src/IoDevice/I8251.c:523:20: error: unknown type name ‘I8251Set’
+                    I8251Set      setDtr,      I8251Set      setRts,
+                    ^~~~~~~~
+./Src/IoDevice/I8251.c:523:47: error: unknown type name ‘I8251Set’
+                    I8251Set      setDtr,      I8251Set      setRts,
+                                               ^~~~~~~~
+./Src/IoDevice/I8251.c:524:20: error: unknown type name ‘I8251Get’
+                    I8251Get      getDtr,      I8251Get      getRts,
+                    ^~~~~~~~
+./Src/IoDevice/I8251.c:524:47: error: unknown type name ‘I8251Get’
+                    I8251Get      getDtr,      I8251Get      getRts,
+                                               ^~~~~~~~
+make: *** [Makefile:456: objs/I8251.o] Error 1

@@ -687,23 +687,11 @@ int piInitVideo()
 
 	fprintf(stderr, "Initializing SDL video...\n");
 
-	// We're doing our own video rendering - this is just so SDL-based keyboard
-	// can work
-	SDL_Init(SDL_INIT_EVERYTHING);
-        //SDL_VideoInit("fbdev", 0);
-	//sdlScreen = SDL_SetVideoMode(0, 0, 0, 0);//SDL_ASYNCBLIT);
-
-	//SDL_VideoInit("KMSDRM");
-
-        //sdlScreen = SDL_CreateWindow("BlueberryMSX", 0, 0, 0, 0, NULL);
-        /*sdlScreen = SDL_CreateWindow("BlueberryMSX", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_OPENGL);
-
-	fprintf(stderr,"After SDL_CreateWindow\n");
-    	gbmSwapBuffers(&display,&surface);
-    	getchar();
-	*/
-
-        SDL_ShowCursor(SDL_DISABLE);
+	//SDL_INIT_JOYSTICK will handle the keyboard initialization so we don't need to do SDL_INIT_EVERYTHING here//
+	//SDL_Init(SDL_INIT_JOYSTICK);
+	//SDL_VideoInit("RPI");
+	
+	SDL_ShowCursor(SDL_DISABLE);
 
 	fprintf(stderr,"PyInitVideo returning 1\n");
 	return 1;

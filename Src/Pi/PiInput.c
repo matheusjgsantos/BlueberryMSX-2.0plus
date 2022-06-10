@@ -374,4 +374,3 @@ int   archKeyboardIsKeySelected(int msxKeyCode) { return 0; }
 char* archKeyconfigSelectedKeyTitle() { return ""; }
 char* archKeyconfigMappedToTitle() { return ""; }
 char* archKeyconfigMappingSchemeTitle() { return ""; }
-

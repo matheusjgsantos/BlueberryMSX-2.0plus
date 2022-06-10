@@ -278,11 +278,19 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	
-	if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
+/*	if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
 		fprintf(stderr,"PiMain SDL_Init failed: %s\n", SDL_GetError());
 		SDL_Quit();
 		exit(1);
 	}
+*/
+	if (SDL_InitSubSystem(SDL_INIT_EVERYTHING) != 0){
+		fprintf(stderr,"PiMain SDL_INIT_EVERYTHING failed: %s\n", SDL_GetError());
+		/*SDL_Quit();*/
+		/*exit(1);*/
+	}
+
+
 	SDL_ShowCursor(SDL_DISABLE);
 	SDL_JoystickEventState(SDL_ENABLE);
 

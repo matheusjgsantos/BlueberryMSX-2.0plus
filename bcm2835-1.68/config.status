@@ -437,7 +437,7 @@ Copyright (C) 2012 Free Software Foundation, Inc.
 This config.status script is free software; the Free Software Foundation
 gives unlimited permission to copy, distribute and modify it."
 
-ac_pwd='/home/pi/dev/BlueberryMSX-2.0plus/bcm2835-1.68'
+ac_pwd='/home/pi/BlueberryMSX-2.0plus/bcm2835-1.68'
 srcdir='.'
 INSTALL='/usr/bin/install -c'
 MKDIR_P='/usr/bin/mkdir -p'
@@ -655,12 +655,12 @@ S["mkdir_p"]="$(MKDIR_P)"
 S["MKDIR_P"]="/usr/bin/mkdir -p"
 S["INSTALL_STRIP_PROGRAM"]="$(install_sh) -c -s"
 S["STRIP"]=""
-S["install_sh"]="${SHELL} /home/pi/dev/BlueberryMSX-2.0plus/bcm2835-1.68/install-sh"
-S["MAKEINFO"]="${SHELL} /home/pi/dev/BlueberryMSX-2.0plus/bcm2835-1.68/missing makeinfo"
-S["AUTOHEADER"]="${SHELL} /home/pi/dev/BlueberryMSX-2.0plus/bcm2835-1.68/missing autoheader"
-S["AUTOMAKE"]="${SHELL} /home/pi/dev/BlueberryMSX-2.0plus/bcm2835-1.68/missing automake-1.16"
-S["AUTOCONF"]="${SHELL} /home/pi/dev/BlueberryMSX-2.0plus/bcm2835-1.68/missing autoconf"
-S["ACLOCAL"]="${SHELL} /home/pi/dev/BlueberryMSX-2.0plus/bcm2835-1.68/missing aclocal-1.16"
+S["install_sh"]="${SHELL} /home/pi/BlueberryMSX-2.0plus/bcm2835-1.68/install-sh"
+S["MAKEINFO"]="${SHELL} /home/pi/BlueberryMSX-2.0plus/bcm2835-1.68/missing makeinfo"
+S["AUTOHEADER"]="${SHELL} /home/pi/BlueberryMSX-2.0plus/bcm2835-1.68/missing autoheader"
+S["AUTOMAKE"]="${SHELL} /home/pi/BlueberryMSX-2.0plus/bcm2835-1.68/missing automake-1.16"
+S["AUTOCONF"]="${SHELL} /home/pi/BlueberryMSX-2.0plus/bcm2835-1.68/missing autoconf"
+S["ACLOCAL"]="${SHELL} /home/pi/BlueberryMSX-2.0plus/bcm2835-1.68/missing aclocal-1.16"
 S["VERSION"]="1.68"
 S["PACKAGE"]="bcm2835"
 S["CYGPATH_W"]="echo"

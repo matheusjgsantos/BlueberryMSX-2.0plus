@@ -73,7 +73,11 @@ How to build from source:
 -----------
 
 - Install the following development libs:
-`sudo apt install -y libsdl2-dev libdrm-dev libgbm-dev`
+`sudo apt install -y libsdl2-dev libdrm-dev libgbm-dev autoconf`
+- Configure and build BCM2835 support lib:
+   `cd bcm2835-1.68`
+   `./configure`
+   `make && sudo make install`
 - Running `make` from `~/BlueberryMSX-2.0plus` should do the trick.  
 - All source files are available at the `~/BlueberryMSX-2.0plus/Src`, but documentation is still incomplete
 

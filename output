@@ -1,0 +1,1116 @@
+execve("./bluemsx-pi", ["./bluemsx-pi"], 0x7ebac6e4 /* 22 vars */) = 0
+brk(NULL)                               = 0x37bd000
+mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x76fc1000
+access("/etc/ld.so.preload", R_OK)      = 0
+openat(AT_FDCWD, "/etc/ld.so.preload", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+fstat64(3, {st_mode=S_IFREG|0644, st_size=54, ...}) = 0
+mmap2(NULL, 54, PROT_READ|PROT_WRITE, MAP_PRIVATE, 3, 0) = 0x76fc0000
+close(3)                                = 0
+readlink("/proc/self/exe", "/home/pi/BlueberryMSX-2.0plus/bl"..., 4096) = 40
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\254\3\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=17708, ...}) = 0
+mmap2(NULL, 81964, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76f7e000
+mprotect(0x76f82000, 61440, PROT_NONE)  = 0
+mmap2(0x76f91000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x76f91000
+close(3)                                = 0
+munmap(0x76fc0000, 54)                  = 0
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+fstat64(3, {st_mode=S_IFREG|0644, st_size=40390, ...}) = 0
+mmap2(NULL, 40390, PROT_READ, MAP_PRIVATE, 3, 0) = 0x76fb7000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libSDL2-2.0.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\230I\1\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=1036864, ...}) = 0
+mmap2(NULL, 1119832, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76e6c000
+mprotect(0x76f63000, 61440, PROT_NONE)  = 0
+mmap2(0x76f72000, 28672, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xf6000) = 0x76f72000
+mmap2(0x76f79000, 18008, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x76f79000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libz.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0<\32\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=95880, ...}) = 0
+mmap2(NULL, 159980, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76e44000
+mprotect(0x76e5b000, 61440, PROT_NONE)  = 0
+mmap2(0x76e6a000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x16000) = 0x76e6a000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libpthread.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\3\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\224O\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0755, st_size=130416, ...}) = 0
+mmap2(NULL, 168560, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76e1a000
+mprotect(0x76e31000, 61440, PROT_NONE)  = 0
+mmap2(0x76e40000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x16000) = 0x76e40000
+mmap2(0x76e42000, 4720, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x76e42000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libudev.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\370-\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=128592, ...}) = 0
+mmap2(NULL, 194744, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76dea000
+mprotect(0x76e09000, 61440, PROT_NONE)  = 0
+mmap2(0x76e18000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1e000) = 0x76e18000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libdrm.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\3040\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=59116, ...}) = 0
+mmap2(NULL, 124628, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76dcb000
+mprotect(0x76dd9000, 61440, PROT_NONE)  = 0
+mmap2(0x76de8000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xd000) = 0x76de8000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libgbm.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0X\34\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=46960, ...}) = 0
+mmap2(NULL, 111172, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76daf000
+mprotect(0x76dba000, 61440, PROT_NONE)  = 0
+mmap2(0x76dc9000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xa000) = 0x76dc9000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libGLESv2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\2109\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=105768, ...}) = 0
+mmap2(NULL, 148084, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76d8a000
+mprotect(0x76d9e000, 65536, PROT_NONE)  = 0
+mmap2(0x76dae000, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x14000) = 0x76dae000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libEGL.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\370i\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=202072, ...}) = 0
+mmap2(NULL, 232596, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76d51000
+mprotect(0x76d79000, 65536, PROT_NONE)  = 0
+mmap2(0x76d89000, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x28000) = 0x76d89000
+close(3)                                = 0
+openat(AT_FDCWD, "/usr/local/lib/libwiringPi.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0h+\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0755, st_size=69852, ...}) = 0
+mmap2(NULL, 120512, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76d33000
+mprotect(0x76d3f000, 61440, PROT_NONE)  = 0
+mmap2(0x76d4e000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xb000) = 0x76d4e000
+mmap2(0x76d50000, 1728, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x76d50000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libstdc++.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\3\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0@\343\6\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=1265528, ...}) = 0
+mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x76fb5000
+mmap2(NULL, 1337068, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76bec000
+mprotect(0x76d1a000, 65536, PROT_NONE)  = 0
+mmap2(0x76d2a000, 28672, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x12e000) = 0x76d2a000
+mmap2(0x76d31000, 5868, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x76d31000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libm.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\240r\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=464392, ...}) = 0
+mmap2(NULL, 528504, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76b6a000
+mprotect(0x76bdb000, 61440, PROT_NONE)  = 0
+mmap2(0x76bea000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x70000) = 0x76bea000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libgcc_s.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\270\321\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=116324, ...}) = 0
+mmap2(NULL, 180532, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76b3d000
+mprotect(0x76b59000, 61440, PROT_NONE)  = 0
+mmap2(0x76b68000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1b000) = 0x76b68000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libc.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\274x\1\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0755, st_size=1296004, ...}) = 0
+mmap2(NULL, 1364764, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x769ef000
+mprotect(0x76b27000, 65536, PROT_NONE)  = 0
+mmap2(0x76b37000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x138000) = 0x76b37000
+mmap2(0x76b3a000, 8988, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x76b3a000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/tls/v7l/neon/vfp/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/tls/v7l/neon/vfp", 0x7eacea48) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/tls/v7l/neon/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/tls/v7l/neon", 0x7eacea48) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/tls/v7l/vfp/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/tls/v7l/vfp", 0x7eacea48) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/tls/v7l/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/tls/v7l", 0x7eacea48) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/tls/neon/vfp/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/tls/neon/vfp", 0x7eacea48) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/tls/neon/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/tls/neon", 0x7eacea48) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/tls/vfp/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/tls/vfp", 0x7eacea48) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/tls/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/tls", 0x7eacea48)   = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/v7l/neon/vfp/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/v7l/neon/vfp", 0x7eacea48) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/v7l/neon/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/v7l/neon", 0x7eacea48) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/v7l/vfp/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/v7l/vfp", 0x7eacea48) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/v7l/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/v7l", 0x7eacea48)   = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/neon/vfp/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/neon/vfp", 0x7eacea48) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/neon/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/neon", 0x7eacea48)  = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/vfp/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib/vfp", 0x7eacea48)   = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/opt/vc/lib/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/opt/vc/lib", {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libasound.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0@\347\1\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=853556, ...}) = 0
+mmap2(NULL, 917932, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7690e000
+mprotect(0x769da000, 65536, PROT_NONE)  = 0
+mmap2(0x769ea000, 20480, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xcc000) = 0x769ea000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libdl.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libdl.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0 \n\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=9768, ...}) = 0
+mmap2(NULL, 73924, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x768fb000
+mprotect(0x768fd000, 61440, PROT_NONE)  = 0
+mmap2(0x7690c000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1000) = 0x7690c000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libpulse-simple.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libpulse-simple.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\274\17\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=13628, ...}) = 0
+mmap2(NULL, 77832, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x768e7000
+mprotect(0x768ea000, 61440, PROT_NONE)  = 0
+mmap2(0x768f9000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2000) = 0x768f9000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libpulse.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libpulse.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\300\223\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=284840, ...}) = 0
+mmap2(NULL, 348200, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76891000
+mprotect(0x768d6000, 61440, PROT_NONE)  = 0
+mmap2(0x768e5000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x44000) = 0x768e5000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libsndio.so.7.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libsndio.so.7.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\340!\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=50660, ...}) = 0
+mmap2(NULL, 124092, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76872000
+mprotect(0x7687d000, 65536, PROT_NONE)  = 0
+mmap2(0x7688d000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xb000) = 0x7688d000
+mmap2(0x7688f000, 5308, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7688f000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libbcm_host.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\2306\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=98612, ...}) = 0
+mmap2(NULL, 159144, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7684b000
+mprotect(0x7685e000, 61440, PROT_NONE)  = 0
+mmap2(0x7686d000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x12000) = 0x7686d000
+mmap2(0x7686f000, 11688, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7686f000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libX11.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libX11.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0(:\1\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=1120968, ...}) = 0
+mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x76fb3000
+mmap2(NULL, 1186300, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76729000
+mprotect(0x76837000, 65536, PROT_NONE)  = 0
+mmap2(0x76847000, 16384, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x10e000) = 0x76847000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libXext.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libXext.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0P(\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=59540, ...}) = 0
+mmap2(NULL, 124056, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7670a000
+mprotect(0x76718000, 61440, PROT_NONE)  = 0
+mmap2(0x76727000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xd000) = 0x76727000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libXcursor.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libXcursor.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0X\36\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=34484, ...}) = 0
+mmap2(NULL, 98760, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x766f1000
+mprotect(0x766f9000, 61440, PROT_NONE)  = 0
+mmap2(0x76708000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x7000) = 0x76708000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libXinerama.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libXinerama.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\214\10\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=9616, ...}) = 0
+mmap2(NULL, 73888, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x766de000
+mprotect(0x766e0000, 61440, PROT_NONE)  = 0
+mmap2(0x766ef000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1000) = 0x766ef000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libXi.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libXi.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\270\31\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=54856, ...}) = 0
+mmap2(NULL, 119120, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x766c0000
+mprotect(0x766cd000, 61440, PROT_NONE)  = 0
+mmap2(0x766dc000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xc000) = 0x766dc000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libXrandr.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libXrandr.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0P\26\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=34312, ...}) = 0
+mmap2(NULL, 98544, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x766a7000
+mprotect(0x766af000, 61440, PROT_NONE)  = 0
+mmap2(0x766be000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x7000) = 0x766be000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libXss.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libXss.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0 \n\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=9632, ...}) = 0
+mmap2(NULL, 73904, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76694000
+mprotect(0x76696000, 61440, PROT_NONE)  = 0
+mmap2(0x766a5000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1000) = 0x766a5000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libXxf86vm.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libXxf86vm.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\0\f\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=17828, ...}) = 0
+mmap2(NULL, 82100, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7667f000
+mprotect(0x76683000, 61440, PROT_NONE)  = 0
+mmap2(0x76692000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x76692000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libwayland-egl.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libwayland-egl.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0 \4\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=5376, ...}) = 0
+mmap2(NULL, 69684, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7666d000
+mprotect(0x7666e000, 61440, PROT_NONE)  = 0
+mmap2(0x7667d000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0) = 0x7667d000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libwayland-client.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libwayland-client.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0(,\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=38924, ...}) = 0
+mmap2(NULL, 103136, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76653000
+mprotect(0x7665c000, 61440, PROT_NONE)  = 0
+mmap2(0x7666b000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x8000) = 0x7666b000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libwayland-cursor.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libwayland-cursor.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\304\f\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=26104, ...}) = 0
+mmap2(NULL, 90368, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7663c000
+mprotect(0x7663f000, 61440, PROT_NONE)  = 0
+mmap2(0x7664e000, 20480, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2000) = 0x7664e000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libxkbcommon.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libxkbcommon.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\320)\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=231176, ...}) = 0
+mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7663a000
+mmap2(NULL, 295328, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x765f1000
+mprotect(0x76629000, 61440, PROT_NONE)  = 0
+mmap2(0x76638000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x37000) = 0x76638000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/librt.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/librt.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\3\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0 \30\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=26600, ...}) = 0
+mmap2(NULL, 90648, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x765da000
+mprotect(0x765e0000, 61440, PROT_NONE)  = 0
+mmap2(0x765ef000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x5000) = 0x765ef000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libwayland-server.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\250;\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=51360, ...}) = 0
+mmap2(NULL, 115724, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x765bd000
+mprotect(0x765c9000, 61440, PROT_NONE)  = 0
+mmap2(0x765d8000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xb000) = 0x765d8000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libexpat.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\200 \0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=198196, ...}) = 0
+mmap2(NULL, 262300, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7657c000
+mprotect(0x765ab000, 61440, PROT_NONE)  = 0
+mmap2(0x765ba000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2e000) = 0x765ba000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libvchiq_arm.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0(\26\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=30288, ...}) = 0
+mmap2(NULL, 88456, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76566000
+mprotect(0x7656c000, 61440, PROT_NONE)  = 0
+mmap2(0x7657b000, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x5000) = 0x7657b000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/vc/lib/libvcos.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\250*\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=173224, ...}) = 0
+mmap2(NULL, 105616, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7654c000
+mprotect(0x76555000, 65536, PROT_NONE)  = 0
+mmap2(0x76565000, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x9000) = 0x76565000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libcrypt.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0p\t\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=34348, ...}) = 0
+mmap2(NULL, 258416, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7650c000
+mprotect(0x76513000, 65536, PROT_NONE)  = 0
+mmap2(0x76523000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x7000) = 0x76523000
+mmap2(0x76525000, 156016, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x76525000
+close(3)                                = 0
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/v7l/neon/vfp/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/v7l/neon/vfp", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/v7l/neon/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/v7l/neon", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/v7l/vfp/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/v7l/vfp", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/v7l/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/v7l", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/neon/vfp/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/neon/vfp", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/neon/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/neon", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/vfp/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/vfp", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/tls/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/tls", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/v7l/neon/vfp/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/v7l/neon/vfp", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/v7l/neon/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/v7l/neon", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/v7l/vfp/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/v7l/vfp", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/v7l/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/v7l", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/neon/vfp/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/neon/vfp", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/neon/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/neon", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/vfp/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/usr/lib/arm-linux-gnueabihf/pulseaudio/vfp", 0x7eace8b8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/libpulsecommon-12.2.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0@\1\1\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=460284, ...}) = 0
+mmap2(NULL, 524808, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7648b000
+mprotect(0x764fa000, 61440, PROT_NONE)  = 0
+mmap2(0x76509000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x6e000) = 0x76509000
+close(3)                                = 0
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/libcap.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libcap.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0004\16\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=17872, ...}) = 0
+mmap2(NULL, 82080, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76476000
+mprotect(0x7647a000, 61440, PROT_NONE)  = 0
+mmap2(0x76489000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x76489000
+close(3)                                = 0
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/pulseaudio/libdbus-1.so.3", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libdbus-1.so.3", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\24\251\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=263632, ...}) = 0
+mmap2(NULL, 328016, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76425000
+mprotect(0x76465000, 61440, PROT_NONE)  = 0
+mmap2(0x76474000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3f000) = 0x76474000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libbsd.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\0,\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=95940, ...}) = 0
+mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x76423000
+mmap2(NULL, 163168, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x763fb000
+mprotect(0x76412000, 61440, PROT_NONE)  = 0
+mmap2(0x76421000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x16000) = 0x76421000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libxcb.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\f\232\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=124744, ...}) = 0
+mmap2(NULL, 189008, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x763cc000
+mprotect(0x763ea000, 61440, PROT_NONE)  = 0
+mmap2(0x763f9000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1d000) = 0x763f9000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libXrender.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\240\24\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=34492, ...}) = 0
+mmap2(NULL, 98728, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x763b3000
+mprotect(0x763bb000, 61440, PROT_NONE)  = 0
+mmap2(0x763ca000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x7000) = 0x763ca000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libXfixes.so.3", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0(\20\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=17820, ...}) = 0
+mmap2(NULL, 82100, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7639e000
+mprotect(0x763a2000, 61440, PROT_NONE)  = 0
+mmap2(0x763b1000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x763b1000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libffi.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0H\22\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=30356, ...}) = 0
+mmap2(NULL, 95032, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76386000
+mprotect(0x7638c000, 65536, PROT_NONE)  = 0
+mmap2(0x7639c000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x6000) = 0x7639c000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libX11-xcb.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0(\3\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=5368, ...}) = 0
+mmap2(NULL, 69676, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76374000
+mprotect(0x76375000, 61440, PROT_NONE)  = 0
+mmap2(0x76384000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0) = 0x76384000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libICE.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\2244\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=80352, ...}) = 0
+mmap2(NULL, 152068, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7634e000
+mprotect(0x76361000, 61440, PROT_NONE)  = 0
+mmap2(0x76370000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x12000) = 0x76370000
+mmap2(0x76372000, 4612, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x76372000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libSM.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0H\24\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=26116, ...}) = 0
+mmap2(NULL, 90392, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76337000
+mprotect(0x7633d000, 61440, PROT_NONE)  = 0
+mmap2(0x7634c000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x5000) = 0x7634c000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libXtst.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\220\17\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=17960, ...}) = 0
+mmap2(NULL, 82208, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76322000
+mprotect(0x76326000, 61440, PROT_NONE)  = 0
+mmap2(0x76335000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x76335000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libsystemd.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0(\277\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=576364, ...}) = 0
+mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x76320000
+mmap2(NULL, 642696, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76283000
+mprotect(0x7630e000, 61440, PROT_NONE)  = 0
+mmap2(0x7631d000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x8a000) = 0x7631d000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libwrap.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0L\35\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=30508, ...}) = 0
+mmap2(NULL, 96376, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7626b000
+mprotect(0x76272000, 61440, PROT_NONE)  = 0
+mmap2(0x76281000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x6000) = 0x76281000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libsndfile.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\3107\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=432856, ...}) = 0
+mmap2(NULL, 506652, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x761ef000
+mprotect(0x76257000, 65536, PROT_NONE)  = 0
+mmap2(0x76267000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x68000) = 0x76267000
+mmap2(0x76269000, 6940, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x76269000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libasyncns.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\0\16\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=17708, ...}) = 0
+mmap2(NULL, 81928, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x761da000
+mprotect(0x761de000, 61440, PROT_NONE)  = 0
+mmap2(0x761ed000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x761ed000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libXau.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0X\n\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=9600, ...}) = 0
+mmap2(NULL, 73904, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x761c7000
+mprotect(0x761c9000, 61440, PROT_NONE)  = 0
+mmap2(0x761d8000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1000) = 0x761d8000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libXdmcp.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\10\17\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=17852, ...}) = 0
+mmap2(NULL, 82072, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x761b2000
+mprotect(0x761b6000, 61440, PROT_NONE)  = 0
+mmap2(0x761c5000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x761c5000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libuuid.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0(\20\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=26060, ...}) = 0
+mmap2(NULL, 90132, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7619b000
+mprotect(0x761a1000, 61440, PROT_NONE)  = 0
+mmap2(0x761b0000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x5000) = 0x761b0000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/liblzma.so.5", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0x\"\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=132888, ...}) = 0
+mmap2(NULL, 197040, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7616a000
+mprotect(0x7618a000, 61440, PROT_NONE)  = 0
+mmap2(0x76199000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1f000) = 0x76199000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/liblz4.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\240\31\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=112144, ...}) = 0
+mmap2(NULL, 176352, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7613e000
+mprotect(0x76159000, 61440, PROT_NONE)  = 0
+mmap2(0x76168000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1a000) = 0x76168000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libgcrypt.so.20", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\0a\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=827976, ...}) = 0
+mmap2(NULL, 892864, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x76064000
+mprotect(0x7612a000, 61440, PROT_NONE)  = 0
+mmap2(0x76139000, 20480, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xc5000) = 0x76139000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libnsl.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\340/\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=71576, ...}) = 0
+mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x76062000
+mmap2(NULL, 145164, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7603e000
+mprotect(0x7604f000, 61440, PROT_NONE)  = 0
+mmap2(0x7605e000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x10000) = 0x7605e000
+mmap2(0x76060000, 5900, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x76060000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libFLAC.so.8", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\270i\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=275832, ...}) = 0
+mmap2(NULL, 339988, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x75fea000
+mprotect(0x7602c000, 65536, PROT_NONE)  = 0
+mmap2(0x7603c000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x42000) = 0x7603c000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libogg.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\304\22\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=17636, ...}) = 0
+mmap2(NULL, 81928, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x75fd5000
+mprotect(0x75fd9000, 61440, PROT_NONE)  = 0
+mmap2(0x75fe8000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x75fe8000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libvorbis.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\200&\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=156984, ...}) = 0
+mmap2(NULL, 221192, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x75f9e000
+mprotect(0x75fc4000, 61440, PROT_NONE)  = 0
+mmap2(0x75fd3000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x25000) = 0x75fd3000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libvorbisenc.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\310l\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=529748, ...}) = 0
+mmap2(NULL, 593956, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x75f0c000
+mprotect(0x75f81000, 65536, PROT_NONE)  = 0
+mmap2(0x75f91000, 53248, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x75000) = 0x75f91000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libresolv.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0`$\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=71472, ...}) = 0
+mmap2(NULL, 145320, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x75ee8000
+mprotect(0x75ef9000, 61440, PROT_NONE)  = 0
+mmap2(0x75f08000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x10000) = 0x75f08000
+mmap2(0x75f0a000, 6056, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x75f0a000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libgpg-error.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0(0\0\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=103940, ...}) = 0
+mmap2(NULL, 168268, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x75ebe000
+mprotect(0x75ed7000, 61440, PROT_NONE)  = 0
+mmap2(0x75ee6000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x18000) = 0x75ee6000
+close(3)                                = 0
+mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x75ebc000
+mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x75eba000
+set_tls(0x75eba780)                     = 0
+mprotect(0x76b37000, 8192, PROT_READ)   = 0
+mprotect(0x75ee6000, 4096, PROT_READ)   = 0
+mprotect(0x75f08000, 4096, PROT_READ)   = 0
+mprotect(0x75fe8000, 4096, PROT_READ)   = 0
+mprotect(0x76bea000, 4096, PROT_READ)   = 0
+mprotect(0x75fd3000, 4096, PROT_READ)   = 0
+mprotect(0x75f91000, 49152, PROT_READ)  = 0
+mprotect(0x7603c000, 4096, PROT_READ)   = 0
+mprotect(0x7605e000, 4096, PROT_READ)   = 0
+mprotect(0x76139000, 4096, PROT_READ)   = 0
+mprotect(0x76168000, 4096, PROT_READ)   = 0
+mprotect(0x76e40000, 4096, PROT_READ)   = 0
+mprotect(0x76199000, 4096, PROT_READ)   = 0
+mprotect(0x761b0000, 4096, PROT_READ)   = 0
+mprotect(0x765ef000, 4096, PROT_READ)   = 0
+mprotect(0x76421000, 4096, PROT_READ)   = 0
+mprotect(0x761c5000, 4096, PROT_READ)   = 0
+mprotect(0x761d8000, 4096, PROT_READ)   = 0
+mprotect(0x761ed000, 4096, PROT_READ)   = 0
+mprotect(0x76267000, 4096, PROT_READ)   = 0
+mprotect(0x76281000, 4096, PROT_READ)   = 0
+mprotect(0x7631d000, 8192, PROT_READ)   = 0
+mprotect(0x763f9000, 4096, PROT_READ)   = 0
+mprotect(0x7690c000, 4096, PROT_READ)   = 0
+mprotect(0x76847000, 4096, PROT_READ)   = 0
+mprotect(0x76727000, 4096, PROT_READ)   = 0
+mprotect(0x766dc000, 4096, PROT_READ)   = 0
+mprotect(0x76335000, 4096, PROT_READ)   = 0
+mprotect(0x76370000, 4096, PROT_READ)   = 0
+mprotect(0x7634c000, 4096, PROT_READ)   = 0
+mprotect(0x76384000, 4096, PROT_READ)   = 0
+mprotect(0x76b68000, 4096, PROT_READ)   = 0
+mprotect(0x7639c000, 4096, PROT_READ)   = 0
+mprotect(0x763b1000, 4096, PROT_READ)   = 0
+mprotect(0x763ca000, 4096, PROT_READ)   = 0
+mprotect(0x76474000, 4096, PROT_READ)   = 0
+mprotect(0x76489000, 4096, PROT_READ)   = 0
+mprotect(0x76509000, 8192, PROT_READ)   = 0
+mprotect(0x76523000, 4096, PROT_READ)   = 0
+mprotect(0x765ba000, 8192, PROT_READ)   = 0
+mprotect(0x765d8000, 4096, PROT_READ)   = 0
+mprotect(0x76638000, 4096, PROT_READ)   = 0
+mprotect(0x7666b000, 4096, PROT_READ)   = 0
+mprotect(0x7664e000, 4096, PROT_READ)   = 0
+mprotect(0x7667d000, 4096, PROT_READ)   = 0
+mprotect(0x76692000, 4096, PROT_READ)   = 0
+mprotect(0x766a5000, 4096, PROT_READ)   = 0
+mprotect(0x766be000, 4096, PROT_READ)   = 0
+mprotect(0x766ef000, 4096, PROT_READ)   = 0
+mprotect(0x76708000, 4096, PROT_READ)   = 0
+mprotect(0x769ea000, 16384, PROT_READ)  = 0
+mprotect(0x7688d000, 4096, PROT_READ)   = 0
+mprotect(0x768e5000, 4096, PROT_READ)   = 0
+mprotect(0x768f9000, 4096, PROT_READ)   = 0
+mprotect(0x76d2a000, 20480, PROT_READ)  = 0
+mprotect(0x76d4e000, 4096, PROT_READ)   = 0
+mprotect(0x76de8000, 4096, PROT_READ)   = 0
+mprotect(0x76dc9000, 4096, PROT_READ)   = 0
+mprotect(0x76e18000, 4096, PROT_READ)   = 0
+mprotect(0x76e6a000, 4096, PROT_READ)   = 0
+mprotect(0x76f72000, 8192, PROT_READ)   = 0
+mprotect(0x76f91000, 4096, PROT_READ)   = 0
+mprotect(0x192000, 4096, PROT_READ)     = 0
+mprotect(0x76fc3000, 4096, PROT_READ)   = 0
+munmap(0x76fb7000, 40390)               = 0
+set_tid_address(0x75eba328)             = 633
+set_robust_list(0x75eba330, 12)         = 0
+rt_sigaction(SIGRTMIN, {sa_handler=0x76e1e8e8, sa_mask=[], sa_flags=SA_RESTORER|SA_SIGINFO, sa_restorer=0x76a1c120}, NULL, 8) = 0
+rt_sigaction(SIGRT_1, {sa_handler=0x76e1e9a4, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART|SA_SIGINFO, sa_restorer=0x76a1c120}, NULL, 8) = 0
+rt_sigprocmask(SIG_UNBLOCK, [RTMIN RT_1], NULL, 8) = 0
+ugetrlimit(RLIMIT_STACK, {rlim_cur=8192*1024, rlim_max=RLIM_INFINITY}) = 0
+brk(NULL)                               = 0x37bd000
+brk(0x37de000)                          = 0x37de000
+futex(0x76565470, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 3
+fstat64(3, {st_mode=S_IFREG|0444, st_size=0, ...}) = 0
+read(3, "processor\t: 0\nmodel name\t: ARMv7"..., 1024) = 1024
+read(3, "ariant\t: 0x0\nCPU part\t: 0xd03\nCP"..., 1024) = 157
+_llseek(3, 0, [0], SEEK_SET)            = 0
+read(3, "processor\t: 0\nmodel name\t: ARMv7"..., 1024) = 1024
+read(3, "ariant\t: 0x0\nCPU part\t: 0xd03\nCP"..., 1024) = 157
+close(3)                                = 0
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 3
+fstat64(3, {st_mode=S_IFREG|0444, st_size=0, ...}) = 0
+read(3, "processor\t: 0\nmodel name\t: ARMv7"..., 1024) = 1024
+read(3, "ariant\t: 0x0\nCPU part\t: 0xd03\nCP"..., 1024) = 157
+close(3)                                = 0
+openat(AT_FDCWD, "/dev/mem", O_RDWR|O_SYNC|O_CLOEXEC) = -1 EACCES (Permission denied)
+openat(AT_FDCWD, "/dev/gpiomem", O_RDWR|O_SYNC|O_CLOEXEC) = 3
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, 3, 0x200000) = 0x76fc0000
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, 3, 0x20c000) = 0x76fbf000
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, 3, 0x101000) = 0x76fbe000
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, 3, 0x100000) = 0x76fbd000
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, 3, 0xb000) = 0x76fbc000
+openat(AT_FDCWD, "/dev/dri/card0", O_RDWR|O_CLOEXEC) = 4
+ioctl(4, DRM_IOCTL_MODE_GETRESOURCES, 0x7eacd1f8) = 0
+ioctl(4, DRM_IOCTL_MODE_GETRESOURCES, 0x7eacd1f8) = 0
+ioctl(4, DRM_IOCTL_MODE_GETCONNECTOR, 0x7eacd1a8) = 0
+ioctl(4, DRM_IOCTL_MODE_GETCONNECTOR, 0x7eacd1a8) = 0
+fstat64(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(0x88, 0), ...}) = 0
+write(1, "resolution: 800x600\n", 20)   = 20
+ioctl(4, DRM_IOCTL_MODE_GETENCODER, 0x7eacd240) = 0
+ioctl(4, DRM_IOCTL_MODE_GETCRTC, 0x7eacd1e8) = 0
+fstat64(4, {st_mode=S_IFCHR|0660, st_rdev=makedev(0xe2, 0), ...}) = 0
+geteuid32()                             = 1000
+getuid32()                              = 1000
+ioctl(4, DRM_IOCTL_VERSION, 0x37c29b8)  = 0
+ioctl(4, DRM_IOCTL_VERSION, 0x37c29b8)  = 0
+getrandom("\x23\xbb\x99\x12", 4, GRND_NONBLOCK) = 4
+lstat64("/proc", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+lstat64("/proc/self", {st_mode=S_IFLNK|0777, st_size=0, ...}) = 0
+readlink("/proc/self", "633", 4095)     = 3
+lstat64("/proc/633", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+lstat64("/proc/633/exe", {st_mode=S_IFLNK|0777, st_size=0, ...}) = 0
+readlink("/proc/633/exe", "/home/pi/BlueberryMSX-2.0plus/bl"..., 4095) = 40
+lstat64("/home", {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+lstat64("/home/pi", {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+lstat64("/home/pi/BlueberryMSX-2.0plus", {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+lstat64("/home/pi/BlueberryMSX-2.0plus/bluemsx-pi", {st_mode=S_IFREG|0755, st_size=7102632, ...}) = 0
+openat(AT_FDCWD, "/usr/share/drirc.d", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 5
+fstat64(5, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(5, /* 3 entries */, 32768)   = 96
+getdents64(5, /* 0 entries */, 32768)   = 0
+close(5)                                = 0
+openat(AT_FDCWD, "/usr/share/drirc.d/00-mesa-defaults.conf", O_RDONLY|O_LARGEFILE) = 5
+read(5, "<?xml version=\"1.0\" standalone=\""..., 4096) = 4096
+getrandom("\x85\xfb\xc3\x09", 4, GRND_NONBLOCK) = 4
+read(5, ">\n\n        <application name=\"Un"..., 4096) = 4096
+read(5, "_glsl_abs_sqrt\" value=\"true\" />\n"..., 4096) = 4096
+read(5, "ation>\n\n        <application nam"..., 4096) = 4096
+read(5, "daptive_sync\" value=\"false\" />\n "..., 4096) = 4096
+read(5, "ation>\n        <application name"..., 4096) = 4096
+read(5, "executable=\"dota2\">\n            "..., 4096) = 1062
+read(5, "", 4096)                       = 0
+close(5)                                = 0
+openat(AT_FDCWD, "/etc/drirc", O_RDONLY|O_LARGEFILE) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/home/pi/.drirc", O_RDONLY|O_LARGEFILE) = -1 ENOENT (No such file or directory)
+fstat64(4, {st_mode=S_IFCHR|0660, st_rdev=makedev(0xe2, 0), ...}) = 0
+stat64("/sys/dev/char/226:0/device/drm", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+readlink("/sys/dev/char/226:0/device/subsystem", "../../../../bus/platform", 4096) = 24
+openat(AT_FDCWD, "/dev/dri", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 5
+fstat64(5, {st_mode=S_IFDIR|0755, st_size=100, ...}) = 0
+getdents64(5, /* 5 entries */, 32768)   = 144
+stat64("/dev/dri/card0", {st_mode=S_IFCHR|0660, st_rdev=makedev(0xe2, 0), ...}) = 0
+stat64("/sys/dev/char/226:0/device/drm", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+readlink("/sys/dev/char/226:0/device/subsystem", "../../../../bus/platform", 4096) = 24
+openat(AT_FDCWD, "/sys/dev/char/226:0/device/uevent", O_RDONLY|O_LARGEFILE) = 6
+fstat64(6, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(6, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(6)                                = 0
+openat(AT_FDCWD, "/sys/dev/char/226:0/device/uevent", O_RDONLY|O_LARGEFILE) = 6
+fstat64(6, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(6, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(6)                                = 0
+openat(AT_FDCWD, "/sys/dev/char/226:0/device/uevent", O_RDONLY|O_LARGEFILE) = 6
+fstat64(6, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(6, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(6)                                = 0
+stat64("/dev/dri/renderD128", {st_mode=S_IFCHR|0660, st_rdev=makedev(0xe2, 0x80), ...}) = 0
+stat64("/sys/dev/char/226:128/device/drm", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+readlink("/sys/dev/char/226:128/device/subsystem", "../../../../bus/platform", 4096) = 24
+openat(AT_FDCWD, "/sys/dev/char/226:128/device/uevent", O_RDONLY|O_LARGEFILE) = 6
+fstat64(6, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(6, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(6)                                = 0
+openat(AT_FDCWD, "/sys/dev/char/226:128/device/uevent", O_RDONLY|O_LARGEFILE) = 6
+fstat64(6, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(6, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(6)                                = 0
+openat(AT_FDCWD, "/sys/dev/char/226:128/device/uevent", O_RDONLY|O_LARGEFILE) = 6
+fstat64(6, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(6, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(6)                                = 0
+getdents64(5, /* 0 entries */, 32768)   = 0
+stat64("/dev/dri/card0", {st_mode=S_IFCHR|0660, st_rdev=makedev(0xe2, 0), ...}) = 0
+close(5)                                = 0
+ioctl(4, DRM_IOCTL_VERSION, 0x37c4358)  = 0
+ioctl(4, DRM_IOCTL_VERSION, 0x37c4358)  = 0
+futex(0x7690d0b8, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+fstat64(5, {st_mode=S_IFREG|0644, st_size=40390, ...}) = 0
+mmap2(NULL, 40390, PROT_READ, MAP_PRIVATE, 5, 0) = 0x75eb0000
+close(5)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libglapi.so.0", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+read(5, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0`s\0\0004\0\0\0"..., 512) = 512
+fstat64(5, {st_mode=S_IFREG|0644, st_size=194052, ...}) = 0
+mmap2(NULL, 261284, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 5, 0) = 0x75e70000
+mprotect(0x75e9c000, 61440, PROT_NONE)  = 0
+mmap2(0x75eab000, 20480, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 5, 0x2b000) = 0x75eab000
+close(5)                                = 0
+mprotect(0x75eab000, 16384, PROT_READ)  = 0
+munmap(0x75eb0000, 40390)               = 0
+geteuid32()                             = 1000
+getuid32()                              = 1000
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/dri/tls/vc4_dri.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/lib/arm-linux-gnueabihf/dri/vc4_dri.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+read(5, "\177ELF\1\1\1\3\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0P^\5\0004\0\0\0"..., 512) = 512
+fstat64(5, {st_mode=S_IFREG|0644, st_size=15098252, ...}) = 0
+mmap2(NULL, 17353000, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 5, 0) = 0x74de3000
+mprotect(0x75b91000, 65536, PROT_NONE)  = 0
+mmap2(0x75ba1000, 753664, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 5, 0xdae000) = 0x75ba1000
+mmap2(0x75c59000, 2189608, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x75c59000
+close(5)                                = 0
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+fstat64(5, {st_mode=S_IFREG|0644, st_size=40390, ...}) = 0
+mmap2(NULL, 40390, PROT_READ, MAP_PRIVATE, 5, 0) = 0x75eb0000
+close(5)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libLLVM-9.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+read(5, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\0\0\0\0004\0\0\0"..., 512) = 512
+fstat64(5, {st_mode=S_IFREG|0644, st_size=62339468, ...}) = 0
+mmap2(NULL, 62551681, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 5, 0) = 0x7123b000
+mprotect(0x749b5000, 4096, PROT_NONE)   = 0
+mmap2(0x749b6000, 4169728, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 5, 0x377a000) = 0x749b6000
+mmap2(0x74db0000, 206465, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x74db0000
+close(5)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libsensors.so.5", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+read(5, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0x\25\0\0004\0\0\0"..., 512) = 512
+fstat64(5, {st_mode=S_IFREG|0644, st_size=50880, ...}) = 0
+mmap2(NULL, 115624, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 5, 0) = 0x7121e000
+mprotect(0x7122a000, 61440, PROT_NONE)  = 0
+mmap2(0x71239000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 5, 0xb000) = 0x71239000
+close(5)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libdrm_radeon.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+read(5, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\\\20\0\0004\0\0\0"..., 512) = 512
+fstat64(5, {st_mode=S_IFREG|0644, st_size=42436, ...}) = 0
+mmap2(NULL, 106672, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 5, 0) = 0x71203000
+mprotect(0x7120d000, 61440, PROT_NONE)  = 0
+mmap2(0x7121c000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 5, 0x9000) = 0x7121c000
+close(5)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libelf.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+read(5, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0\210\"\0\0004\0\0\0"..., 512) = 512
+fstat64(5, {st_mode=S_IFREG|0644, st_size=104156, ...}) = 0
+mmap2(NULL, 168220, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 5, 0) = 0x711d9000
+mprotect(0x711f1000, 65536, PROT_NONE)  = 0
+mmap2(0x71201000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 5, 0x18000) = 0x71201000
+close(5)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libdrm_amdgpu.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+read(5, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0 \36\0\0004\0\0\0"..., 512) = 512
+fstat64(5, {st_mode=S_IFREG|0644, st_size=30300, ...}) = 0
+mmap2(NULL, 94536, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 5, 0) = 0x711c1000
+mprotect(0x711c8000, 61440, PROT_NONE)  = 0
+mmap2(0x711d7000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 5, 0x6000) = 0x711d7000
+close(5)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libdrm_nouveau.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+read(5, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0L\22\0\0004\0\0\0"..., 512) = 512
+fstat64(5, {st_mode=S_IFREG|0644, st_size=26148, ...}) = 0
+mmap2(NULL, 90356, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 5, 0) = 0x711aa000
+mprotect(0x711b0000, 61440, PROT_NONE)  = 0
+mmap2(0x711bf000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 5, 0x5000) = 0x711bf000
+close(5)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libatomic.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+read(5, "\177ELF\1\1\1\3\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0(\25\0\0004\0\0\0"..., 512) = 512
+fstat64(5, {st_mode=S_IFREG|0644, st_size=30104, ...}) = 0
+mmap2(NULL, 98456, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 5, 0) = 0x71191000
+mprotect(0x71198000, 61440, PROT_NONE)  = 0
+mmap2(0x711a7000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 5, 0x6000) = 0x711a7000
+mmap2(0x711a9000, 152, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x711a9000
+close(5)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/tls/v7l/neon/vfp/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/tls/v7l/neon/vfp", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/tls/v7l/neon/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/tls/v7l/neon", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/tls/v7l/vfp/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/tls/v7l/vfp", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/tls/v7l/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/tls/v7l", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/tls/neon/vfp/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/tls/neon/vfp", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/tls/neon/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/tls/neon", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/tls/vfp/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/tls/vfp", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/tls/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/tls", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/v7l/neon/vfp/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/v7l/neon/vfp", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/v7l/neon/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/v7l/neon", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/v7l/vfp/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/v7l/vfp", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/v7l/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/v7l", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/neon/vfp/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/neon/vfp", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/neon/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/neon", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/vfp/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib/vfp", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/../lib/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+stat64("/lib/arm-linux-gnueabihf/../lib", 0x7eacb1f8) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libedit.so.2", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+read(5, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0xL\0\0004\0\0\0"..., 512) = 512
+fstat64(5, {st_mode=S_IFREG|0644, st_size=153952, ...}) = 0
+mmap2(NULL, 226048, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 5, 0) = 0x71159000
+mprotect(0x7117d000, 65536, PROT_NONE)  = 0
+mmap2(0x7118d000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 5, 0x24000) = 0x7118d000
+mmap2(0x7118f000, 4864, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7118f000
+close(5)                                = 0
+openat(AT_FDCWD, "/lib/arm-linux-gnueabihf/libtinfo.so.6", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+read(5, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0(\0\1\0\0\0pn\0\0004\0\0\0"..., 512) = 512
+fstat64(5, {st_mode=S_IFREG|0644, st_size=133216, ...}) = 0
+mmap2(NULL, 198300, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 5, 0) = 0x71128000
+mprotect(0x71146000, 65536, PROT_NONE)  = 0
+mmap2(0x71156000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 5, 0x1e000) = 0x71156000
+close(5)                                = 0
+mprotect(0x71156000, 8192, PROT_READ)   = 0
+mprotect(0x7118d000, 4096, PROT_READ)   = 0
+mprotect(0x711a7000, 4096, PROT_READ)   = 0
+mprotect(0x711bf000, 4096, PROT_READ)   = 0
+mprotect(0x711d7000, 4096, PROT_READ)   = 0
+mprotect(0x71201000, 4096, PROT_READ)   = 0
+mprotect(0x7121c000, 4096, PROT_READ)   = 0
+mprotect(0x71239000, 4096, PROT_READ)   = 0
+mprotect(0x749b6000, 4046848, PROT_READ) = 0
+mprotect(0x75ba1000, 462848, PROT_READ) = 0
+futex(0x74dafc88, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+openat(AT_FDCWD, "/sys/devices/system/cpu/online", O_RDONLY|O_CLOEXEC) = 5
+read(5, "0-3\n", 8192)                  = 4
+close(5)                                = 0
+brk(0x37ff000)                          = 0x37ff000
+futex(0x76d312c0, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+futex(0x76d312c4, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+munmap(0x75eb0000, 40390)               = 0
+getrandom("\x21\x9a\xdd\x7b", 4, GRND_NONBLOCK) = 4
+lstat64("/proc", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+lstat64("/proc/self", {st_mode=S_IFLNK|0777, st_size=0, ...}) = 0
+readlink("/proc/self", "633", 4095)     = 3
+lstat64("/proc/633", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+lstat64("/proc/633/exe", {st_mode=S_IFLNK|0777, st_size=0, ...}) = 0
+readlink("/proc/633/exe", "/home/pi/BlueberryMSX-2.0plus/bl"..., 4095) = 40
+lstat64("/home", {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+lstat64("/home/pi", {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+lstat64("/home/pi/BlueberryMSX-2.0plus", {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+lstat64("/home/pi/BlueberryMSX-2.0plus/bluemsx-pi", {st_mode=S_IFREG|0755, st_size=7102632, ...}) = 0
+openat(AT_FDCWD, "/usr/share/drirc.d", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 5
+fstat64(5, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(5, /* 3 entries */, 32768)   = 96
+getdents64(5, /* 0 entries */, 32768)   = 0
+close(5)                                = 0
+openat(AT_FDCWD, "/usr/share/drirc.d/00-mesa-defaults.conf", O_RDONLY|O_LARGEFILE) = 5
+read(5, "<?xml version=\"1.0\" standalone=\""..., 4096) = 4096
+getrandom("\xc2\xc7\xc0\x39", 4, GRND_NONBLOCK) = 4
+read(5, ">\n\n        <application name=\"Un"..., 4096) = 4096
+read(5, "_glsl_abs_sqrt\" value=\"true\" />\n"..., 4096) = 4096
+read(5, "ation>\n\n        <application nam"..., 4096) = 4096
+read(5, "daptive_sync\" value=\"false\" />\n "..., 4096) = 4096
+read(5, "ation>\n        <application name"..., 4096) = 4096
+read(5, "executable=\"dota2\">\n            "..., 4096) = 1062
+read(5, "", 4096)                       = 0
+close(5)                                = 0
+openat(AT_FDCWD, "/etc/drirc", O_RDONLY|O_LARGEFILE) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/home/pi/.drirc", O_RDONLY|O_LARGEFILE) = -1 ENOENT (No such file or directory)
+fcntl64(4, F_DUPFD_CLOEXEC, 3)          = 5
+fstat64(5, {st_mode=S_IFCHR|0660, st_rdev=makedev(0xe2, 0), ...}) = 0
+stat64("/sys/dev/char/226:0/device/drm", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+readlink("/sys/dev/char/226:0/device/subsystem", "../../../../bus/platform", 4096) = 24
+openat(AT_FDCWD, "/dev/dri", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 6
+fstat64(6, {st_mode=S_IFDIR|0755, st_size=100, ...}) = 0
+getdents64(6, /* 5 entries */, 32768)   = 144
+stat64("/dev/dri/card0", {st_mode=S_IFCHR|0660, st_rdev=makedev(0xe2, 0), ...}) = 0
+stat64("/sys/dev/char/226:0/device/drm", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+readlink("/sys/dev/char/226:0/device/subsystem", "../../../../bus/platform", 4096) = 24
+openat(AT_FDCWD, "/sys/dev/char/226:0/device/uevent", O_RDONLY|O_LARGEFILE) = 7
+fstat64(7, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(7, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(7)                                = 0
+openat(AT_FDCWD, "/sys/dev/char/226:0/device/uevent", O_RDONLY|O_LARGEFILE) = 7
+fstat64(7, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(7, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(7)                                = 0
+openat(AT_FDCWD, "/sys/dev/char/226:0/device/uevent", O_RDONLY|O_LARGEFILE) = 7
+fstat64(7, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(7, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(7)                                = 0
+stat64("/dev/dri/renderD128", {st_mode=S_IFCHR|0660, st_rdev=makedev(0xe2, 0x80), ...}) = 0
+stat64("/sys/dev/char/226:128/device/drm", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+readlink("/sys/dev/char/226:128/device/subsystem", "../../../../bus/platform", 4096) = 24
+openat(AT_FDCWD, "/sys/dev/char/226:128/device/uevent", O_RDONLY|O_LARGEFILE) = 7
+fstat64(7, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(7, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(7)                                = 0
+openat(AT_FDCWD, "/sys/dev/char/226:128/device/uevent", O_RDONLY|O_LARGEFILE) = 7
+fstat64(7, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(7, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(7)                                = 0
+openat(AT_FDCWD, "/sys/dev/char/226:128/device/uevent", O_RDONLY|O_LARGEFILE) = 7
+fstat64(7, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(7, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(7)                                = 0
+getdents64(6, /* 0 entries */, 32768)   = 0
+stat64("/dev/dri/card0", {st_mode=S_IFCHR|0660, st_rdev=makedev(0xe2, 0), ...}) = 0
+close(6)                                = 0
+geteuid32()                             = 1000
+getuid32()                              = 1000
+ioctl(5, DRM_IOCTL_VERSION, 0x37e80b0)  = 0
+ioctl(5, DRM_IOCTL_VERSION, 0x37e80b0)  = 0
+getrandom("\x37\x5b\x53\xe0", 4, GRND_NONBLOCK) = 4
+openat(AT_FDCWD, "/usr/share/drirc.d", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 6
+fstat64(6, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(6, /* 3 entries */, 32768)   = 96
+getdents64(6, /* 0 entries */, 32768)   = 0
+close(6)                                = 0
+openat(AT_FDCWD, "/usr/share/drirc.d/00-mesa-defaults.conf", O_RDONLY|O_LARGEFILE) = 6
+read(6, "<?xml version=\"1.0\" standalone=\""..., 4096) = 4096
+getrandom("\x3f\x5d\x9b\xeb", 4, GRND_NONBLOCK) = 4
+read(6, ">\n\n        <application name=\"Un"..., 4096) = 4096
+read(6, "_glsl_abs_sqrt\" value=\"true\" />\n"..., 4096) = 4096
+read(6, "ation>\n\n        <application nam"..., 4096) = 4096
+read(6, "daptive_sync\" value=\"false\" />\n "..., 4096) = 4096
+read(6, "ation>\n        <application name"..., 4096) = 4096
+read(6, "executable=\"dota2\">\n            "..., 4096) = 1062
+read(6, "", 4096)                       = 0
+close(6)                                = 0
+openat(AT_FDCWD, "/etc/drirc", O_RDONLY|O_LARGEFILE) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/home/pi/.drirc", O_RDONLY|O_LARGEFILE) = -1 ENOENT (No such file or directory)
+fstat64(5, {st_mode=S_IFCHR|0660, st_rdev=makedev(0xe2, 0), ...}) = 0
+stat64("/sys/dev/char/226:0/device/drm", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+readlink("/sys/dev/char/226:0/device/subsystem", "../../../../bus/platform", 4096) = 24
+openat(AT_FDCWD, "/dev/dri", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 6
+fstat64(6, {st_mode=S_IFDIR|0755, st_size=100, ...}) = 0
+getdents64(6, /* 5 entries */, 32768)   = 144
+stat64("/dev/dri/card0", {st_mode=S_IFCHR|0660, st_rdev=makedev(0xe2, 0), ...}) = 0
+stat64("/sys/dev/char/226:0/device/drm", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+readlink("/sys/dev/char/226:0/device/subsystem", "../../../../bus/platform", 4096) = 24
+openat(AT_FDCWD, "/sys/dev/char/226:0/device/uevent", O_RDONLY|O_LARGEFILE) = 7
+fstat64(7, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(7, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(7)                                = 0
+openat(AT_FDCWD, "/sys/dev/char/226:0/device/uevent", O_RDONLY|O_LARGEFILE) = 7
+fstat64(7, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(7, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(7)                                = 0
+openat(AT_FDCWD, "/sys/dev/char/226:0/device/uevent", O_RDONLY|O_LARGEFILE) = 7
+fstat64(7, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(7, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(7)                                = 0
+stat64("/dev/dri/renderD128", {st_mode=S_IFCHR|0660, st_rdev=makedev(0xe2, 0x80), ...}) = 0
+stat64("/sys/dev/char/226:128/device/drm", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+readlink("/sys/dev/char/226:128/device/subsystem", "../../../../bus/platform", 4096) = 24
+openat(AT_FDCWD, "/sys/dev/char/226:128/device/uevent", O_RDONLY|O_LARGEFILE) = 7
+fstat64(7, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(7, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(7)                                = 0
+openat(AT_FDCWD, "/sys/dev/char/226:128/device/uevent", O_RDONLY|O_LARGEFILE) = 7
+fstat64(7, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(7, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(7)                                = 0
+openat(AT_FDCWD, "/sys/dev/char/226:128/device/uevent", O_RDONLY|O_LARGEFILE) = 7
+fstat64(7, {st_mode=S_IFREG|0644, st_size=4096, ...}) = 0
+read(7, "DRIVER=vc4-drm\nOF_NAME=gpu\nOF_FU"..., 4096) = 140
+close(7)                                = 0
+getdents64(6, /* 0 entries */, 32768)   = 0
+stat64("/dev/dri/card0", {st_mode=S_IFCHR|0660, st_rdev=makedev(0xe2, 0), ...}) = 0
+close(6)                                = 0
+ioctl(5, DRM_IOCTL_VERSION, 0x37e8038)  = 0
+ioctl(5, DRM_IOCTL_VERSION, 0x37e8038)  = 0
+getrandom("\xdc\x21\xd2\x40", 4, GRND_NONBLOCK) = 4
+openat(AT_FDCWD, "/usr/share/drirc.d", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 6
+fstat64(6, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(6, /* 3 entries */, 32768)   = 96
+getdents64(6, /* 0 entries */, 32768)   = 0
+close(6)                                = 0
+openat(AT_FDCWD, "/usr/share/drirc.d/00-mesa-defaults.conf", O_RDONLY|O_LARGEFILE) = 6
+read(6, "<?xml version=\"1.0\" standalone=\""..., 4096) = 4096
+getrandom("\x00\x6b\xea\x31", 4, GRND_NONBLOCK) = 4
+read(6, ">\n\n        <application name=\"Un"..., 4096) = 4096
+read(6, "_glsl_abs_sqrt\" value=\"true\" />\n"..., 4096) = 4096
+read(6, "ation>\n\n        <application nam"..., 4096) = 4096
+read(6, "daptive_sync\" value=\"false\" />\n "..., 4096) = 4096
+read(6, "ation>\n        <application name"..., 4096) = 4096
+read(6, "executable=\"dota2\">\n            "..., 4096) = 1062
+read(6, "", 4096)                       = 0
+close(6)                                = 0
+openat(AT_FDCWD, "/etc/drirc", O_RDONLY|O_LARGEFILE) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/home/pi/.drirc", O_RDONLY|O_LARGEFILE) = -1 ENOENT (No such file or directory)
+ioctl(5, DRM_IOCTL_AMDGPU_GEM_WAIT_IDLE or DRM_IOCTL_EXYNOS_VIDI_CONNECTION or DRM_IOCTL_TEGRA_GET_SYNCPT or DRM_IOCTL_VC4_GET_PARAM or DRM_IOCTL_VIA_DMA_INIT, 0x7eacc798) = 0
+fcntl64(5, F_DUPFD_CLOEXEC, 3)          = 6
+ioctl(6, DRM_IOCTL_AMDGPU_GEM_WAIT_IDLE or DRM_IOCTL_EXYNOS_VIDI_CONNECTION or DRM_IOCTL_TEGRA_GET_SYNCPT or DRM_IOCTL_VC4_GET_PARAM or DRM_IOCTL_VIA_DMA_INIT, 0x7eacc718) = 0
+ioctl(6, DRM_IOCTL_AMDGPU_GEM_WAIT_IDLE or DRM_IOCTL_EXYNOS_VIDI_CONNECTION or DRM_IOCTL_TEGRA_GET_SYNCPT or DRM_IOCTL_VC4_GET_PARAM or DRM_IOCTL_VIA_DMA_INIT, 0x7eacc718) = 0
+ioctl(6, DRM_IOCTL_AMDGPU_GEM_WAIT_IDLE or DRM_IOCTL_EXYNOS_VIDI_CONNECTION or DRM_IOCTL_TEGRA_GET_SYNCPT or DRM_IOCTL_VC4_GET_PARAM or DRM_IOCTL_VIA_DMA_INIT, 0x7eacc718) = 0
+ioctl(6, DRM_IOCTL_AMDGPU_GEM_WAIT_IDLE or DRM_IOCTL_EXYNOS_VIDI_CONNECTION or DRM_IOCTL_TEGRA_GET_SYNCPT or DRM_IOCTL_VC4_GET_PARAM or DRM_IOCTL_VIA_DMA_INIT, 0x7eacc718) = 0
+ioctl(6, DRM_IOCTL_AMDGPU_GEM_WAIT_IDLE or DRM_IOCTL_EXYNOS_VIDI_CONNECTION or DRM_IOCTL_TEGRA_GET_SYNCPT or DRM_IOCTL_VC4_GET_PARAM or DRM_IOCTL_VIA_DMA_INIT, 0x7eacc718) = 0
+ioctl(6, DRM_IOCTL_GET_CAP, 0x7eacc718) = 0
+ioctl(6, DRM_IOCTL_AMDGPU_GEM_WAIT_IDLE or DRM_IOCTL_EXYNOS_VIDI_CONNECTION or DRM_IOCTL_TEGRA_GET_SYNCPT or DRM_IOCTL_VC4_GET_PARAM or DRM_IOCTL_VIA_DMA_INIT, 0x7eacc750) = 0
+ioctl(6, DRM_IOCTL_AMDGPU_GEM_WAIT_IDLE or DRM_IOCTL_EXYNOS_VIDI_CONNECTION or DRM_IOCTL_TEGRA_GET_SYNCPT or DRM_IOCTL_VC4_GET_PARAM or DRM_IOCTL_VIA_DMA_INIT, 0x7eacc760) = 0
+openat(AT_FDCWD, "/proc/self/auxv", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 7
+read(7, "!\0\0\0\0p\361~", 8)           = 8
+read(7, "\20\0\0\0\326\260?\0", 8)      = 8
+close(7)                                = 0
+futex(0x75c823d0, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+ioctl(6, DRM_IOCTL_TEGRA_GET_SYNCPT_BASE or DRM_IOCTL_VC4_GET_TILING, 0x7eacc718) = -1 ENOENT (No such file or directory)
+ioctl(4, DRM_IOCTL_GET_CAP, 0x7eacc7c8) = 0
+ioctl(6, DRM_IOCTL_AMDGPU_GEM_WAIT_IDLE or DRM_IOCTL_EXYNOS_VIDI_CONNECTION or DRM_IOCTL_TEGRA_GET_SYNCPT or DRM_IOCTL_VC4_GET_PARAM or DRM_IOCTL_VIA_DMA_INIT, 0x7eacbba8) = 0
+ioctl(6, DRM_IOCTL_AMDGPU_GEM_WAIT_IDLE or DRM_IOCTL_EXYNOS_VIDI_CONNECTION or DRM_IOCTL_TEGRA_GET_SYNCPT or DRM_IOCTL_VC4_GET_PARAM or DRM_IOCTL_VIA_DMA_INIT, 0x7eacbba8) = 0
+ioctl(6, DRM_IOCTL_AMDGPU_GEM_WAIT_IDLE or DRM_IOCTL_EXYNOS_VIDI_CONNECTION or DRM_IOCTL_TEGRA_GET_SYNCPT or DRM_IOCTL_VC4_GET_PARAM or DRM_IOCTL_VIA_DMA_INIT, 0x7eacbba8) = 0
+ioctl(6, DRM_IOCTL_AMDGPU_GEM_WAIT_IDLE or DRM_IOCTL_EXYNOS_VIDI_CONNECTION or DRM_IOCTL_TEGRA_GET_SYNCPT or DRM_IOCTL_VC4_GET_PARAM or DRM_IOCTL_VIA_DMA_INIT, 0x7eacbba8) = 0
+openat(AT_FDCWD, "/dev/vchiq", O_RDWR|O_LARGEFILE) = 7
+ioctl(7, _IOC(_IOC_READ|_IOC_WRITE, 0xc4, 0xa, 0x8), 0x7eacd1dc) = 0
+ioctl(7, _IOC(_IOC_NONE, 0xc4, 0x10, 0), 0x8) = 0
+ioctl(7, _IOC(_IOC_NONE, 0xc4, 0, 0), 0) = 0
+mmap2(NULL, 8392704, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x70927000
+mprotect(0x70928000, 8388608, PROT_READ|PROT_WRITE) = 0
+clone(child_stack=0x71126eb8, flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, parent_tidptr=0x711273e8, tls=0x71127840, child_tidptr=0x711273e8) = 634
+strace: Process 634 attached
+[pid   633] ioctl(7, _IOC(_IOC_READ|_IOC_WRITE, 0xc4, 0x2, 0x1c) <unfinished ...>
+[pid   634] set_robust_list(0x711273f0, 12) = 0
+[pid   633] <... ioctl resumed> , 0x7eacd1a4) = -1 EIO (Input/output error)
+[pid   634] prctl(PR_SET_NAME, "VCHIQ completio"... <unfinished ...>
+[pid   633] ioctl(7, _IOC(_IOC_READ|_IOC_WRITE, 0xc4, 0x2, 0x1c) <unfinished ...>
+[pid   634] <... prctl resumed> )       = 0
+[pid   633] <... ioctl resumed> , 0x7eacd1a4) = -1 EIO (Input/output error)
+[pid   634] mmap2(NULL, 2097152, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0 <unfinished ...>
+[pid   633] ioctl(7, _IOC(_IOC_READ|_IOC_WRITE, 0xc4, 0x2, 0x1c) <unfinished ...>
+[pid   634] <... mmap2 resumed> )       = 0x70727000
+[pid   634] munmap(0x70727000, 888832 <unfinished ...>
+[pid   633] <... ioctl resumed> , 0x7eacd1a4) = -1 EIO (Input/output error)
+[pid   634] <... munmap resumed> )      = 0
+[pid   633] write(2, "* failed to add service - alread"..., 41 <unfinished ...>
+* failed to add service - already in use?[pid   634] munmap(0x70900000, 159744 <unfinished ...>
+[pid   633] <... write resumed> )       = 41
+[pid   634] <... munmap resumed> )      = 0
+[pid   633] write(2, "\n", 1 <unfinished ...>
+
+[pid   634] mprotect(0x70800000, 135168, PROT_READ|PROT_WRITE <unfinished ...>
+[pid   633] <... write resumed> )       = 1
+[pid   634] <... mprotect resumed> )    = 0
+[pid   634] ioctl(7, _IOC(_IOC_READ|_IOC_WRITE, 0xc4, 0x7, 0x14) <unfinished ...>
+[pid   633] exit_group(1)               = ?
+[pid   634] <... ioctl resumed> <unfinished ...>) = ?
+[pid   634] +++ exited with 1 +++
++++ exited with 1 +++
