@@ -33,4 +33,3 @@ void piInputResetJoysticks();
 void piInputResetMSXDevices(int realMice, int realJoysticks);
 
 #endif // PI_INPUT_H
-

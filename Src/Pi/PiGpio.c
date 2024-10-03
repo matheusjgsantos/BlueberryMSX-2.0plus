@@ -26,10 +26,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#ifdef __arm__
+//#ifdef __arm__
    #include <wiringPi.h>
    #include <wiringShift.h>
-#endif
+//#endif
 
 #include "Led.h"
 

@@ -291,7 +291,7 @@ OpenYM2413_2::Patch::Patch()
 {
 }
 
-OpenYM2413_2::Patch::Patch(int n, const byte* data)
+OpenYM2413_2::Patch::Patch(int n, const uint8_t* data)
 {
 	if (n == 0) {
 		AM = (data[0] >> 7) & 1;
@@ -550,7 +550,7 @@ void OpenYM2413_2::Channel::keyOff()
 //                                                           //
 //***********************************************************//
 
-static byte inst_data[16 + 3][8] = {
+static uint8_t inst_data[16 + 3][8] = {
 	{ 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 }, // user instrument
 	{ 0x61,0x61,0x1e,0x17,0xf0,0x7f,0x00,0x17 }, // violin
 	{ 0x13,0x41,0x16,0x0e,0xfd,0xf4,0x23,0x23 }, // guitar
@@ -1051,7 +1051,7 @@ void OpenYM2413_2::setInternalVolume(short newVolume)
 //                                                  //
 //**************************************************//
 
-void OpenYM2413_2::writeReg(byte regis, byte data, const EmuTime &time)
+void OpenYM2413_2::writeReg(uint8_t regis, uint8_t data, const EmuTime &time)
 {
 
 	assert (regis < 0x40);
@@ -1230,12 +1230,12 @@ unsigned OpenYM2413_2::getSize() const
 	return 0x40;
 }
 
-byte OpenYM2413_2::read(unsigned address)
+uint8_t OpenYM2413_2::read(unsigned address)
 {
 	return reg[address];
 }
 
-void OpenYM2413_2::write(unsigned address, byte value)
+void OpenYM2413_2::write(unsigned address, uint8_t value)
 {
 	writeReg(address, value, 0 /*Scheduler::instance().getCurrentTime() */);
 }
@@ -1248,7 +1248,7 @@ void OpenYM2413_2::loadState()
 
     for (i = 0; i < sizeof(reg) / sizeof(reg[0]); i++) {
         sprintf(tag, "reg%.4d", i);
-        reg[i] = (byte)saveStateGet(state, tag, 0);
+        reg[i] = (uint8_t)saveStateGet(state, tag, 0);
     }
 
     maxVolume  = saveStateGet(state, "maxVolume",     0);
@@ -1269,34 +1269,34 @@ void OpenYM2413_2::loadState()
         patches[i].EG = 0 != saveStateGet(state, tag, 0);
 
         sprintf(tag, "KR%d", i);
-        patches[i].KR = (byte)saveStateGet(state, tag, 0);
+        patches[i].KR = (uint8_t)saveStateGet(state, tag, 0);
         
         sprintf(tag, "ML%d", i);
-        patches[i].ML = (byte)saveStateGet(state, tag, 0);
+        patches[i].ML = (uint8_t)saveStateGet(state, tag, 0);
         
         sprintf(tag, "KL%d", i);
-        patches[i].KL = (byte)saveStateGet(state, tag, 0);
+        patches[i].KL = (uint8_t)saveStateGet(state, tag, 0);
         
         sprintf(tag, "TL%d", i);
-        patches[i].TL = (byte)saveStateGet(state, tag, 0);
+        patches[i].TL = (uint8_t)saveStateGet(state, tag, 0);
         
         sprintf(tag, "FB%d", i);
-        patches[i].FB = (byte)saveStateGet(state, tag, 0);
+        patches[i].FB = (uint8_t)saveStateGet(state, tag, 0);
         
         sprintf(tag, "WF%d", i);
-        patches[i].WF = (byte)saveStateGet(state, tag, 0);
+        patches[i].WF = (uint8_t)saveStateGet(state, tag, 0);
         
         sprintf(tag, "AR%d", i);
-        patches[i].AR = (byte)saveStateGet(state, tag, 0);
+        patches[i].AR = (uint8_t)saveStateGet(state, tag, 0);
         
         sprintf(tag, "DR%d", i);
-        patches[i].DR = (byte)saveStateGet(state, tag, 0);
+        patches[i].DR = (uint8_t)saveStateGet(state, tag, 0);
         
         sprintf(tag, "SL%d", i);
-        patches[i].SL = (byte)saveStateGet(state, tag, 0);
+        patches[i].SL = (uint8_t)saveStateGet(state, tag, 0);
         
         sprintf(tag, "RR%d", i);
-        patches[i].RR = (byte)saveStateGet(state, tag, 0);
+        patches[i].RR = (uint8_t)saveStateGet(state, tag, 0);
     }
 
     for (i = 0; i < sizeof(ch) / sizeof(ch[0]); i++) {

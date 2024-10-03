@@ -157,9 +157,9 @@ static void updateLeds()
 extern uint32_t screenWidth;
 extern uint32_t screenHeight;
 
-static void handleEvent(SDL_Event* event)
-{
+static void handleEvent(SDL_Event* event) {
 	switch (event->type) {
+	printf("TO_REMOVE: handleEvent running: %d\n", &event->type);
 	case SDL_USEREVENT:
 		switch (event->user.code) {
 		case EVENT_UPDATE_DISPLAY:
@@ -197,6 +197,7 @@ static void handleEvent(SDL_Event* event)
 		joystickAxisUpdate(event);
 		break;
 	case SDL_KEYDOWN:
+		printf("Registered SDL_KEYDOWN event: %s",&event->key);
 		keyboardUpdate(event);
 		shortcutCheckDown(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
 		break;
@@ -470,31 +471,58 @@ int main(int argc, char **argv)
 	
 	fprintf(stderr, "Powering on\n");
 
+	SDL_Event regEvent = event;
+	SDL_PollEvent(&event);
 	while (!doQuit) {
-		SDL_WaitEvent(&event);
+		if (SDL_WaitEvent(&event) == 0) {
+			printf(stderr,"SDL_WaitEvent error: %d\n",SDL_GetError());
+		};
+
 		do {
-//			if (event.type == SDL_QUIT ) {
-//				doQuit = 1;
-//			} else {
+			if (&event.key.state == SDL_PRESSED) {
+				printf("Key pressed: %s\n",&event.key.keysym);
+			};
+			if (event.type == SDL_QUIT) {
+				doQuit = 1;
+			} else {
 				handleEvent(&event);
-//			}
+				if (event.type != regEvent.type){
+					printf("Registered event %s\n",&event.text);
+					regEvent.type = event.type;
+				}
+			}
 		} while (SDL_PollEvent(&event));
 	}
-
+	//Destroy video
+	printf("Removing video allocation\n");
 	videoDestroy(video);
+
+	//Destroy Properties
+	printf("Removing properties allocation\n");
 	propDestroy(properties);
+
+	printf("Removing sound allocation\n");
 	archSoundDestroy();
+
+	printf("Removing mixer allocation\n");
 	mixerDestroy(mixer);
+
+	printf("Removing GPIO allocation\n");
 	gpioShutdown();
 
 #ifdef RASPI_GPIO
 	//gpioTogglePowerLed(0);
 #endif
 
+	printf("Removing Video allocation\n");
 	piDestroyVideo();
+
+	printf("Removing uDev allocation\n");
 	piDestroyUdev();
+
 	fprintf(stderr,"PiMain is calling SDL_Quit()");
 	SDL_Quit();
+
 #ifdef RPMC_FRONTLED
     frontled(0);
 #endif

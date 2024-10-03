@@ -1,10 +1,10 @@
 m4trace:/usr/share/aclocal-1.16/amversion.m4:14: -1- AC_DEFUN([AM_AUTOMAKE_VERSION], [am__api_version='1.16'
 dnl Some users find AM_AUTOMAKE_VERSION and mistake it for a way to
 dnl require some minimum version.  Point them to the right macro.
-m4_if([$1], [1.16.1], [],
+m4_if([$1], [1.16.5], [],
       [AC_FATAL([Do not call $0, use AM_INIT_AUTOMAKE([$1]).])])dnl
 ])
-m4trace:/usr/share/aclocal-1.16/amversion.m4:33: -1- AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION], [AM_AUTOMAKE_VERSION([1.16.1])dnl
+m4trace:/usr/share/aclocal-1.16/amversion.m4:33: -1- AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION], [AM_AUTOMAKE_VERSION([1.16.5])dnl
 m4_ifndef([AC_AUTOCONF_VERSION],
   [m4_copy([m4_PACKAGE_VERSION], [AC_AUTOCONF_VERSION])])dnl
 _AM_AUTOCONF_VERSION(m4_defn([AC_AUTOCONF_VERSION]))])
@@ -226,7 +226,9 @@ m4trace:/usr/share/aclocal-1.16/depout.m4:11: -1- AC_DEFUN([_AM_OUTPUT_DEPENDENC
   done
   if test $am_rc -ne 0; then
     AC_MSG_FAILURE([Something went wrong bootstrapping makefile fragments
-    for automatic dependency tracking.  Try re-running configure with the
+    for automatic dependency tracking.  If GNU make was not used, consider
+    re-running the configure script with MAKE="gmake" (or whatever is
+    necessary).  You can also try re-running configure with the
     '--disable-dependency-tracking' option to at least be able to build
     the package (albeit without support for automatic dependency tracking).])
   fi
@@ -237,10 +239,14 @@ m4trace:/usr/share/aclocal-1.16/depout.m4:11: -1- AC_DEFUN([_AM_OUTPUT_DEPENDENC
   rm -f conftest-deps.mk
 }
 ])
-m4trace:/usr/share/aclocal-1.16/depout.m4:62: -1- AC_DEFUN([AM_OUTPUT_DEPENDENCY_COMMANDS], [AC_CONFIG_COMMANDS([depfiles],
+m4trace:/usr/share/aclocal-1.16/depout.m4:64: -1- AC_DEFUN([AM_OUTPUT_DEPENDENCY_COMMANDS], [AC_CONFIG_COMMANDS([depfiles],
      [test x"$AMDEP_TRUE" != x"" || _AM_OUTPUT_DEPENDENCY_COMMANDS],
      [AMDEP_TRUE="$AMDEP_TRUE" MAKE="${MAKE-make}"])])
 m4trace:/usr/share/aclocal-1.16/init.m4:29: -1- AC_DEFUN([AM_INIT_AUTOMAKE], [AC_PREREQ([2.65])dnl
+m4_ifdef([_$0_ALREADY_INIT],
+  [m4_fatal([$0 expanded multiple times
+]m4_defn([_$0_ALREADY_INIT]))],
+  [m4_define([_$0_ALREADY_INIT], m4_expansion_stack)])dnl
 dnl Autoconf wants to disallow AM_ names.  We explicitly allow
 dnl the ones we care about.
 m4_pattern_allow([^AM_[A-Z]+FLAGS$])dnl
@@ -277,7 +283,7 @@ m4_ifval([$3], [_AM_SET_OPTION([no-define])])dnl
 [_AM_SET_OPTIONS([$1])dnl
 dnl Diagnose old-style AC_INIT with new-style AM_AUTOMAKE_INIT.
 m4_if(
-  m4_ifdef([AC_PACKAGE_NAME], [ok]):m4_ifdef([AC_PACKAGE_VERSION], [ok]),
+  m4_ifset([AC_PACKAGE_NAME], [ok]):m4_ifset([AC_PACKAGE_VERSION], [ok]),
   [ok:ok],,
   [m4_fatal([AC_INIT should be called with package and version arguments])])dnl
  AC_SUBST([PACKAGE], ['AC_PACKAGE_TARNAME'])dnl
@@ -329,6 +335,20 @@ AC_PROVIDE_IFELSE([AC_PROG_OBJCXX],
 		  [m4_define([AC_PROG_OBJCXX],
 			     m4_defn([AC_PROG_OBJCXX])[_AM_DEPENDENCIES([OBJCXX])])])dnl
 ])
+# Variables for tags utilities; see am/tags.am
+if test -z "$CTAGS"; then
+  CTAGS=ctags
+fi
+AC_SUBST([CTAGS])
+if test -z "$ETAGS"; then
+  ETAGS=etags
+fi
+AC_SUBST([ETAGS])
+if test -z "$CSCOPE"; then
+  CSCOPE=cscope
+fi
+AC_SUBST([CSCOPE])
+
 AC_REQUIRE([AM_SILENT_RULES])dnl
 dnl The testsuite driver may need to know about EXEEXT, so add the
 dnl 'am__EXEEXT' conditional if _AM_COMPILER_EXEEXT was seen.  This
@@ -382,7 +402,7 @@ dnl The trailing newline in this macro's definition is deliberate, for
 dnl backward compatibility and to allow trailing 'dnl'-style comments
 dnl after the AM_INIT_AUTOMAKE invocation. See automake bug#16841.
 ])
-m4trace:/usr/share/aclocal-1.16/init.m4:186: -1- AC_DEFUN([_AC_AM_CONFIG_HEADER_HOOK], [# Compute $1's index in $config_headers.
+m4trace:/usr/share/aclocal-1.16/init.m4:204: -1- AC_DEFUN([_AC_AM_CONFIG_HEADER_HOOK], [# Compute $1's index in $config_headers.
 _am_arg=$1
 _am_stamp_count=1
 for _am_header in $config_headers :; do
@@ -448,12 +468,7 @@ AC_SUBST($1)])
 m4trace:/usr/share/aclocal-1.16/missing.m4:20: -1- AC_DEFUN([AM_MISSING_HAS_RUN], [AC_REQUIRE([AM_AUX_DIR_EXPAND])dnl
 AC_REQUIRE_AUX_FILE([missing])dnl
 if test x"${MISSING+set}" != xset; then
-  case $am_aux_dir in
-  *\ * | *\	*)
-    MISSING="\${SHELL} \"$am_aux_dir/missing\"" ;;
-  *)
-    MISSING="\${SHELL} $am_aux_dir/missing" ;;
-  esac
+  MISSING="\${SHELL} '$am_aux_dir/missing'"
 fi
 # Use eval to expand $SHELL
 if eval "$MISSING --is-lightweight"; then
@@ -476,7 +491,7 @@ Also, your code should no longer depend upon 'am_cv_prog_cc_stdc',
 but upon 'ac_cv_prog_cc_stdc'.])])
 m4trace:/usr/share/aclocal-1.16/obsolete.m4:26: -1- AC_DEFUN([AM_C_PROTOTYPES], [AC_FATAL([automatic de-ANSI-fication support has been removed])])
 m4trace:/usr/share/aclocal-1.16/obsolete.m4:28: -1- AU_DEFUN([fp_C_PROTOTYPES], [AM_C_PROTOTYPES])
-m4trace:/usr/share/aclocal-1.16/obsolete.m4:28: -1- AC_DEFUN([fp_C_PROTOTYPES], [AC_DIAGNOSE([obsolete], [The macro `fp_C_PROTOTYPES' is obsolete.
+m4trace:/usr/share/aclocal-1.16/obsolete.m4:28: -1- AC_DEFUN([fp_C_PROTOTYPES], [m4_warn([obsolete], [The macro `fp_C_PROTOTYPES' is obsolete.
 You should run autoupdate.])dnl
 AM_C_PROTOTYPES])
 m4trace:/usr/share/aclocal-1.16/options.m4:11: -1- AC_DEFUN([_AM_MANGLE_OPTION], [[_AM_OPTION_]m4_bpatsubst($1, [[^a-zA-Z0-9_]], [_])])
@@ -816,13 +831,14 @@ m4trace:configure.ac:9: -1- m4_pattern_allow([^host_alias$])
 m4trace:configure.ac:9: -1- m4_pattern_allow([^target_alias$])
 m4trace:configure.ac:11: -1- AM_CONFIG_HEADER([config.h])
 m4trace:configure.ac:11: -1- _m4_warn([obsolete], ['AM_CONFIG_HEADER': this macro is obsolete.
-You should use the 'AC_CONFIG_HEADERS' macro instead.], [/usr/share/aclocal-1.16/obsolete.m4:11: AM_CONFIG_HEADER is expanded from...
+You should use the 'AC_CONFIG_HEADERS' macro instead.], [./lib/autoconf/general.m4:2434: AC_DIAGNOSE is expanded from...
+/usr/share/aclocal-1.16/obsolete.m4:11: AM_CONFIG_HEADER is expanded from...
 configure.ac:11: the top level])
 m4trace:configure.ac:12: -1- AM_INIT_AUTOMAKE([])
 m4trace:configure.ac:12: -1- m4_pattern_allow([^AM_[A-Z]+FLAGS$])
 m4trace:configure.ac:12: -1- AM_SET_CURRENT_AUTOMAKE_VERSION
-m4trace:configure.ac:12: -1- AM_AUTOMAKE_VERSION([1.16.1])
-m4trace:configure.ac:12: -1- _AM_AUTOCONF_VERSION([2.69])
+m4trace:configure.ac:12: -1- AM_AUTOMAKE_VERSION([1.16.5])
+m4trace:configure.ac:12: -1- _AM_AUTOCONF_VERSION([2.71])
 m4trace:configure.ac:12: -1- m4_pattern_allow([^INSTALL_PROGRAM$])
 m4trace:configure.ac:12: -1- m4_pattern_allow([^INSTALL_SCRIPT$])
 m4trace:configure.ac:12: -1- m4_pattern_allow([^INSTALL_DATA$])
@@ -888,6 +904,9 @@ AC_PROVIDE_IFELSE([AC_PROG_OBJCXX],
 			     m4_defn([AC_PROG_OBJCXX])[_AM_DEPENDENCIES([OBJCXX])])])dnl
 ])
 m4trace:configure.ac:12: -2- _AM_MANGLE_OPTION([no-dependencies])
+m4trace:configure.ac:12: -1- m4_pattern_allow([^CTAGS$])
+m4trace:configure.ac:12: -1- m4_pattern_allow([^ETAGS$])
+m4trace:configure.ac:12: -1- m4_pattern_allow([^CSCOPE$])
 m4trace:configure.ac:12: -1- AM_SILENT_RULES
 m4trace:configure.ac:12: -1- m4_pattern_allow([^AM_V$])
 m4trace:configure.ac:12: -1- AM_SUBST_NOTMAKE([AM_V])
@@ -908,6 +927,7 @@ m4trace:configure.ac:13: -1- m4_pattern_allow([^CC$])
 m4trace:configure.ac:13: -1- m4_pattern_allow([^CC$])
 m4trace:configure.ac:13: -1- m4_pattern_allow([^CC$])
 m4trace:configure.ac:13: -1- m4_pattern_allow([^ac_ct_CC$])
+m4trace:configure.ac:13: -1- m4_pattern_allow([^CC$])
 m4trace:configure.ac:13: -1- m4_pattern_allow([^EXEEXT$])
 m4trace:configure.ac:13: -1- m4_pattern_allow([^OBJEXT$])
 m4trace:configure.ac:13: -1- _AM_PROG_CC_C_O
@@ -950,6 +970,7 @@ m4trace:configure.ac:19: -1- m4_pattern_allow([^CC$])
 m4trace:configure.ac:19: -1- m4_pattern_allow([^CC$])
 m4trace:configure.ac:19: -1- m4_pattern_allow([^CC$])
 m4trace:configure.ac:19: -1- m4_pattern_allow([^ac_ct_CC$])
+m4trace:configure.ac:19: -1- m4_pattern_allow([^CC$])
 m4trace:configure.ac:19: -1- _AM_PROG_CC_C_O
 m4trace:configure.ac:19: -1- AM_RUN_LOG([$CC -c conftest.$ac_ext -o conftest2.$ac_objext])
 m4trace:configure.ac:19: -1- _AM_DEPENDENCIES([CC])
@@ -962,6 +983,7 @@ m4trace:configure.ac:19: -1- m4_pattern_allow([^am__fastdepCC_FALSE$])
 m4trace:configure.ac:19: -1- _AM_SUBST_NOTMAKE([am__fastdepCC_TRUE])
 m4trace:configure.ac:19: -1- _AM_SUBST_NOTMAKE([am__fastdepCC_FALSE])
 m4trace:configure.ac:20: -1- AC_CONFIG_MACRO_DIR([m4])
+m4trace:configure.ac:20: -1- AC_CONFIG_MACRO_DIR_TRACE([m4])
 m4trace:configure.ac:21: -1- AM_CONDITIONAL([HAVE_DOXYGEN], [test -n "$DOXYGEN"])
 m4trace:configure.ac:21: -1- m4_pattern_allow([^HAVE_DOXYGEN_TRUE$])
 m4trace:configure.ac:21: -1- m4_pattern_allow([^HAVE_DOXYGEN_FALSE$])

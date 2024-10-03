@@ -13,7 +13,7 @@ using namespace std;
 
 
 typedef unsigned long  EmuTime;
-typedef unsigned char  byte;
+typedef unsigned char  uint8_t;
 typedef unsigned short word;
 
 extern "C" {
@@ -24,13 +24,13 @@ extern "C" {
 class TimerCallback
 {
 	public:
-		virtual void callback(byte value) = 0;
+		virtual void callback(uint8_t value) = 0;
 };
 
 extern void moonsoundTimerSet(void* ref, int timer, int count);
-extern void moonsoundTimerStart(void* ref, int timer, int start, byte timerRef);
+extern void moonsoundTimerStart(void* ref, int timer, int start, uint8_t timerRef);
 
-template<int freq, byte flag>
+template<int freq, uint8_t flag>
 class Timer
 {
 	public:
@@ -39,7 +39,7 @@ class Timer
             id = 12500 / freq;
         }
 		virtual ~Timer() {}
-		void setValue(byte value) {
+		void setValue(uint8_t value) {
             moonsoundTimerSet(ref, id, id * (256 - value));
         }
 		void setStart(bool start, const EmuTime &time) {
@@ -93,51 +93,51 @@ class YMF262Slot
 {
 	public:
 		YMF262Slot();
-		inline int volume_calc(byte LFO_AM);
-		inline void FM_KEYON(byte key_set);
-		inline void FM_KEYOFF(byte key_clr);
+		inline int volume_calc(uint8_t LFO_AM);
+		inline void FM_KEYON(uint8_t key_set);
+		inline void FM_KEYOFF(uint8_t key_clr);
 
-		byte ar;	// attack rate: AR<<2
-		byte dr;	// decay rate:  DR<<2
-		byte rr;	// release rate:RR<<2
-		byte KSR;	// key scale rate
-		byte ksl;	// keyscale level
-		byte ksr;	// key scale rate: kcode>>KSR
-		byte mul;	// multiple: mul_tab[ML]
+		uint8_t ar;	// attack rate: AR<<2
+		uint8_t dr;	// decay rate:  DR<<2
+		uint8_t rr;	// release rate:RR<<2
+		uint8_t KSR;	// key scale rate
+		uint8_t ksl;	// keyscale level
+		uint8_t ksr;	// key scale rate: kcode>>KSR
+		uint8_t mul;	// multiple: mul_tab[ML]
 
 		// Phase Generator 
 		unsigned int Cnt;	// frequency counter
 		unsigned int Incr;	// frequency counter step
-		byte FB;	// feedback shift value
+		uint8_t FB;	// feedback shift value
 		int op1_out[2];	// slot1 output for feedback
-		byte CON;	// connection (algorithm) type
+		uint8_t CON;	// connection (algorithm) type
 
 		// Envelope Generator 
-		byte eg_type;	// percussive/non-percussive mode 
-		byte state;	// phase type
+		uint8_t eg_type;	// percussive/non-percussive mode 
+		uint8_t state;	// phase type
 		unsigned int TL;	// total level: TL << 2
 		int TLL;	// adjusted now TL
 		int volume;	// envelope counter
 		int sl;		// sustain level: sl_tab[SL]
 
 		unsigned int eg_m_ar;// (attack state)
-		byte eg_sh_ar;	// (attack state)
-		byte eg_sel_ar;	// (attack state)
+		uint8_t eg_sh_ar;	// (attack state)
+		uint8_t eg_sel_ar;	// (attack state)
 		unsigned int eg_m_dr;// (decay state)
-		byte eg_sh_dr;	// (decay state)
-		byte eg_sel_dr;	// (decay state)
+		uint8_t eg_sh_dr;	// (decay state)
+		uint8_t eg_sel_dr;	// (decay state)
 		unsigned int eg_m_rr;// (release state)
-		byte eg_sh_rr;	// (release state)
-		byte eg_sel_rr;	// (release state)
+		uint8_t eg_sh_rr;	// (release state)
+		uint8_t eg_sel_rr;	// (release state)
 
-		byte key;	// 0 = KEY OFF, >0 = KEY ON
+		uint8_t key;	// 0 = KEY OFF, >0 = KEY ON
 
 		// LFO 
-		byte  AMmask;	// LFO Amplitude Modulation enable mask 
-		byte vib;	// LFO Phase Modulation enable flag (active high)
+		uint8_t  AMmask;	// LFO Amplitude Modulation enable mask 
+		uint8_t vib;	// LFO Phase Modulation enable flag (active high)
 
 		// waveform select 
-		byte waveform_number;
+		uint8_t waveform_number;
 		unsigned int wavetable;
 
 		int connect;	// slot output pointer
@@ -147,8 +147,8 @@ class YMF262Channel
 {
 	public:
 		YMF262Channel();
-		void chan_calc(byte LFO_AM);
-		void chan_calc_ext(byte LFO_AM);
+		void chan_calc(uint8_t LFO_AM);
+		void chan_calc_ext(uint8_t LFO_AM);
 		void CALC_FCSLOT(YMF262Slot &slot);
 
 		YMF262Slot slots[2];
@@ -156,7 +156,7 @@ class YMF262Channel
 		int block_fnum;	// block+fnum
 		int fc;		// Freq. Increment base
 		int ksl_base;	// KeyScaleLevel Base step
-		byte kcode;	// key code (for key scaling)
+		uint8_t kcode;	// key code (for key scaling)
 
 		// there are 12 2-operator channels which can be combined in pairs
 		// to form six 4-operator channel, they are:
@@ -166,7 +166,7 @@ class YMF262Channel
 		//  9 and 12,
 		//  10 and 13,
 		//  11 and 14
-		byte extended;	// set to 1 if this channel forms up a 4op channel with another channel(only used by first of pair of channels, ie 0,1,2 and 9,10,11) 
+		uint8_t extended;	// set to 1 if this channel forms up a 4op channel with another channel(only used by first of pair of channels, ie 0,1,2 and 9,10,11) 
 };
 
 // Bitmask for register 0x04 
@@ -187,34 +187,34 @@ class YMF262 : public SoundDevice, public TimerCallback
 		virtual ~YMF262();
 		
 		virtual void reset(const EmuTime &time);
-		void writeReg(int r, byte v, const EmuTime &time);
-		byte peekReg(int reg);
-		byte readReg(int reg);
-		byte peekStatus();
-		byte readStatus();
+		void writeReg(int r, uint8_t v, const EmuTime &time);
+		uint8_t peekReg(int reg);
+		uint8_t readReg(int reg);
+		uint8_t peekStatus();
+		uint8_t readStatus();
 		
 		virtual void setInternalVolume(short volume);
 		virtual void setSampleRate(int sampleRate, int Oversampling);
 		virtual int* updateBuffer(int length);
 
-		void callback(byte flag);
+		void callback(uint8_t flag);
 
         void loadState();
         void saveState();
 
 	private:
-		void writeRegForce(int r, byte v, const EmuTime &time);
+		void writeRegForce(int r, uint8_t v, const EmuTime &time);
 		void init_tables(void);
-		void setStatus(byte flag);
-		void resetStatus(byte flag);
-		void changeStatusMask(byte flag);
+		void setStatus(uint8_t flag);
+		void resetStatus(uint8_t flag);
+		void changeStatusMask(uint8_t flag);
 		void advance_lfo();
 		void advance();
 		void chan_calc_rhythm(bool noise);
-		void set_mul(byte sl, byte v);
-		void set_ksl_tl(byte sl, byte v);
-		void set_ar_dr(byte sl, byte v);
-		void set_sl_rr(byte sl, byte v);
+		void set_mul(uint8_t sl, uint8_t v);
+		void set_ksl_tl(uint8_t sl, uint8_t v);
+		void set_ar_dr(uint8_t sl, uint8_t v);
+		void set_sl_rr(uint8_t sl, uint8_t v);
 		void update_channels(YMF262Channel &ch);
 		void checkMute();
 		bool checkMuteHelper();
@@ -228,7 +228,7 @@ class YMF262 : public SoundDevice, public TimerCallback
 
         YMF262Channel channels[18];	// OPL3 chips have 18 channels
 
-		byte reg[512];
+		uint8_t reg[512];
 
         unsigned int pan[18*4];		// channels output masks (0xffffffff = enable); 4 masks per one channel 
 
@@ -239,11 +239,11 @@ class YMF262 : public SoundDevice, public TimerCallback
 		unsigned int fn_tab[1024];		// fnumber->increment counter
 
 		// LFO 
-		byte LFO_AM;
-		byte LFO_PM;
+		uint8_t LFO_AM;
+		uint8_t LFO_PM;
 		
-		byte lfo_am_depth;
-		byte lfo_pm_depth_range;
+		uint8_t lfo_am_depth;
+		uint8_t lfo_pm_depth_range;
 		unsigned int lfo_am_cnt;
 		unsigned int lfo_am_inc;
 		unsigned int lfo_pm_cnt;
@@ -254,12 +254,12 @@ class YMF262 : public SoundDevice, public TimerCallback
 		unsigned int noise_f;		// current noise period
 
 		bool OPL3_mode;			// OPL3 extension enable flag
-		byte rhythm;			// Rhythm mode
-		byte nts;			// NTS (note select)
+		uint8_t rhythm;			// Rhythm mode
+		uint8_t nts;			// NTS (note select)
 
-		byte status;			// status flag
-		byte status2;
-		byte statusMask;		// status mask
+		uint8_t status;			// status flag
+		uint8_t status2;
+		uint8_t statusMask;		// status mask
 
 		int chanout[20];		// 18 channels + two phase modulation
 		short maxVolume;
