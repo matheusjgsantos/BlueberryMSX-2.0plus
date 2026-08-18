@@ -81,6 +81,45 @@ How to build from source:
 - Running `make` from `~/BlueberryMSX-2.0plus` should do the trick.  
 - All source files are available at the `~/BlueberryMSX-2.0plus/Src`, but documentation is still incomplete
 
+Cross-compiling for Raspberry Pi from x86_64 using Docker
+--------------------------------------------------------
+
+Build ARMv7 binaries on an x86_64 host with Docker Buildx and an arm32v7 Debian base.
+
+Prerequisites
+- Docker with buildx enabled
+- `docker buildx build --platform linux/arm/v7`
+
+Base build image
+```
+docker buildx build --platform linux/arm/v7 -f Dockerfile.arm -t bluemsx-arm-build .
+```
+`Dockerfile.arm` uses `arm32v7/debian:bookworm` and installs:
+`build-essential libsdl2-dev libdrm-dev libgbm-dev autoconf git pkg-config`
+
+WiringPi is required for PiGPIO. It is not in Debian bookworm, so build from source in the image.
+
+Full source build image
+```
+docker buildx build --platform linux/arm/v7 -f Dockerfile.build.arm -t bluemsx-arm-built .
+```
+`Dockerfile.build.arm`:
+- FROM arm32v7/debian:bookworm
+- Install build deps
+- `git clone https://github.com/WiringPi/WiringPi.git /tmp/WiringPi && cd /tmp/WiringPi && ./build && ldconfig`
+- WORKDIR /work
+- COPY . .
+- RUN make clean && make
+
+Extract the binary
+```
+docker create --name bluemsx_tmp bluemsx-arm-built
+docker cp bluemsx_tmp:/work/bluemsx-pi ./bluemsx-pi-arm
+docker rm bluemsx_tmp
+```
+
+The resulting `bluemsx-pi-arm` is an ARMv7 binary ready for Raspberry Pi 3/4.
+
 Known issues:
 -------
  - Keyboard mapping code is **garbage** because SDL2.0 introduced ***very long values*** for the key ids causing [segmentation faults](https://stackoverflow.com/questions/30815857/sdl-keycodes-are-too-big-for-storage) just by looking at it. Need complete rework

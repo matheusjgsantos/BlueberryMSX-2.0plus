@@ -1,0 +1,13 @@
+FROM arm32v7/debian:bookworm
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libsdl2-dev \
+    libdrm-dev \
+    libgbm-dev \
+    autoconf \
+    git \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /work
