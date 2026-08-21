@@ -58,8 +58,15 @@
 #include "PiShortcuts.h"
 #include "PiVideo.h"
 #include "PiUdev.h"
+#include "PiMouse.h"
+#include "PiInput.h"
 #include "InputEvent.h"
 
+void keyboardInit(Properties *properties);
+void keyboardUpdate(SDL_KeyboardEvent *event);
+void joystickButtonUpdate(SDL_JoyButtonEvent *event);
+void joystickAxisUpdate(SDL_JoyAxisEvent *event);
+void actionToggleVideoColorMode(void);
 #define EVENT_UPDATE_DISPLAY 2
 
 static void setDefaultPaths(const char* rootDir);
@@ -191,17 +198,17 @@ static void handleEvent(SDL_Event* event)
             else if (inputEventGetState(EC_JOY_BUTTONR))	// plaire avoid key duplicate
                 actionDiskQuickChange();
         }
-		joystickButtonUpdate(event);
+		joystickButtonUpdate(&event->jbutton);
 		break;
 	case SDL_JOYAXISMOTION:
-		joystickAxisUpdate(event);
+		joystickAxisUpdate(&event->jaxis);
 		break;
 	case SDL_KEYDOWN:
-		keyboardUpdate(event);
+		keyboardUpdate(&event->key);
 		shortcutCheckDown(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
 		break;
 	case SDL_KEYUP:
-		keyboardUpdate(event);
+		keyboardUpdate(&event->key);
 		shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
 		break;
 	// DEPRECATED on sdl2 -- case SDL_ACTIVEEVENT:
@@ -278,7 +285,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	
-	if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
+	if (SDL_InitSubSystem(SDL_INIT_TIMER|SDL_INIT_EVENTS|SDL_INIT_GAMECONTROLLER|SDL_INIT_AUDIO) != 0){
 		fprintf(stderr,"PiMain SDL_Init failed: %s\n", SDL_GetError());
 		/*SDL_Quit();
 		exit(1);*/

@@ -125,6 +125,7 @@ Known issues:
  - Keyboard mapping code is **garbage** because SDL2.0 introduced ***very long values*** for the key ids causing [segmentation faults](https://stackoverflow.com/questions/30815857/sdl-keycodes-are-too-big-for-storage) just by looking at it. Need complete rework
  - Emulator only works on HDMI0, I need to add logic to make DRM "discover" which HDMI port is in use and enable it. Zero idea how to do this
  - Sometimes the emulator gets upset and decides to disable sound. Check bluemsx.ini for `sound.masterEnable=yes` entry and fix it if changed to `no`
+ - Moonsound / MSX-Music / YM2413 sound is silent: those C++ emulators don't compile on the aarch64 toolchain and are stubbed out for now — the cartridges load, but without sound
  - Improvements, improvements and more improvements
 
 Resolved issues:
@@ -132,3 +133,7 @@ Resolved issues:
  - Screen resolution code is odd, opens a 800x600 screen even when the desired configuration is 640x480. Need to figure out what is happening - **FIXED**
  - RPMC power led
  - Slot 2 is now working, but I need to test what happens with 2 cartridges inserted
+ - Black screen on 64-bit (aarch64) Raspberry Pi OS: the Moonsound/MSX-Music ROM mapper stubs were declared `void`, but board init does `success &= romMapper...Create(...)`. On ARM64 the empty stubs never write the return register (X0), so the caller ANDed the *first argument* (a string pointer, always even-aligned) into the success flag and got 0 — the machine was never created. Fixed by giving the stubs the proper `int` return, with correct buffer ownership (see `Src/Pi/stubs.c`) - **FIXED**
+ - 64-bit build: WiringPi is not available on aarch64, so the GPIO slot LED code is now guarded with `#ifdef __arm__` (the LEDs stay off on 64-bit) - **FIXED**
+ - 64-bit build errors: `byte` typedef clash in the OpenMSX sound headers (renamed `byte_t`), missing includes and a wrong `pthread_create` callback signature in `PiUdev.c`, unguarded MIDI file I/O in `MidiIO.c` - **FIXED**
+ - Display: `SDL_Init(SDL_INIT_EVERYTHING)` was fighting the raw DRM/GBM/EGL path for the display — now only the needed subsystems are initialized; EGL binds `EGL_OPENGL_ES_API` instead of `EGL_OPENGL_API`; framebuffer creation uses `drmModeAddFB2` with `DRM_FORMAT_XRGB8888` and reports `drmModeSetCrtc` failures instead of ignoring them - **FIXED**

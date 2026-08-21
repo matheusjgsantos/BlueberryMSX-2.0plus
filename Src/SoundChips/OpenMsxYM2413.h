@@ -10,7 +10,7 @@ using namespace std;
 
 
 typedef unsigned long  EmuTime;
-typedef unsigned char  byte;
+typedef unsigned char  byte_t;
 typedef unsigned short word;
 
 extern "C" {

@@ -28,9 +28,15 @@
 #include <libudev.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "Disk.h"
+#include <pthread.h>
+#include <unistd.h>
 #include <linux/fd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "Disk.h"
+#include <pthread.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <scsi/scsi.h>
@@ -47,7 +53,7 @@ static int stopMonitor = 0;
 static struct udev *udev = NULL;
 static struct udev_monitor *mon;
 
-static void udevMon(void *arg);
+static void* udevMon(void *arg);
 
 static int connectedMice = 0;
 static int connectedJoysticks = 0;
@@ -256,7 +262,7 @@ unsigned char udev_format_unit(char devname[], int blocks, int block_size, int t
 	return ret;
 }
 
-static void udevMon(void *arg)
+static void* udevMon(void *arg)
 {
 	fprintf(stderr, "udev monitor starting\n");
 	
@@ -322,5 +328,6 @@ static void udevMon(void *arg)
 		usleep(1000*1000);
 	}
 	fprintf(stderr, "udev monitor exiting\n");
+return NULL;
 }
 

@@ -28,6 +28,9 @@
 #include "ArchNotifications.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include "Crc32Calc.h"
+#include "ziphelper.h"
 
 extern char *msxScreen;
 extern int msxScreenPitch;
@@ -154,7 +157,7 @@ int pngAddChunk(BYTE* dest, int type, const void* data, int length)
 
 void* ScreenShotPng(void* src, int srcPitch, int width, int height, int* bitmapSize)
 {
-    int   compressedSize;
+    unsigned long   compressedSize;
     BYTE* compressedData;
     int   pngSize;
     BYTE* pngData;
