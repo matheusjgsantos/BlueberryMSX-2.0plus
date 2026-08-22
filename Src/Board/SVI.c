@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "SVI.h"
+#include "Board.h"
 
 #include "R800.h"
 #include "R800Dasm.h"

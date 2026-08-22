@@ -64,6 +64,8 @@
 
 void keyboardInit(Properties *properties);
 void keyboardUpdate(SDL_KeyboardEvent *event);
+int piKeyboardEvdevInit(void);
+void piKeyboardEvdevDestroy(void);
 void joystickButtonUpdate(SDL_JoyButtonEvent *event);
 void joystickAxisUpdate(SDL_JoyAxisEvent *event);
 void actionToggleVideoColorMode(void);
@@ -354,6 +356,7 @@ int main(int argc, char **argv)
 
 	fprintf(stderr,"PiMain is calling keyboardInit with %d\n",properties);
 	keyboardInit(properties);
+	piKeyboardEvdevInit();
 
 	// Larger buffers cause sound delay
 	// properties->sound.bufSize = 40;
@@ -500,6 +503,7 @@ int main(int argc, char **argv)
 
 	piDestroyVideo();
 	piDestroyUdev();
+	piKeyboardEvdevDestroy();
 	fprintf(stderr,"PiMain is calling SDL_Quit()");
 	SDL_Quit();
 #ifdef RPMC_FRONTLED
