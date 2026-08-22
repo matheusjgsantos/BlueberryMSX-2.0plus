@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <signal.h>
 #include <SDL.h>
 
 //#ifdef RASPI_GPIO
@@ -206,12 +207,12 @@ static void handleEvent(SDL_Event* event)
 		joystickAxisUpdate(&event->jaxis);
 		break;
 	case SDL_KEYDOWN:
-		keyboardUpdate(&event->key);
-		shortcutCheckDown(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
-		break;
 	case SDL_KEYUP:
 		keyboardUpdate(&event->key);
-		shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
+		if (event->type == SDL_KEYDOWN)
+			shortcutCheckDown(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
+		else
+			shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
 		break;
 	// DEPRECATED on sdl2 -- case SDL_ACTIVEEVENT:
 	case SDL_WINDOWEVENT_ENTER:
@@ -271,6 +272,12 @@ static void setDefaultPaths(const char* rootDir)
 
 int main(int argc, char **argv)
 {
+	/* The physical keyboard is shared with the tty: a physical Ctrl+C
+	 * generates SIGINT for the foreground process. Ignore it so the
+	 * emulator keeps running and the key reaches the MSX (BASIC BREAK);
+	 * quitting is done with the F12 hotkey. */
+	signal(SIGINT, SIG_IGN);
+
 //#ifdef RASPI_GPIO
 	//fprintf(stderr,"PiMain is calling gpioInit()\n");
 	gpioInit();
