@@ -1,7 +1,8 @@
 # BlueberryMSX 2.0 Plus — aarch64 Port: Full Change Record
 
 Source material for the article. All work verified on a Raspberry Pi 3B running 64-bit
-(aarch64) Raspberry Pi OS with the 800x480 DSI display.
+(aarch64) Raspberry Pi OS with the 800x480 DSI display. This branch also brings the RPMC
+front-panel LEDs (74HC595) to 64-bit and documents the board (see §5 and `Doc/RPMC.md`).
 
 ## TL;DR
 
@@ -159,7 +160,10 @@ none of their return values is consumed.
   -Wno-int-conversion` — the original C has unprototyped calls and implicit conversions
   that are hard errors under the 64-bit toolchain. Real bugs were fixed in source (below);
   the rest was suppressed to keep the diff honest.
-- Removed `LIBS += -lwiringPi` — WiringPi does not build on aarch64 (see PiGpio.c).
+- Removed `LIBS += -lwiringPi` and added `-lbcm2835` to `LIBS` — WiringPi does not
+  build on aarch64; the bcm2835 lib (built statically) is now the GPIO driver for both
+  32-bit and 64-bit (see PiGpio.c and §5).
+- Added `-DRASPI_GPIO` to `COMMON_FLAGS` so the Pi slot/LED code paths compile.
 - Removed from `SOURCE_FILES`: `romMapperMoonsound.c`, `romMapperMsxMusic.c`,
   `Moonsound.c`, `OpenMsxYM2413.cpp`, `OpenMsxYM2413_2.cpp`, `OpenMsxYMF262.cpp`,
   `OpenMsxYMF278.cpp`, `YM2413.cpp` (the C++ sound emulators, see §1).
@@ -167,10 +171,16 @@ none of their return values is consumed.
 
 ### `Src/Pi/PiGpio.c`
 
-WiringPi is armhf-only. The whole shift-register LED code (CLOCK/LATCH/DATA pins,
-`gpioShiftLeds`) is now wrapped in `#ifdef __arm__ ... #else ... #endif`; on aarch64 the
-three entry points (`gpioInit`, `gpioShutdown`, `gpioUpdateLeds`) compile as empty
-functions. **Consequence: slot-board LEDs do not light up on 64-bit.**
+WiringPi is armhf-only, so the whole 74HC595 shift-register driver was rewritten on top
+of the **bcm2835** lib (works on armhf *and* aarch64). The guard is now
+`#if defined(__arm__) || defined(__aarch64__)` and the three entry points
+(`gpioInit`, `gpioShutdown`, `gpioUpdateLeds`) are real implementations that drive the
+board's front panel: 74HC595 on SRCLK=GPIO22 / RCLK=GPIO23 / SER=GPIO26 (LSB-first),
+verified bit map PWR=0x80, SLT2=0x40, SLT1=0x20, I/O=0x10, HAN=0x08, CAPS=0x04
+(6 LEDs, no FDD/TURBO on this board — see §5 and `Doc/RPMC.md`). If `bcm2835_init()`
+fails (e.g. no `/dev/mem` permission) it prints "slot LEDs disabled" and the emulator
+continues without LEDs. The committed binary links bcm2835 **statically**, so a stock
+OS image needs no extra GPIO package.
 
 ### `Src/SoundChips/OpenMsxY8950Adpcm.h`, `OpenMsxYM2413.h`, `OpenMsxYM2413_2.h`, `OpenMsxYMF262.h`, `OpenMsxYMF278.h`
 
@@ -295,34 +305,94 @@ Added `string.h` (in both include blocks) and `drm/drm_fourcc.h` (for
 - **Instrumentation audit**: `grep -rnF '[DBG]' Src/` returns nothing; the six
   debug-only files are byte-identical to HEAD (`git diff` empty).
 
-## 5. Known limitations / follow-ups
+## 5. Front-panel LEDs (74HC595) — working on both 32-bit and 64-bit
+
+The RPMC board's front panel is driven by a single 74HC595 shift register. Full wiring
+(SRCLK=GPIO22, RCLK=GPIO23, SER=GPIO26, LSB-first) and the complete board pin-out are in
+`Doc/RPMC.md`.
+
+### Verified LED bit map (sweep test)
+
+Each bit was shifted out with a standalone bcm2835 sweep program (`/tmp/sweep_leds.c` on
+the Pi) while watching the panel:
+
+| Bit | Value | LED |
+|-----|-------|-----|
+| 7 | 0x80 | PWR |
+| 6 | 0x40 | SLT2 |
+| 5 | 0x20 | SLT1 |
+| 4 | 0x10 | I/O |
+| 3 | 0x08 | HAN (Kana) |
+| 2 | 0x04 | CAPS |
+| 1/0 | 0x02/0x01 | not connected |
+
+The board has **6 LEDs — no FDD or TURBO**. The legacy status builder in `Emulator.c`
+(compiled out — `RPMC_FRONTLED` is not defined) assumed an 8-LED panel (FDD2=bit4,
+FDD1=bit1, TURBO=bit0) and never matched the board.
+
+### What changed
+
+- `Src/Pi/PiGpio.c` — rewritten on bcm2835 (see §2); PWR bit set in `gpioInit()`,
+  cleared in `gpioShutdown()`; `gpioUpdateLeds()` recomputes I/O = SLT1 || SLT2 and only
+  re-shifts when the byte changes; called every frame from `PiMain.c`
+  (`EVENT_UPDATE_DISPLAY`).
+- `Src/IoDevice/MsxBus.cpp` — `readMemory()` now sets the per-slot busy flag (throttled
+  to ~1/100 reads) under `RASPI_GPIO`, so the SLT1/SLT2 LEDs light while a slot is being
+  accessed.
+- `Src/IoDevice/Led.c` — fixed `ledSetCapslock()`, which called the *setter*
+  `ledSetSlot2Busy()` where it needed the *getter* `ledGetSlot2Busy()` (it would have
+  clobbered the slot-2 busy flag with 0).
+- `Src/IoDevice/MsxBusPi.c` — `frontled()` (the other 74HC595 driver, raw GPIO, from
+  the 2016 msxslot core) is kept but effectively dead code: its only live call is
+  `frontled(0x0)` in `msxinit()` (a no-op — the `static oldbyte` starts at 0), and the
+  per-frame status call sites are wrapped in `#ifdef RPMC_FRONTLED`, which the Makefile
+  does not define.
+- `Dockerfile.arm` / `Dockerfile.build.arm` — armhf cross-build image builds bcm2835
+  from the in-tree `bcm2835-1.68` instead of WiringPi.
+
+### Verification
+
+- Bit map confirmed by the sweep test on the board (6 of 8 bits drive LEDs; bits 1–0 do
+  nothing).
+- Running a game: PWR lights at boot; SLT1/SLT2 light as the cartridge is read; CAPS and
+  HAN follow the keyboard; I/O lights with cartridge I/O.
+- `ldd bluemsx-pi` shows no `libbcm2835` — the driver is statically linked, so the
+  committed aarch64 binary runs on a stock 64-bit OS image with no extra GPIO package.
+
+## 6. Known limitations / follow-ups
 
 - **Silent Moonsound / MSX-Music / YM2413**: the stubs make those cartridges *load*
   successfully but produce no sound — music in games that use them is missing. The
   proper follow-up is to re-introduce the real C++ emulators (the `CXXFLAGS` line is
   already in place) or port them to C.
-- **GPIO slot LEDs off on aarch64**: WiringPi is armhf-only; the `#ifdef __arm__` guard
-  makes the LED functions no-ops on 64-bit.
 - **HDMI0 only**: pre-existing issue, unchanged (see README "Known issues").
-- **Keyboard mapping**: pre-existing issue; the union-member fix in §3 is a step in the
-  right direction but a full rework is still wanted (see README "Known issues").
+- **Keyboard mapping** (resolved): the union-member fix in §3 was the actual bug — the
+  handlers were reading the wrong fields of `SDL_Event`. Verified working on hardware;
+  moved to README "Resolved issues".
 
-## 6. File-by-file change list
+## 7. File-by-file change list
 
 | File | Change |
 |---|---|
-| `Makefile` | `CXXFLAGS` added; warning suppressions; `-lwiringPi` removed; 8 sound files removed from build; `stubs.c` added |
+| `Makefile` | `CXXFLAGS` added; warning suppressions; `-lwiringPi` removed; `-lbcm2835` + `-DRASPI_GPIO` added; 8 sound files removed from build; `stubs.c` added |
 | `Src/Pi/stubs.c` | **new** — `int` ROM-mapper stubs with correct ownership semantics; no-op chip stubs |
 | `Src/Pi/PiMain.c` | `SDL_InitSubSystem` instead of `SDL_Init(EVERYTHING)`; event union-member pointer fixes; includes + forward decls |
 | `Src/Pi/PiVideo.c` | `EGL_OPENGL_ES_API`; `drmModeAddFB2` + error reporting on `drmModeSetCrtc`; `glUniformMatrix4fv` cast; includes |
-| `Src/Pi/PiGpio.c` | `#ifdef __arm__` guard — LED functions are no-ops on aarch64 |
+| `Src/Pi/PiGpio.c` | rewritten on bcm2835 — 74HC595 front-panel LEDs (6 LEDs, verified bit map) work on armhf **and** aarch64; static link, graceful fallback |
 | `Src/Pi/PiUdev.c` | missing includes; pthread-safe `udevMon` signature (`void*` + `return NULL`) |
 | `Src/Pi/PiNotifications.c` | missing includes; `unsigned long` compressed size |
 | `Src/Pi/PiMouse.c` | `(const char**)` cursor-map casts |
+| `Src/IoDevice/MsxBusPi.c` | `frontled()` (74HC595, msxslot core) kept; effectively dead code — see §5 |
+| `Src/IoDevice/MsxBus.cpp` | slot-busy flag in `readMemory()` (~1/100 reads) drives the SLT1/SLT2 LEDs |
+| `Src/IoDevice/Led.c` | `ledSetCapslock()`: `ledSetSlot2Busy()` → `ledGetSlot2Busy()` |
 | `Src/IoDevice/MidiIO.c` | NULL/empty-filename guards for MIDI file I/O |
 | `Src/SoundChips/OpenMsxY*.h` (5 headers) | `byte` → `byte_t` typedef |
+| `Dockerfile.arm`, `Dockerfile.build.arm` | bcm2835 (in-tree 1.68) replaces WiringPi in the armhf build image |
+| `Doc/RPMC.md` | **new** — complete RPMC board reference (pin-out, bus protocol, GPCLK0, 595 LED map, build, test) |
+| `README.md` | aarch64 install (no GPIO build step — bcm2835 static in the committed binary); WiringPi→bcm2835 in build/cross-compile; LED + keyboard moved to Resolved |
+| `CHANGES.md` | this document |
 
-## 7. Working-tree artifacts
+## 8. Working-tree artifacts
 
 - `ROM/knightmare.rom` — 32 KB test ROM used for on-device verification (untracked).
 - `test_drm`, `test_drm.c` — standalone DRM test programs written during debugging
@@ -335,3 +405,5 @@ Added `string.h` (in both include blocks) and `drm/drm_fourcc.h` (for
   instrumentation was removed.
 - `/tmp/abitest/` on the Pi — the two-TU ABI repro from §1 (`voidver`, `intver`,
   `main.c`, `stubs.c`, `header.h`).
+- `/tmp/sweep_leds.c` (+ compiled `sweep_leds`) on the Pi — standalone bcm2835 bit-map
+  sweep program used to verify the 74HC595 LED map (see `Doc/RPMC.md` §7).
