@@ -33,9 +33,8 @@
 extern "C" {
 #include "MsxBusPi.h"
 #include "MsxBus.h"
+#include "Led.h"
 #include "RomLoader.h"
-extern void ledSetSlot1Busy();
-extern void ledSetSlot2Busy();
 extern void checkInt(void);
 };
 //#define FAKE_ROM
@@ -135,7 +134,7 @@ int CMSXBUS::readMemory(UInt16 address)
 		value = 0xff;
 	byte = value;
 #endif
-#ifdef RPMC_FRONTLED
+#ifdef RASPI_GPIO
 	if (time++ > 100)
 	{
 		if (slot)

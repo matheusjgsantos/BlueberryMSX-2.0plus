@@ -145,23 +145,9 @@ void archQuit()
 	//system("sudo aconnect -x");
 }
 
-static int floppy1LedOn = 0;
-static int floppy2LedOn = 0;
-
 static void updateLeds()
 {
-//#ifdef RASPI_GPIO
-	int floppy1LedNow = ledGetFdd1();
-	if (floppy1LedNow != floppy1LedOn) {
-		floppy1LedOn = floppy1LedNow;
-		//gpioToggleFloppyLed(0, floppy1LedOn);
-	}
-	int floppy2LedNow = ledGetFdd2();
-	if (floppy2LedNow != floppy2LedOn) {
-		floppy2LedOn = floppy2LedNow;
-		//gpioToggleFloppyLed(1, floppy2LedOn);
-	}
-//#endif
+	gpioUpdateLeds();
 }
 
 extern uint32_t screenWidth;
