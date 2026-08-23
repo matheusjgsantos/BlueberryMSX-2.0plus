@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include "SG1000.h"
+#include "Board.h"
 
 #include "R800.h"
 #include "R800Dasm.h"

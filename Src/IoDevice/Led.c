@@ -137,7 +137,7 @@ int ledGetSlot1Busy() {
 }
 
 int ledSetSlot2Busy() {
-    slot1access = clock();
+    slot2access = clock();
 }
 
 int ledGetSlot2Busy() {

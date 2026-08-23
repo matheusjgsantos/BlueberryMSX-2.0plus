@@ -31,6 +31,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include "Properties.h"
@@ -40,6 +41,7 @@
 
 #include <xf86drm.h>
 #include <xf86drmMode.h>
+#include <drm/drm_fourcc.h>
 #include <gbm.h>
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
@@ -48,6 +50,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 
 
 typedef	struct ShaderInfo {
@@ -338,9 +341,14 @@ static void gbmSwapBuffers(EGLDisplay *display, EGLSurface *surface)
     uint32_t pitch = gbm_bo_get_stride(bo);
     //fprintf(stderr,"gbm_bo_get_pitch returned %lu\n",pitch);
     uint32_t fb;
-    drmModeAddFB(device, mode.hdisplay, mode.vdisplay, 24, 32, pitch, handle, &fb);
+    uint32_t handles[4] = { handle, 0, 0, 0 };
+    uint32_t pitches[4] = { pitch, 0, 0, 0 };
+    uint32_t offsets[4] = { 0, 0, 0, 0 };
+    int ret = drmModeAddFB2(device, mode.hdisplay, mode.vdisplay, DRM_FORMAT_XRGB8888, handles, pitches, offsets, &fb, 0);
+    if (ret) fprintf(stderr, "drmModeAddFB2 failed: %d\n", ret);
     // for tests purpose - drmModeAddFB(device, mode.hdisplay, mode.vdisplay, 24, 32, 3328, 1, &fb);
-    drmModeSetCrtc(device, crtc->crtc_id, fb, 0, 0, &connectorId, 1, &mode);
+    ret = drmModeSetCrtc(device, crtc->crtc_id, fb, 0, 0, &connectorId, 1, &mode);
+    if (ret) fprintf(stderr, "drmModeSetCrtc failed: %d\n", ret);
 
     if (previousBo)
     {
@@ -425,7 +433,7 @@ int piInitVideo()
     }
 
     // Make sure that we can use OpenGL in this EGL app.
-    eglBindAPI(EGL_OPENGL_API);
+    eglBindAPI(EGL_OPENGL_ES_API);
 
     printf("Initialized EGL version: %d.%d\n", major, minor);
 
@@ -797,7 +805,7 @@ void piUpdateEmuDisplay()
 		else
 			setOrtho(projection, -sx/2, sx/2,    0,   -sy, -0.5f, +0.5f,1,1);		
 		//setOrtho(projection, -1, 1,    1,   -1, -0.5f, +0.5f,1,1);		
-		glUniformMatrix4fv(sh->u_vp_matrix, 1, GL_FALSE, projection);
+		glUniformMatrix4fv(sh->u_vp_matrix, 1, GL_FALSE, (const GLfloat *)projection);
 	}					
 	drawQuad(sh);
 

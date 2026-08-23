@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <signal.h>
 #include <SDL.h>
 
 //#ifdef RASPI_GPIO
@@ -58,8 +59,17 @@
 #include "PiShortcuts.h"
 #include "PiVideo.h"
 #include "PiUdev.h"
+#include "PiMouse.h"
+#include "PiInput.h"
 #include "InputEvent.h"
 
+void keyboardInit(Properties *properties);
+void keyboardUpdate(SDL_KeyboardEvent *event);
+int piKeyboardEvdevInit(void);
+void piKeyboardEvdevDestroy(void);
+void joystickButtonUpdate(SDL_JoyButtonEvent *event);
+void joystickAxisUpdate(SDL_JoyAxisEvent *event);
+void actionToggleVideoColorMode(void);
 #define EVENT_UPDATE_DISPLAY 2
 
 static void setDefaultPaths(const char* rootDir);
@@ -135,23 +145,9 @@ void archQuit()
 	//system("sudo aconnect -x");
 }
 
-static int floppy1LedOn = 0;
-static int floppy2LedOn = 0;
-
 static void updateLeds()
 {
-//#ifdef RASPI_GPIO
-	int floppy1LedNow = ledGetFdd1();
-	if (floppy1LedNow != floppy1LedOn) {
-		floppy1LedOn = floppy1LedNow;
-		//gpioToggleFloppyLed(0, floppy1LedOn);
-	}
-	int floppy2LedNow = ledGetFdd2();
-	if (floppy2LedNow != floppy2LedOn) {
-		floppy2LedOn = floppy2LedNow;
-		//gpioToggleFloppyLed(1, floppy2LedOn);
-	}
-//#endif
+	gpioUpdateLeds();
 }
 
 extern uint32_t screenWidth;
@@ -191,18 +187,18 @@ static void handleEvent(SDL_Event* event)
             else if (inputEventGetState(EC_JOY_BUTTONR))	// plaire avoid key duplicate
                 actionDiskQuickChange();
         }
-		joystickButtonUpdate(event);
+		joystickButtonUpdate(&event->jbutton);
 		break;
 	case SDL_JOYAXISMOTION:
-		joystickAxisUpdate(event);
+		joystickAxisUpdate(&event->jaxis);
 		break;
 	case SDL_KEYDOWN:
-		keyboardUpdate(event);
-		shortcutCheckDown(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
-		break;
 	case SDL_KEYUP:
-		keyboardUpdate(event);
-		shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
+		keyboardUpdate(&event->key);
+		if (event->type == SDL_KEYDOWN)
+			shortcutCheckDown(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
+		else
+			shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, event->key.keysym.mod, event->key.keysym.sym);
 		break;
 	// DEPRECATED on sdl2 -- case SDL_ACTIVEEVENT:
 	case SDL_WINDOWEVENT_ENTER:
@@ -262,6 +258,12 @@ static void setDefaultPaths(const char* rootDir)
 
 int main(int argc, char **argv)
 {
+	/* The physical keyboard is shared with the tty: a physical Ctrl+C
+	 * generates SIGINT for the foreground process. Ignore it so the
+	 * emulator keeps running and the key reaches the MSX (BASIC BREAK);
+	 * quitting is done with the F12 hotkey. */
+	signal(SIGINT, SIG_IGN);
+
 //#ifdef RASPI_GPIO
 	//fprintf(stderr,"PiMain is calling gpioInit()\n");
 	gpioInit();
@@ -278,7 +280,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	
-	if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
+	if (SDL_InitSubSystem(SDL_INIT_TIMER|SDL_INIT_EVENTS|SDL_INIT_GAMECONTROLLER|SDL_INIT_AUDIO) != 0){
 		fprintf(stderr,"PiMain SDL_Init failed: %s\n", SDL_GetError());
 		/*SDL_Quit();
 		exit(1);*/
@@ -347,6 +349,7 @@ int main(int argc, char **argv)
 
 	fprintf(stderr,"PiMain is calling keyboardInit with %d\n",properties);
 	keyboardInit(properties);
+	piKeyboardEvdevInit();
 
 	// Larger buffers cause sound delay
 	// properties->sound.bufSize = 40;
@@ -493,6 +496,7 @@ int main(int argc, char **argv)
 
 	piDestroyVideo();
 	piDestroyUdev();
+	piKeyboardEvdevDestroy();
 	fprintf(stderr,"PiMain is calling SDL_Quit()");
 	SDL_Quit();
 #ifdef RPMC_FRONTLED

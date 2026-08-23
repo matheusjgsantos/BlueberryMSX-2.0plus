@@ -32,5 +32,8 @@
 void piInputResetJoysticks();
 void piInputResetMSXDevices(int realMice, int realJoysticks);
 
+int piKeyboardEvdevInit(void);
+void piKeyboardEvdevDestroy(void);
+
 #endif // PI_INPUT_H
 

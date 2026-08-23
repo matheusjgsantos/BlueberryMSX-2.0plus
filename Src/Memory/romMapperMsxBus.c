@@ -26,6 +26,7 @@
 ******************************************************************************
 */
 #include "romMapperMsxBus.h"
+#include "Board.h"
 #include "MediaDb.h"
 #include "SlotManager.h"
 #include "DeviceManager.h"

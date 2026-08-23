@@ -57,5 +57,10 @@ int  ledGetHd();
 void ledSetCas(int enable);
 int  ledGetCas();
 
+int ledSetSlot1Busy();
+int ledGetSlot1Busy();
+int ledSetSlot2Busy();
+int ledGetSlot2Busy();
+
 #endif
 

@@ -1,98 +1,70 @@
-/*****************************************************************************
-**
-** blueberryMSX
-** https://github.com/pokebyte/blueberryMSX
-**
-** An MSX Emulator for Raspberry Pi based on blueMSX
-**
-** Copyright (C) 2014 Akop Karapetyan
-**
-** This program is free software; you can redistribute it and/or modify
-** it under the terms of the GNU General Public License as published by
-** the Free Software Foundation; either version 2 of the License, or
-** (at your option) any later version.
-**
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU General Public License for more details.
-**
-** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software
-** Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-**
-******************************************************************************
-*/
-
 #include <stdlib.h>
 #include <stdio.h>
-#ifdef __arm__
-   #include <wiringPi.h>
-   #include <wiringShift.h>
-#endif
-
 #include "Led.h"
 
-//#ifdef RASPI_GPIO
-
-#define CLOCK 3 // 23 in BCM - Header 15 - GPIO. 3
-#define LATCH 4 // 22 in BCM - Header 16 - GPIO .4
-#define DATA  25 // 26 in BCM - Header 37 - GPIO.25
+// 74HC595 shift-register pins in BCM/GPIO numbering, converted from the
+// original wiringPi numbers: CLOCK 3->22, LATCH 4->23, DATA 25->26.
+#define CLOCK 22
+#define LATCH 23
+#define DATA  26
 
 #define POWER 0x80
-#define FDD0  0x40
-#define FDD1  0x20
+#define SLT2  0x40
+#define SLT1  0x20
+#define IO    0x10
+#define HAN   0x08
+#define CAPS  0x04
 
 static int ledBitMap = 0;
 
-static void gpioShiftLeds();
+#if defined(__arm__) || defined(__aarch64__)
+#include <bcm2835.h>
 
+static void gpioShiftLeds();
 void gpioInit()
 {
-	wiringPiSetup();
-
-	pinMode(CLOCK, OUTPUT) ;
-	pinMode(LATCH, OUTPUT) ;
-	pinMode(DATA,  OUTPUT) ;
-
-	ledBitMap = POWER;
-	//fprintf(stderr,"Calling gpioShiftLeds\n");
-	gpioShiftLeds();
+    if (!bcm2835_init())
+    {
+        fprintf(stderr, "PiGpio: bcm2835_init() failed - slot LEDs disabled\n");
+        return;
+    }
+    bcm2835_gpio_fsel(CLOCK, BCM2835_GPIO_FSEL_OUTP);
+    bcm2835_gpio_fsel(LATCH, BCM2835_GPIO_FSEL_OUTP);
+    bcm2835_gpio_fsel(DATA,  BCM2835_GPIO_FSEL_OUTP);
+    ledBitMap = POWER;
+    gpioShiftLeds();
 }
-
 void gpioShutdown()
 {
-	ledBitMap = 0;
-	gpioShiftLeds();
+    ledBitMap = 0;
+    gpioShiftLeds();
 }
-
 void gpioUpdateLeds()
 {
-	int oldBitMap = ledBitMap;
-
-	if (ledGetFdd1()) {
-		ledBitMap |= FDD0;
-	} else {
-		ledBitMap &= ~FDD0;
-	}
-
-	if (ledGetFdd2()) {
-		ledBitMap |= FDD1;
-	} else {
-		ledBitMap &= ~FDD1;
-	}
-
-	if (oldBitMap != ledBitMap) {
-		gpioShiftLeds();
-	}
+    int oldBitMap = ledBitMap;
+    if (ledGetSlot2Busy()) ledBitMap |= SLT2; else ledBitMap &= ~SLT2;
+    if (ledGetSlot1Busy()) ledBitMap |= SLT1; else ledBitMap &= ~SLT1;
+    if (ledGetSlot1Busy() || ledGetSlot2Busy()) ledBitMap |= IO; else ledBitMap &= ~IO;
+    if (ledGetKana()) ledBitMap |= HAN; else ledBitMap &= ~HAN;
+    if (ledGetCapslock()) ledBitMap |= CAPS; else ledBitMap &= ~CAPS;
+    if (oldBitMap != ledBitMap) gpioShiftLeds();
 }
-
 static void gpioShiftLeds()
 {
-	//fprintf(stderr,"Executing gpioShiftLeds()\n");
-	digitalWrite(LATCH, LOW);
-	shiftOut(DATA, CLOCK, LSBFIRST, ledBitMap);
-	digitalWrite(LATCH, HIGH);
+    bcm2835_gpio_write(LATCH, 0);
+    for (int bit = 0; bit < 8; bit++)
+    {
+        bcm2835_gpio_write(DATA, (ledBitMap >> bit) & 1);
+        bcm2835_gpio_write(CLOCK, 0);
+        bcm2835_delayMicroseconds(10);
+        bcm2835_gpio_write(CLOCK, 1);
+        bcm2835_delayMicroseconds(10);
+    }
+    bcm2835_gpio_write(LATCH, 1);
+    bcm2835_delayMicroseconds(10);
 }
-
-//#endif
+#else
+void gpioInit() {}
+void gpioShutdown() {}
+void gpioUpdateLeds() {}
+#endif

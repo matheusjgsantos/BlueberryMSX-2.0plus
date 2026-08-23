@@ -153,11 +153,11 @@ static int piMouseInRect(int x, int y)
 void piMouseSetCaptureRect(int x, int y, int width, int height)
 {
     if (mouse.cursorArrow == NULL) {
-        mouse.cursorArrow = sdlCreateCursor(arrow, 0, 0);
+        mouse.cursorArrow = sdlCreateCursor((const char**)arrow, 0, 0);
     }
 
     if (mouse.cursorCross == NULL) {
-        mouse.cursorCross = sdlCreateCursor(cross, 15, 15);
+        mouse.cursorCross = sdlCreateCursor((const char**)cross, 15, 15);
     }
 
     mouse.captRgn.top    = y;

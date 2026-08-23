@@ -1,0 +1,24 @@
+FROM arm32v7/debian:bookworm
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libsdl2-dev \
+    libdrm-dev \
+    libgbm-dev \
+    autoconf \
+    git \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /work
+COPY . .
+
+# bcm2835 GPIO lib (not in Debian) — build the in-tree copy. It installs a
+# static libbcm2835.a, so bluemsx-pi has no runtime GPIO dependency.
+RUN cd bcm2835-1.68 \
+    && ./configure \
+    && make \
+    && make install \
+    && ldconfig
+
+RUN make clean && make

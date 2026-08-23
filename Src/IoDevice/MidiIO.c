@@ -64,14 +64,17 @@ static void setOutType(int device, MidiIO* midiIo)
         midiIo->outHost = archMidiOutCreate(device);
         break;
     case MIDI_FILE:
-		if (access(theOutFileName, F_OK) != -1) 
+        midiIo->outFile = NULL;
+		if (theOutFileName[0] != '\0' && access(theOutFileName, F_OK) != -1) 
 		{
 			midiIo->outFile = fopen(theOutFileName, "w+");
-			setbuf(midiIo->outFile, NULL);
-			printf("%s: %d\n", theOutFileName, midiIo->outFile);
+			if (midiIo->outFile) {
+				setbuf(midiIo->outFile, NULL);
+				printf("%s: %p\n", theOutFileName, (void*)midiIo->outFile);
+			}
 		}
 		else
-			printf("%s: not exist.\n", theOutFileName);
+			printf("%s: not exist or empty.\n", theOutFileName);
         break;
     }
 }
@@ -90,8 +93,13 @@ static void setInType(int device, MidiIO* midiIo)
         midiIo->inHost = archMidiInCreate(device, midiInCb, midiIo);
         break;
     case MIDI_FILE:
-        midiIo->inFile = fopen(theInFileName, "w+");
-		setbuf(midiIo->inFile, NULL);
+        midiIo->inFile = NULL;
+        if (theInFileName[0] != '\0') {
+            midiIo->inFile = fopen(theInFileName, "w+");
+            if (midiIo->inFile) {
+                setbuf(midiIo->inFile, NULL);
+            }
+        }
         break;
     }
 }
@@ -106,7 +114,10 @@ static void removeOutType(MidiIO* midiIo)
         midiIo->outHost = NULL;
         break;
     case MIDI_FILE:
-        fclose(midiIo->outFile);
+        if (midiIo->outFile) {
+            fclose(midiIo->outFile);
+            midiIo->outFile = NULL;
+        }
         break;
     }
 }
@@ -121,7 +132,10 @@ static void removeInType(MidiIO* midiIo)
         midiIo->inHost = 0;
         break;
     case MIDI_FILE:
-        fclose(midiIo->inFile);
+        if (midiIo->inFile) {
+            fclose(midiIo->inFile);
+            midiIo->inFile = NULL;
+        }
         break;
     }
 }
@@ -213,11 +227,13 @@ void midi_write(MidiIO* midiIo, UInt8 value)
 		pclog("MIDI send data %i: ", midi_pos); for(int i = 0; i < midi_pos; i++) pclog("%02x ", midi_command[i]);
 		if (midi_command[0] & 0xf0 == 0xc0)
 		{
-//			midi_command[1] = 0x80 | MT32toGM[0x7f & midi_command[1]];
+ //			midi_command[1] = 0x80 | MT32toGM[0x7f & midi_command[1]];
 			pclog("--> "); for(int i = 0; i < midi_pos; i++) pclog("%02x ", midi_command[i]);
 		}
 		pclog("\n");
-		fwrite(midi_command, midi_pos, 1, midiIo->outFile);
+		if (midiIo->outFile) {
+			fwrite(midi_command, midi_pos, 1, midiIo->outFile);
+		}
 		midi_pos = 0;
 	}
 	
@@ -226,7 +242,9 @@ void midi_write(MidiIO* midiIo, UInt8 value)
 		if (midi_pos < 2048)
 		{
 			pclog("MIDI send sysex %i: ", midi_pos); for (int i = 0; i < midi_pos; i++) pclog("%02x ", midi_command[i]); pclog("\n");
-			fwrite(midi_command, midi_pos, 1, midiIo->outFile);
+			if (midiIo->outFile) {
+				fwrite(midi_command, midi_pos, 1, midiIo->outFile);
+			}
 		}
 		midi_pos = 0;
 	}
@@ -242,11 +260,13 @@ void midiIoTransmit(MidiIO* midiIo, UInt8 value)
         }
         break;
     case MIDI_FILE:
+        if (midiIo->outFile) {
 #if 1
-        fwrite(&value, 1, 1, midiIo->outFile);
+            fwrite(&value, 1, 1, midiIo->outFile);
 #else
-		midi_write(midiIo, value);
+            midi_write(midiIo, value);
 #endif
+        }
         break;
     }
 }

@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "Adam.h"
+#include "Board.h"
 
 #include "R800.h"
 #include "R800Dasm.h"

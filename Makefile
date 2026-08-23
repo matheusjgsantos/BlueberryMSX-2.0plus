@@ -27,6 +27,7 @@ BCM_LIBDIR= /opt/vc/lib
 #
 CC    = $(SILENT)gcc
 CXX   = $(SILENT)g++
+CXXFLAGS = -std=c++98 -Wno-error=ambiguous -fpermissive
 LD    = $(SILENT)g++ 
 RM    = $(SILENT)-rm -f
 RMDIR = $(SILENT)-rm -rf
@@ -36,8 +37,8 @@ ECHO  = @echo
 #
 # Flags
 #
-COMMON_FLAGS = -DUSESDL2 -DUSESDL2Main -DUSE_EGL -DIS_RPI -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DRASPI -DUSESDL_egl -DUSE-GLESv2
-CFLAGS   = -g -w -O3 -ffast-math -fstrict-aliasing -fomit-frame-pointer -finstrument-functions $(COMMON_FLAGS)
+COMMON_FLAGS = -DUSESDL2 -DUSESDL2Main -DUSE_EGL -DIS_RPI -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DRASPI -DUSESDL_egl -DUSE-GLESv2 -DRASPI_GPIO
+CFLAGS   = -g -w -O3 -Wno-implicit-function-declaration -Wno-incompatible-pointer-types -Wno-int-conversion -ffast-math -fstrict-aliasing -fomit-frame-pointer -finstrument-functions $(COMMON_FLAGS)
 CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  =  
 LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm  -lGLESv2 -lEGL 
@@ -46,7 +47,6 @@ CFLAGS   += -DRASPI_GPIO
 #CFLAGS   += -DSINGLE_THREADED 
 
 #ifdef RASPI_GPIO
-LIBS     += -lwiringPi
 #endif
 
 TARGET   = bluemsx-pi
@@ -127,6 +127,7 @@ vpath % $(ROOT_DIR)/Src/Z80
 # Source files
 #
 SOURCE_FILES  =
+SOURCE_FILES += stubs.c
 
 SOURCE_FILES += PiMain.c
 #ifdef RASPI_GPIO
@@ -233,10 +234,8 @@ SOURCE_FILES += romMapperMegaFlashRomScc.c
 SOURCE_FILES += romMapperMegaRAM.c
 SOURCE_FILES += romMapperMicrosol.c
 SOURCE_FILES += romMapperMicrosolVmx80.c
-SOURCE_FILES += romMapperMoonsound.c
 SOURCE_FILES += romMapperMsxAudio.c
 SOURCE_FILES += romMapperMsxDos2.c
-SOURCE_FILES += romMapperMsxMusic.c
 SOURCE_FILES += romMapperMsxPrn.c
 SOURCE_FILES += romMapperNational.c
 SOURCE_FILES += romMapperNationalFdc.c
@@ -367,19 +366,13 @@ SOURCE_FILES += Fmopl.c
 SOURCE_FILES += KeyClick.c 
 SOURCE_FILES += MameVLM5030.c 
 SOURCE_FILES += MameYM2151.c 
-SOURCE_FILES += Moonsound.c 
 SOURCE_FILES += MsxPsg.c
-SOURCE_FILES += OpenMsxYM2413.cpp 
-SOURCE_FILES += OpenMsxYM2413_2.cpp 
-SOURCE_FILES += OpenMsxYMF262.cpp 
-SOURCE_FILES += OpenMsxYMF278.cpp 
 SOURCE_FILES += SamplePlayer.c
 SOURCE_FILES += SCC.c 
 SOURCE_FILES += SN76489.c 
 SOURCE_FILES += VLM5030.c 
 SOURCE_FILES += Y8950.c 
 SOURCE_FILES += ym2151.c
-SOURCE_FILES += YM2413.cpp 
 SOURCE_FILES += Ymdeltat.c 
 
 SOURCE_FILES += Actions.c 
