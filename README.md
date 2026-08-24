@@ -17,18 +17,36 @@ Shortcuts:
 * Press **F10**, **F9**, **F8** to set frame skipping to 1, 2, 3, respectively
 * Press **ALT+F10** to toggle scanline
 * Press **CTRL+F10** to toggle 4:3 forced for 16:9 or more resolution.
-* Press **F6** to soft reset
-* Press **F7** to take a screen shot.
+* Press **F6** to take a screen shot
+* Press **F7** to soft/hard reset
+* All other commands (disk change, cassette, volume, speed, ...) are
+  configurable in the `[Shortcuts]` section of `bluemsx.ini` (Windows
+  virtual-key codes). See `Doc/ARCHITECTURE.md` sec. 8.2 for the full list.
 
 Hardware reference:
 
 The RPMC slot board (cartridge slots, front-panel LEDs, pin-out, bus protocol,
 clock, build and test procedure) is documented in **[Doc/RPMC.md](Doc/RPMC.md)**.
 
+Supported hardware:
+
+Tested configurations (aarch64, kernel `rpi-v8`):
+
+* Raspberry Pi 3 Model B Rev 1.2 (800x480 DSI panel)
+* Raspberry Pi 4 / Pi 400 (HDMI0 or DSI)
+
+The display is whichever KMS connector is in use (the code walks the DRM
+connector list, so DSI and HDMI both work — see the "Known issues" note).
+The RPMC slot board and the 6 front-panel LEDs (via 74HC595 on bcm2835) work
+on both 32-bit (armhf) and 64-bit (aarch64).
+
 Current Status:
 --------------
 
-Everything that depended on the [DispmanX](https://raspberry-projects.com/pi/programming-in-c/display/dispmanx-api/dispmanx-api-general) API and SDL version 1.2 was replaced, and there are still a few things that need to be fixed (see "Known issues"), but the emulator runs pretty well — including on 64-bit (aarch64) Raspberry Pi OS, with the RPMC slot board (cartridges and front-panel LEDs) working on both 32-bit and 64-bit.
+Everything that depended on the [DispmanX](https://raspberry-projects.com/pi/programming-in-c/display/dispmanx-api/dispmanx-api-general) API and SDL version 1.2 was replaced, and there are still a few things that need to be fixed (see "Known issues"), but the emulator runs pretty well — including on 64-bit (aarch64) Raspberry Pi OS and Debian 13 (trixie), with the RPMC slot board (cartridges and front-panel LEDs) working on both 32-bit and 64-bit.
+
+Internal architecture, startup sequence, threads and code map are documented
+in **[Doc/ARCHITECTURE.md](Doc/ARCHITECTURE.md)**.
 
 How to install on a new SD card image:
 --------
@@ -43,15 +61,21 @@ How to install on a new SD card image:
 
  - Install the libraries needed to run the committed binary: SDL2, GLES, EGL, KMS/DRM, GBM and the audio backends:
 
-  `$ sudo apt install -y libsdl2-2.0-0 libdrm2 libgbm1 libgles2 libegl1 libgl1-mesa-dri libasound2 libpulse0 libsamplerate0`
+   `$ sudo apt install -y libsdl2-2.0-0 libdrm2 libgbm1 libgles2 libegl1 libgl1-mesa-dri libasound2 libpulse0 libsamplerate0`
 
- - Make sure you have the parameters below configured at the [all] section of the /boot/config.txt file:
- ```
-  [all]
-  dtparam=audio=on
-  dtoverlay=vc4-fkms-v3d
-  max_framebuffers=2
- ```
+  (On Debian 13 (trixie) the ALSA package is `libasound2t64` instead of `libasound2`.)
+
+  - Make sure you have the parameters below in /boot/config.txt (tested on
+    Raspberry Pi 3 Model B (aarch64 kernel) and Pi 4/400):
+  ```
+   dtparam=audio=on
+   dtoverlay=vc4-kms-v3d
+   disable_fw_kms_setup=1
+   arm_64bit=1
+   max_framebuffers=2
+   disable_overscan=1
+   arm_boost=1
+  ```
  - Reboot the RaspberryPi if you made any changes in the config.txt file
 
  - Clone the BlueberryMSX-2.0plus repo
@@ -122,7 +146,7 @@ The resulting `bluemsx-pi-arm` is an ARMv7 binary ready for Raspberry Pi 3/4 wit
 
 Known issues:
 -------
- - Emulator only works on HDMI0, I need to add logic to make DRM "discover" which HDMI port is in use and enable it. Zero idea how to do this
+  - Emulator uses the first connected DRM connector (DSI and HDMI both work); multi-monitor selection (e.g. Pi 4 HDMI1) is not handled
  - Sometimes the emulator gets upset and decides to disable sound. Check bluemsx.ini for `sound.masterEnable=yes` entry and fix it if changed to `no`
  - Moonsound / MSX-Music / YM2413 sound is silent: those C++ emulators don't compile on the aarch64 toolchain and are stubbed out for now — the cartridges load, but without sound
  - Improvements, improvements and more improvements

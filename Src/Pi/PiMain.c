@@ -256,8 +256,14 @@ static void setDefaultPaths(const char* rootDir)
 	archCreateDirectory(buffer);
 }
 
+#ifndef BLUEMSX_VERSION
+#define BLUEMSX_VERSION "dev"
+#endif
+
 int main(int argc, char **argv)
 {
+	printf("BlueberryMSX 2.0 Plus v%s\n", BLUEMSX_VERSION);
+
 	/* The physical keyboard is shared with the tty: a physical Ctrl+C
 	 * generates SIGINT for the foreground process. Ignore it so the
 	 * emulator keeps running and the key reaches the MSX (BASIC BREAK);

@@ -25,6 +25,30 @@ machine-code level.
 
 ---
 
+## Release v2.0.1 (documentation & versioning)
+
+No emulation code changes in this release.
+
+* **New `Doc/ARCHITECTURE.md`** — code knowledge base: repository layout, build
+  system (`Makefile` feature switches), startup sequence (`PiMain.c`), thread
+  model, emulator core / real-time sync (`Emulator.c`), DRM/GBM/EGL video path
+  (`PiVideo.c`), evdev keyboard bridge + shortcut system (`PiInput.c`,
+  `PiShortcuts.c`), audio, GPIO LEDs, media/ROMs, and a key-file index.
+* **README fixes** —
+  * shortcut table corrected: **F6** = screenshot, **F7** = soft/hard reset
+    (the two were swapped);
+  * `config.txt` now documents the working set: `dtoverlay=vc4-kms-v3d`
+    (was `vc4-fkms-v3d`), `disable_fw_kms_setup=1`, `arm_64bit=1`,
+    `disable_overscan=1`, `arm_boost=1`;
+  * added "Supported hardware" (Pi 3B aarch64 + DSI, Pi 4/400), Debian 13
+    (trixie) note (`libasound2t64`), and updated the HDMI0 known issue (first
+    connected KMS connector, DSI + HDMI both work).
+* **Version tagging** — `VERSION = 2.0.1` in `Makefile`, passed as
+  `-DBLUEMSX_VERSION` to the build; `bluemsx-pi` now prints a version banner
+  at startup (`PiMain.c`).
+
+---
+
 ## 1. The black-screen bug (root cause, verified)
 
 ### Symptom
