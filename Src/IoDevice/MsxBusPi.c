@@ -43,15 +43,15 @@
 
 #include "Board.h"
 #include "barrier.h"
-  
+   
 #define PAGE_SIZE (4*1024)
 #define BLOCK_SIZE (4*1024)
-  
+   
 static int mem_fd = -1;
 static void *gpio_map;
 static int clk_fd = -1;
 static void *clk_map;
-  
+   
 // I/O access
 volatile unsigned *gpio;
 volatile unsigned *gpio10;
@@ -153,19 +153,19 @@ static void rp1SetOutput(int pin)
 #define GPIO (*(gpio13))
 
 #define GZ_CLK_BUSY    (1 << 7)
- 
- 
+  
 // GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
+// (These are redefined for compatibility, but we're using direct register interface)
 #define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
 #define OUT_GPIO(g) *(gpio+((g)/10)) |=  (1<<(((g)%10)*3))
 #define SET_GPIO_ALT(g,a) *(gpio+(((g)/10))) |= (((a)<=3?(a)+4:(a)==4?3:2)<<(((g)%10)*3))
- 
+  
 #define GPIO_SET *(gpio7)  // sets   bits which are 1 ignores bits which are 0
 #define GPIO_CLR *(gpio10) // clears bits which are 1 ignores bits which are 0
- 
+  
 #define GET_GPIO(g) (*(gpio13)&(1<<g)) // 0 if LOW, (1<<g) if HIGH
 #define GPIO (*(gpio13))
- 
+  
 #define GPIO_PULL *(gpio+37) // Pull up/pull down
 #define GPIO_PULLCLK0 *(gpio+38) // Pull up/pull down clock
 
@@ -375,7 +375,7 @@ unsigned char GetData(int flag, int rflag, int delay)
 #endif
 	return byte;	 
  }
- 
+
  void msxwrite(int slot, unsigned short addr, unsigned char byte)
  {
 	SetAddress(addr);
@@ -385,7 +385,7 @@ unsigned char GetData(int flag, int rflag, int delay)
 #endif
 	return;
  }
- 
+
  int msxreadio(unsigned short addr)
  {
 	unsigned char byte;
@@ -396,9 +396,9 @@ unsigned char GetData(int flag, int rflag, int delay)
 #endif
 	return byte;	 
  }
- 
+
  void msxwriteio(unsigned short addr, unsigned char byte)
-   {
+    {
 	SetAddress(addr);
 	SetData(MSX_IORQ, MSX_IORQ, 55, byte);
 #ifdef DEBUG      
@@ -406,7 +406,7 @@ unsigned char GetData(int flag, int rflag, int delay)
 #endif
 	return;
  }
- 
+
 void checkInt()
 {
 	if (!(GPIO & MSX_INT))
@@ -414,100 +414,98 @@ void checkInt()
 		boardSetInt(0x10000);
 	}
 } 
- 
-#if 0 
-int rtapi_open_as_root(const char *filename, int mode) {
-	fprintf (stderr, "euid: %d uid %d\n", geteuid(), getuid());
-	seteuid(0);
-	fprintf (stderr, "euid: %d uid %d\n", geteuid(), getuid());
-	setfsuid(geteuid());
-	int r = open(filename, mode);
-	setfsuid(getuid());
-	return r;
-}
-#endif
+
 //
 // Set up a memory regions to access GPIO
 //
 int setup_io()
 {
 	int i, speed_id, divisor ;	
-	if (!bcm2835_init()) return -1;
-	gpio = bcm2835_regbase(BCM2835_REGBASE_GPIO);
-	for(int i=0; i < 27; i++)
-	{
-		if (i != 20) {	// if use new pads_strength (pads.c)
-			bcm2835_gpio_fsel(i, 1);    
-			bcm2835_gpio_set_pud(i, BCM2835_GPIO_PUD_UP);
-		}
+
+	// Open the master /dev/mem device
+	if ((mem_fd = open("/dev/mem", O_RDWR | O_SYNC)) < 0) {
+		fprintf(stderr, "Cannot open /dev/mem: %s\n", strerror(errno));
+		return -1;
 	}
 
+	// Map GPIO registers
+	gpio_map = mmap(
+		NULL, 
+		PAGE_SIZE,
+		PROT_READ | PROT_WRITE,
+		MAP_SHARED,
+		mem_fd,
+		0x3F000000  // GPIO base address for Raspberry Pi 3B+
+	);
+
+	if (gpio_map == MAP_FAILED) {
+		fprintf(stderr, "Cannot map GPIO registers: %s\n", strerror(errno));
+		close(mem_fd);
+		return -1;
+	}
+
+	// Map clock registers
+	clk_fd = open("/dev/mem", O_RDWR | O_SYNC);
+	if (clk_fd < 0) {
+		fprintf(stderr, "Cannot open /dev/mem for clocks: %s\n", strerror(errno));
+		return -1;
+	}
+
+	clk_map = mmap(
+		NULL,
+		RP1_CLOCK_MEM_SIZE,
+		PROT_READ | PROT_WRITE,
+		MAP_SHARED,
+		clk_fd,
+		RP1_CLOCK_BASE_PHYS
+	);
+
+	if (clk_map == MAP_FAILED) {
+		fprintf(stderr, "Cannot map clock registers: %s\n", strerror(errno));
+		close(clk_fd);
+		return -1;
+	}
+
+	gpio = (volatile unsigned *)gpio_map;
 	gpio10 = gpio+10;
 	gpio7 = gpio+7;
 	gpio13 = gpio+13;
 	gpio1 = gpio+1;
-	//SET_GPIO_ALT(20, 5);
-	gclk_base = bcm2835_regbase(BCM2835_REGBASE_CLK);
-	if (gclk_base != MAP_FAILED)
+	
+	// Setup the GPIO pins directly using our register-based approach
+	for(i = 0; i < 27; i++)
 	{
-		int divi, divr, divf, freq;
-		bcm2835_gpio_fsel(20, BCM2835_GPIO_FSEL_ALT5); // GPIO_20
-		speed_id = 1;
-		freq = 3579545;	// msx clock
-		divi = 19200000 / freq ;
-		divr = 19200000 % freq ;
-		divf = (int)((double)divr * 4096.0 / 19200000.0) ;
-		if (divi > 4095)
-			divi = 4095 ;		
-		divisor = 1 < 12;// | (int)(6648/1024);
-		GP_CLK0_CTL = 0x5A000000 | speed_id;    // GPCLK0 off
-		while (GP_CLK0_CTL & 0x80);    // Wait for BUSY low
-		GP_CLK0_DIV = 0x5A000000 | (divi << 12) | divf; // set DIVI
-		GP_CLK0_CTL = 0x5A000010 | speed_id;    // GPCLK0 on
-		printf("clock enabled: 0x%08x\n", GP_CLK0_CTL );
+		if(i != 20) { // Skip GPIO 20 since it's used for clock - we'll use direct register control
+			rp1SetInput(i);
+			// Set pull-up resistors where applicable
+			rp1EnablePad(i, 1);
+		}
 	}
-	else
-		printf("clock disabled\n");
-	
-	bcm2835_gpio_pud(BCM2835_GPIO_PUD_UP);
-	for(int i = 0; i < 8; i++)
-		bcm2835_gpio_pudclk(i, 1);
-	bcm2835_gpio_pudclk(27,1);
-	
+
+	// Setup our specific clocks that are needed for MSX operation
+	setup_gclk();
+
 	GPIO_SET = LE_C | MSX_CONTROLS | MSX_WAIT | MSX_INT;
 	GPIO_SET = LE_A | LE_D;
 	GPIO_CLR = LE_C | 0xffff;
 	GPIO_CLR = LE_C;
 	GPIO_CLR = MSX_RESET;
-	for(int i=0;i<2000000;i++);
+	for(i=0;i<2000000;i++);
 	GPIO_SET = MSX_RESET;
-	for(int i=0;i<1000000;i++);
+	for(i=0;i<1000000;i++);
+
 	return 0;
 } // setup_io
 
-#if 0
-#define EINVAL 0
-int stick_this_thread_to_core(int core_id) {
-   int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
-   if (core_id < 0 || core_id >= num_cores)
-      return EINVAL;
-
-   cpu_set_t cpuset;
-   CPU_ZERO(&cpuset);
-   CPU_SET(core_id, &cpuset);
-   return sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
-}
-#endif
 void clear_io()
 {
-//	spi_clear();
+	// Currently empty, as GPIOs are maintained in their state
 }
 
 void msxinit()
 {
 	const struct sched_param priority = {1};
 	sched_setscheduler(0, SCHED_FIFO, &priority);  
-//	stick_this_thread_to_core(0);
 	if (setup_io() == -1)
     {
         printf("GPIO init error\n");
@@ -551,9 +549,7 @@ void frontled(unsigned char byte)
     }
 }
 
-
 #ifdef _MAIN
-
 
 int main(int argc, char **argv)
 {
