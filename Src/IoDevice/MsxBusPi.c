@@ -25,36 +25,134 @@
 */
 
 #define RPMC_V5
-#include <bcm2835.h>
 // Access from ARM Running Linux
 #include "rpi-gpio.h"
-   
+    
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>  
 #include <fcntl.h>
+#include <stdint.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <bcm2835.h>
 #include <time.h>
 #include <sched.h>
 #include <unistd.h>
 #include <pthread.h>
 
+#include "Board.h"
 #include "barrier.h"
- 
+  
 #define PAGE_SIZE (4*1024)
 #define BLOCK_SIZE (4*1024)
- 
-int  mem_fd;
-void *gpio_map;
- 
+  
+static int mem_fd = -1;
+static void *gpio_map;
+static int clk_fd = -1;
+static void *clk_map;
+  
 // I/O access
 volatile unsigned *gpio;
 volatile unsigned *gpio10;
 volatile unsigned *gpio7;
 volatile unsigned *gpio13;
 volatile unsigned *gpio1;
-volatile unsigned *gclk_base;
+static volatile uint32_t *rp1Gpio;
+static volatile uint32_t *rp1Clocks;
+
+#define RP1_MEM_SIZE           0x30000
+#define RP1_REG_SIZE           sizeof(uint32_t)
+#define RP1_IO_BANK0_OFFSET    0x00000
+#define RP1_SYS_RIO0_OFFSET    0x10000
+#define RP1_PADS_BANK0_OFFSET  0x20000
+#define RP1_RW_OFFSET          0x0000
+#define RP1_SET_OFFSET         0x2000
+#define RP1_CLR_OFFSET         0x3000
+#define RP1_GPIO_CTRL          0x0004
+#define RP1_GPIO_OFFSET        8
+#define RP1_CTRL_FUNCSEL_MASK  0x001f
+#define RP1_CTRL_OUTOVER_MASK  0x3000
+#define RP1_CTRL_OEOVER_MASK   0xc000
+#define RP1_FUNCSEL_GPIO       5
+#define RP1_FUNCSEL_GPCLK0     3
+#define RP1_PADS_GPIO          0x04
+#define RP1_PADS_OFFSET        4
+#define RP1_PADS_IN_ENABLE     0x40
+#define RP1_PADS_OUT_DISABLE   0x80
+#define RP1_PADS_BIAS_MASK     0x0c
+#define RP1_PADS_BIAS_PULL_UP  0x08
+#define RP1_RIO_OUT            0x00
+#define RP1_RIO_OE             0x04
+#define RP1_RIO_IN             0x08
+
+#define RP1_CLOCK_BASE_PHYS    0x1f00018000ULL
+#define RP1_CLOCK_MEM_SIZE     0x1000
+#define RP1_GPCLK0_RATE        3579545ULL
+#define RP1_XOSC_RATE          50000000ULL
+#define RP1_GPCLK_OE_CTRL      0x00000
+#define RP1_CLK_GP0_OFFSET     0x00174
+#define RP1_CLK_GP0_CTRL       (RP1_CLK_GP0_OFFSET + 0x00)
+#define RP1_CLK_GP0_DIV_INT    (RP1_CLK_GP0_OFFSET + 0x04)
+#define RP1_CLK_GP0_DIV_FRAC   (RP1_CLK_GP0_OFFSET + 0x08)
+#define RP1_CLK_GP0_SEL        (RP1_CLK_GP0_OFFSET + 0x0c)
+#define RP1_CLK_CTRL_ENABLE    (1u << 11)
+#define RP1_CLK_CTRL_AUXSRC_MASK (0x1fu << 5)
+#define RP1_CLK_DIV_FRAC_BITS  16
+
+static inline volatile uint32_t *rp1Reg(size_t offset)
+{
+	return rp1Gpio + (offset / RP1_REG_SIZE);
+}
+
+static void rp1SetGpioFunction(int pin, uint32_t function)
+{
+	volatile uint32_t *ctrl = rp1Reg(RP1_IO_BANK0_OFFSET + RP1_GPIO_CTRL + pin * RP1_GPIO_OFFSET + RP1_RW_OFFSET);
+	uint32_t value = *ctrl;
+	value &= ~(RP1_CTRL_FUNCSEL_MASK | RP1_CTRL_OUTOVER_MASK | RP1_CTRL_OEOVER_MASK);
+	value |= function;
+	*ctrl = value;
+}
+
+static void rp1EnablePad(int pin, int pullUp)
+{
+	volatile uint32_t *pad = rp1Reg(RP1_PADS_BANK0_OFFSET + RP1_PADS_GPIO + pin * RP1_PADS_OFFSET + RP1_RW_OFFSET);
+	uint32_t value = *pad;
+	value |= RP1_PADS_IN_ENABLE;
+	value &= ~RP1_PADS_OUT_DISABLE;
+	value &= ~RP1_PADS_BIAS_MASK;
+	if (pullUp) {
+		value |= RP1_PADS_BIAS_PULL_UP;
+	}
+	*pad = value;
+}
+
+static void rp1SetInput(int pin)
+{
+	rp1SetGpioFunction(pin, RP1_FUNCSEL_GPIO);
+	rp1EnablePad(pin, 1);
+	*rp1Reg(RP1_SYS_RIO0_OFFSET + RP1_RIO_OE + RP1_CLR_OFFSET) = 1u << pin;
+}
+
+static void rp1SetOutput(int pin)
+{
+	rp1SetGpioFunction(pin, RP1_FUNCSEL_GPIO);
+	rp1EnablePad(pin, 1);
+	*rp1Reg(RP1_SYS_RIO0_OFFSET + RP1_RIO_OE + RP1_SET_OFFSET) = 1u << pin;
+}
+
+// GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
+#define INP_GPIO(g) rp1SetInput(g)
+#define OUT_GPIO(g) rp1SetOutput(g)
+#define SET_GPIO_ALT(g,a) rp1SetGpioFunction((g), (a))
+
+#define GPIO_SET *(gpio7)  // sets   bits which are 1 ignores bits which are 0
+#define GPIO_CLR *(gpio10) // clears bits which are 1 ignores bits which are 0
+
+#define GET_GPIO(g) (*(gpio13)&(1<<g)) // 0 if LOW, (1<<g) if HIGH
+#define GPIO (*(gpio13))
+
+#define GZ_CLK_BUSY    (1 << 7)
  
  
 // GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
@@ -204,13 +302,15 @@ volatile unsigned *gclk_base;
 pthread_mutex_t mutex;
 
 int setup_io();
+static int setup_gclk(void);
+static void clear_gclk(void);
+static void frontledWrite(unsigned char byte, int force);
 void frontled(unsigned char byte);
 int msxread(int slot, unsigned short addr);
 void msxwrite(int slot, unsigned short addr, unsigned char byte);
 int msxreadio(unsigned short addr);
 void msxwriteio(unsigned short addr, unsigned char byte);
 void clear_io();
-void setup_gclk();
 
 
 void SetAddress(unsigned short addr)
