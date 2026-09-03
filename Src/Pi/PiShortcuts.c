@@ -598,10 +598,10 @@ static const ShortcutHotkey highFrameskipHotKey = {
     HOTKEY_TYPE_KEYBOARD, 0, SDLK_F8,
 };
 static const ShortcutHotkey resetHard = {
-    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F7,	
+    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F6,
 };
 static const ShortcutHotkey screenShot = {
-    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F6,	
+    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F7,
 };
 static const ShortcutHotkey toggleScanline = {
     HOTKEY_TYPE_KEYBOARD, KMOD_LALT, SDLK_F10,	
@@ -626,7 +626,7 @@ struct Shortcuts {
     ShortcutHotkey cartRemove[2];
     ShortcutHotkey cartAutoReset;
 
-    ShortcutHotkey diskChange[0];
+    ShortcutHotkey diskChange[2];
     ShortcutHotkey diskRemove[2];
     ShortcutHotkey diskAutoReset;
 
@@ -663,7 +663,18 @@ struct Shortcuts {
 
 #define LOAD_SHORTCUT(hotkey) loadShortcut(iniFile, #hotkey, &shortcuts->hotkey)
 
-#define HOTKEY_EQ(hotkey1, hotkey2) (*(UInt32*)&hotkey1 == *(UInt32*)&hotkey2)
+#define HOTKEY_MOD_MASK (KMOD_LCTRL | KMOD_RCTRL | KMOD_LSHIFT | KMOD_RSHIFT | KMOD_LALT | KMOD_RALT | KMOD_LGUI | KMOD_RGUI)
+
+static int hotkeyMatches(ShortcutHotkey key, ShortcutHotkey hotkey)
+{
+    if (hotkey.type == HOTKEY_TYPE_NONE) {
+        return 0;
+    }
+    if (key.type != hotkey.type || key.key != hotkey.key) {
+        return 0;
+    }
+    return (key.mods & HOTKEY_MOD_MASK) == (hotkey.mods & HOTKEY_MOD_MASK);
+}
 
 ShortcutHotkey toSDLhotkey(ShortcutHotkey hotkey)
 {
@@ -751,8 +762,7 @@ static ShortcutHotkey int2hotkey(int* hotkey) {
 static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 {
     char buffer[512];
-    char* token, *value;
-    int key;
+    unsigned int rawHotkey;
     
     hotkey->type = HOTKEY_TYPE_NONE;
     hotkey->mods = 0;
@@ -777,9 +787,12 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
         // hotkey->mods |= stringToMod(token);
     // }
 // #else
-//	sscanf(strtok(buffer, "="), "%"SCNx32, hotkey);	
-    sscanf(buffer, "%X", hotkey);
-	toSDLhotkey(*hotkey);
+    if (sscanf(buffer, "%X", &rawHotkey) != 1 || rawHotkey == 0) {
+        return;
+    }
+    hotkey->type = rawHotkey & 0xff;
+    hotkey->mods = (rawHotkey >> 8) & 0xff;
+    hotkey->key = (rawHotkey >> 16) & 0xff;
 //#endifma	
 	//printf("shortcut:%s - %s,%08x -> %08x\n", name, shortcutsToString(*hotkey), *hotkey, toSDLhotkey(*hotkey));
 	*hotkey = toSDLhotkey(*hotkey);
