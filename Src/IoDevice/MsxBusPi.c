@@ -40,6 +40,7 @@
 #include <sched.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <stdbool.h>
 
 #include "Board.h"
 #include "barrier.h"
@@ -367,7 +368,7 @@ void clear_io();
 
 
 /* Clock initialization state */
-static bool gclk_initialized = false;
+//static bool gclk_initialized = false;
 
 static int setup_gclk(void)
 {
@@ -441,8 +442,8 @@ static int setup_gclk(void)
 	// Initialize clock pointers if needed
 	if (gclk_base == NULL) {
 		gclk_base = (volatile unsigned *)clk_map;
-		bcm_gpclk0_ctl = (volatile unsigned *)((unsigned)gclk_base + (BCM_GPCLK0_CNTL / 4));
-		bcm_gpclk0_div = (volatile unsigned *)((unsigned)gclk_base + (BCM_GPCLK0_DIV / 4));
+		bcm_gpclk0_ctl = (volatile unsigned *)(gclk_base + (BCM_GPCLK0_CNTL / 4));
+		bcm_gpclk0_div = (volatile unsigned *)(gclk_base + (BCM_GPCLK0_DIV / 4));
 	}
 
 	if (bcm_gpclk0_ctl == NULL || bcm_gpclk0_div == NULL) {
