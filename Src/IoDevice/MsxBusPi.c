@@ -421,36 +421,25 @@ static int setup_gclk(void)
 		return 0;
 	}
 
-	/* BCM283x (Pi 3/4) clock path: GPCLK0 driven to CLK_PIN (GPIO20, ALT0) */
-	if (clk_map == NULL) {
-		clk_fd = open("/dev/mem", O_RDWR | O_SYNC);
-		if (clk_fd < 0) {
-			fprintf(stderr, "Cannot open /dev/mem for BCM clocks: %s\n", strerror(errno));
-			return -1;
-		}
-		clk_map = mmap(NULL, BCM_CLOCK_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, clk_fd, (off_t)BCM_CLOCK_BASE_PHYS);
-		if (clk_map == MAP_FAILED) {
-			fprintf(stderr, "Cannot map BCM clock registers: %s\n", strerror(errno));
-			close(clk_fd);
-			clk_fd = -1;
-			clk_map = NULL;
-			return -1;
-		}
+	/* BCM283x (Pi 3/4) clock path */
+	if (gclk_base == NULL && clk_map != NULL) {
 		gclk_base = (volatile unsigned *)clk_map;
 		bcm_gpclk0_ctl = (volatile unsigned *)((unsigned)gclk_base + (BCM_GPCLK0_CNTL / 4));
 		bcm_gpclk0_div = (volatile unsigned *)((unsigned)gclk_base + (BCM_GPCLK0_DIV / 4));
 	}
 
-	/* Select a 19.2 MHz source and set the divider to reach ~3.579545 MHz.
-	   19.2 MHz / 3.579545 MHz = 5.3636; use integer-divider GPCLK0.
-	   The BCM GPIO clock has a 24-bit dividend / 12-bit divisor. Use the
-	   XOSC-derived PLLD or, simplest and robust, the 19.2 MHz crystal with
-	   DIV = (19.2e6 / 3579545) as a fixed-point value. */
+	if (bcm_gpclk0_ctl == NULL || bcm_gpclk0_div == NULL) {
+		/* This shouldn't happen unless the whole setup failed */
+		fprintf(stderr, "Clock initialization failed, GPCLK0 pointers not available\n");
+		return -1;
+	}
+
+	/* Set up BCM clock */
 	div = ((19200000ULL << 12) + (RP1_GPCLK0_RATE / 2)) / RP1_GPCLK0_RATE;
 
 	*bcm_gpclk0_div = (unsigned)(BCM_GPCLK0_PASSWORD | ((div >> 12) << 12) | (div & 0xfff));
 	ctrl = *bcm_gpclk0_ctl;
-	ctrl = (ctrl & ~0xff) | BCM_GPCLK0_PASSWORD | 6; /* source: 19.2 MHz XOSC (src=6) */
+	ctrl = (ctrl & ~0xff) | BCM_GPCLK0_PASSWORD | 6; /* source: 19.2 MHz XOSC */
 	*bcm_gpclk0_ctl = (ctrl & ~1u) | BCM_GPCLK0_PASSWORD; /* stop first */
 	*bcm_gpclk0_ctl = (ctrl | BCM_GPCLK0_PASSWORD) | 1u;  /* start */
 
