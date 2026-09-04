@@ -1,5 +1,29 @@
 # BlueberryMSX-2.0plus Improvements Changelog
 
+## Version 2.1.1 - Build Fixes
+
+Fixed link errors that prevented `bluemsx-pi` from building. The binary now compiles
+and links cleanly on the Raspberry Pi (aarch64).
+
+### Fixed
+- **`HOTKEY_EQ` undefined reference** (`Src/Pi/PiShortcuts.c`): the `hotkeyMatches()`
+  helper was defined but never used, while all call sites in `shortcutCheckDown()` and
+  `shortcutCheckUp()` still referenced the removed `HOTKEY_EQ` macro. Replaced every
+  `HOTKEY_EQ(key, ...)` call with the equivalent `hotkeyMatches(key, ...)`.
+- **`setup_gclk` undefined reference** (`Src/IoDevice/MsxBusPi.c`): `setup_io()` called
+  `setup_gclk()` but the function definition had been lost in the earlier full-file
+  rewrite. Re-added the RP1 GPCLK0 implementation (3.579545 MHz MSX clock on GPIO20)
+  and the matching `clear_gclk()` shutdown routine.
+- Added the `rp1ClockReg()` inline helper for RP1 clock-manager register access.
+- Removed conflicting duplicate GPIO macro definitions and rewired `GP_CLK0_CTL` /
+  `GP_CLK0_DIV` to use `rp1Clocks` instead of the removed `gclk_base`.
+
+### Verification
+`make clean && make -j4` succeeds on `raspberrypi3b.local`; produces an ELF 64-bit
+aarch64 `bluemsx-pi` binary (7.2 MB).
+
+---
+
 ## Version 2.1.0 - GPIO v2 and Shortcut Enhancements
 
 This release introduces significant improvements to the GPIO implementation and keyboard shortcut handling, enhancing compatibility and functionality while maintaining full backward compatibility with existing configurations.
