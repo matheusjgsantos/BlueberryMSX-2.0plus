@@ -58,8 +58,17 @@ volatile unsigned *gpio10;
 volatile unsigned *gpio7;
 volatile unsigned *gpio13;
 volatile unsigned *gpio1;
+volatile unsigned *gclk_base;
 static volatile uint32_t *rp1Gpio;
 static volatile uint32_t *rp1Clocks;
+
+typedef enum {
+	SOC_UNKNOWN = 0,
+	SOC_BCM283X,   /* Pi 1/2/3/Zero and Pi 4/400 (BCM2835/6/7/2711) */
+	SOC_RP1        /* Pi 5 (BCM2712 + RP1 southbridge) */
+} SocType;
+
+static SocType currentSoc = SOC_UNKNOWN;
 
 #define RP1_MEM_SIZE           0x30000
 #define RP1_REG_SIZE           sizeof(uint32_t)
@@ -99,6 +108,38 @@ static volatile uint32_t *rp1Clocks;
 #define RP1_CLK_CTRL_ENABLE    (1u << 11)
 #define RP1_CLK_CTRL_AUXSRC_MASK (0x1fu << 5)
 #define RP1_CLK_DIV_FRAC_BITS  16
+
+/* BCM283x (Pi 3/4) physical register bases */
+#define BCM_GPIO_BASE_PHYS     0x3F200000ULL
+#define BCM_CLOCK_BASE_PHYS    0x3F101000ULL
+#define BCM_CLOCK_MEM_SIZE     0x1000
+#define BCM_GPFSEL0_OFFSET     0x00
+#define BCM_GPSET0_OFFSET      0x1C
+#define BCM_GPCLR0_OFFSET      0x28
+#define BCM_GPLEV0_OFFSET      0x34
+#define BCM_GPCLK0_CNTL        0x70
+#define BCM_GPCLK0_DIV         0x74
+#define BCM_GPCLK0_PASSWORD    0x5A000000
+
+static SocType bcmDetectSoc(void)
+{
+	const char *compat = "/proc/device-tree/compatible";
+	char buf[256];
+	int fd = open(compat, O_RDONLY);
+	if (fd < 0) {
+		return SOC_BCM283X; /* assume the older /dev/mem style part */
+	}
+	int n = read(fd, buf, sizeof(buf) - 1);
+	close(fd);
+	if (n <= 0) {
+		return SOC_BCM283X;
+	}
+	buf[n] = '\0';
+	if (strstr(buf, "brcm,bcm2712")) {
+		return SOC_RP1;
+	}
+	return SOC_BCM283X;
+}
 
 static inline volatile uint32_t *rp1Reg(size_t offset)
 {
@@ -146,10 +187,31 @@ static void rp1SetOutput(int pin)
 	*rp1Reg(RP1_SYS_RIO0_OFFSET + RP1_RIO_OE + RP1_SET_OFFSET) = 1u << pin;
 }
 
-// GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
-#define INP_GPIO(g) rp1SetInput(g)
-#define OUT_GPIO(g) rp1SetOutput(g)
-#define SET_GPIO_ALT(g,a) rp1SetGpioFunction((g), (a))
+/* BCM283x GPIO helpers */
+static void bcmSetFunction(int pin, int function)
+{
+	volatile unsigned *fsel = gpio + (pin / 10);
+	unsigned reg = *fsel;
+	reg &= ~(7u << ((pin % 10) * 3));
+	reg |= (unsigned)function << ((pin % 10) * 3);
+	/* Group clock bank 0 uses GPFSEL0/1; bank 1 uses GPFSEL2/3... handled by gpio+ */
+	*fsel = reg;
+}
+
+static void bcmSetInput(int pin)
+{
+	bcmSetFunction(pin, 0);
+}
+
+static void bcmSetOutput(int pin)
+{
+	bcmSetFunction(pin, 1);
+}
+
+/* GPIO setup macros, dispatch on the detected SoC */
+#define INP_GPIO(g) ((currentSoc == SOC_RP1) ? rp1SetInput(g) : bcmSetInput(g))
+#define OUT_GPIO(g) ((currentSoc == SOC_RP1) ? rp1SetOutput(g) : bcmSetOutput(g))
+#define SET_GPIO_ALT(g,a) ((currentSoc == SOC_RP1) ? rp1SetGpioFunction((g),(a)) : bcmSetFunction((g),(a)))
 
 #define GPIO_SET *(gpio7)  // sets   bits which are 1 ignores bits which are 0
 #define GPIO_CLR *(gpio10) // clears bits which are 1 ignores bits which are 0
@@ -159,8 +221,8 @@ static void rp1SetOutput(int pin)
 
 #define GZ_CLK_BUSY    (1 << 7)
 
-#define GP_CLK0_CTL *(rp1Clocks + (RP1_CLK_GP0_CTRL / 4))
-#define GP_CLK0_DIV *(rp1Clocks + (RP1_CLK_GP0_DIV_INT / 4))
+#define GP_CLK0_CTL   ((currentSoc == SOC_RP1) ? *(rp1ClockReg(RP1_CLK_GP0_CTRL)) : *(volatile unsigned *)((unsigned)gclk_base + (BCM_GPCLK0_CNTL / 4)))
+#define GP_CLK0_DIV   ((currentSoc == SOC_RP1) ? *(rp1ClockReg(RP1_CLK_GP0_DIV_INT)) : *(volatile unsigned *)((unsigned)gclk_base + (BCM_GPCLK0_DIV / 4)))
 
 #ifdef RPMC_V5
 #define RD0		0
@@ -310,68 +372,116 @@ static int setup_gclk(void)
 	uint32_t ctrl;
 	uint64_t actualRate;
 
-	if (clk_map != NULL) {
+	if (currentSoc == SOC_RP1) {
+		/* RP1 (Pi 5) clock path */
+		if (clk_map != NULL) {
+			rp1SetGpioFunction(CLK_PIN, RP1_FUNCSEL_GPCLK0);
+			rp1EnablePad(CLK_PIN, 0);
+			return 0;
+		}
+
+		clk_fd = open("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC);
+		if (clk_fd < 0) {
+			fprintf(stderr, "Failed to open /dev/mem for RP1 GPCLK0: %s\n", strerror(errno));
+			return -1;
+		}
+
+		clk_map = mmap(NULL, RP1_CLOCK_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, clk_fd, (off_t)RP1_CLOCK_BASE_PHYS);
+		if (clk_map == MAP_FAILED) {
+			int savedErrno = errno;
+			fprintf(stderr, "Failed to map RP1 clock manager: %s\n", strerror(errno));
+			close(clk_fd);
+			clk_fd = -1;
+			clk_map = NULL;
+			errno = savedErrno;
+			return -1;
+		}
+
+		rp1Clocks = (volatile uint32_t *)clk_map;
+		div = ((RP1_XOSC_RATE << RP1_CLK_DIV_FRAC_BITS) + (RP1_GPCLK0_RATE / 2)) / RP1_GPCLK0_RATE;
+		divInt = div >> RP1_CLK_DIV_FRAC_BITS;
+		divFrac = (uint32_t)(div << (32 - RP1_CLK_DIV_FRAC_BITS));
+
+		*rp1ClockReg(RP1_CLK_GP0_DIV_INT) = divInt;
+		*rp1ClockReg(RP1_CLK_GP0_DIV_FRAC) = divFrac;
+		*rp1ClockReg(RP1_CLK_GP0_SEL) = 1u;
+		ctrl = *rp1ClockReg(RP1_CLK_GP0_CTRL);
+		ctrl &= ~RP1_CLK_CTRL_AUXSRC_MASK;
+		ctrl |= RP1_CLK_CTRL_ENABLE;
+		*rp1ClockReg(RP1_CLK_GP0_CTRL) = ctrl;
+		*rp1ClockReg(RP1_GPCLK_OE_CTRL) = *rp1ClockReg(RP1_GPCLK_OE_CTRL) | 1u;
+
 		rp1SetGpioFunction(CLK_PIN, RP1_FUNCSEL_GPCLK0);
 		rp1EnablePad(CLK_PIN, 0);
+
+		actualRate = (RP1_XOSC_RATE << RP1_CLK_DIV_FRAC_BITS) / div;
+		fprintf(stderr, "RP1 GPCLK0 enabled on GPIO20: requested %llu Hz, actual %llu Hz\n",
+		        (unsigned long long)RP1_GPCLK0_RATE, (unsigned long long)actualRate);
 		return 0;
 	}
 
-	clk_fd = open("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC);
-	if (clk_fd < 0) {
-		fprintf(stderr, "Failed to open /dev/mem for RP1 GPCLK0: %s\n", strerror(errno));
-		return -1;
+	/* BCM283x (Pi 3/4) clock path: GPCLK0 driven to CLK_PIN (GPIO20, ALT0) */
+	if (clk_map == NULL) {
+		clk_fd = open("/dev/mem", O_RDWR | O_SYNC);
+		if (clk_fd < 0) {
+			fprintf(stderr, "Cannot open /dev/mem for BCM clocks: %s\n", strerror(errno));
+			return -1;
+		}
+		clk_map = mmap(NULL, BCM_CLOCK_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, clk_fd, (off_t)BCM_CLOCK_BASE_PHYS);
+		if (clk_map == MAP_FAILED) {
+			fprintf(stderr, "Cannot map BCM clock registers: %s\n", strerror(errno));
+			close(clk_fd);
+			clk_fd = -1;
+			clk_map = NULL;
+			return -1;
+		}
+		gclk_base = (volatile unsigned *)clk_map;
 	}
 
-	clk_map = mmap(NULL, RP1_CLOCK_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, clk_fd, (off_t)RP1_CLOCK_BASE_PHYS);
-	if (clk_map == MAP_FAILED) {
-		int savedErrno = errno;
-		fprintf(stderr, "Failed to map RP1 clock manager: %s\n", strerror(errno));
-		close(clk_fd);
-		clk_fd = -1;
-		clk_map = NULL;
-		errno = savedErrno;
-		return -1;
-	}
+	/* Select a 19.2 MHz source and set the divider to reach ~3.579545 MHz.
+	   19.2 MHz / 3.579545 MHz = 5.3636; use integer-divider GPCLK0.
+	   The BCM GPIO clock has a 24-bit dividend / 12-bit divisor. Use the
+	   XOSC-derived PLLD or, simplest and robust, the 19.2 MHz crystal with
+	   DIV = (19.2e6 / 3579545) as a fixed-point value. */
+	div = ((19200000ULL << 12) + (RP1_GPCLK0_RATE / 2)) / RP1_GPCLK0_RATE;
 
-	rp1Clocks = (volatile uint32_t *)clk_map;
-	div = ((RP1_XOSC_RATE << RP1_CLK_DIV_FRAC_BITS) + (RP1_GPCLK0_RATE / 2)) / RP1_GPCLK0_RATE;
-	divInt = div >> RP1_CLK_DIV_FRAC_BITS;
-	divFrac = (uint32_t)(div << (32 - RP1_CLK_DIV_FRAC_BITS));
+	GP_CLK0_DIV = (unsigned)(BCM_GPCLK0_PASSWORD | ((div >> 12) << 12) | (div & 0xfff));
+	ctrl = GP_CLK0_CTL;
+	ctrl = (ctrl & ~0xff) | BCM_GPCLK0_PASSWORD | 6; /* source: 19.2 MHz XOSC (src=6) */
+	GP_CLK0_CTL = (ctrl & ~1u) | BCM_GPCLK0_PASSWORD; /* stop first */
+	GP_CLK0_CTL = (ctrl | BCM_GPCLK0_PASSWORD) | 1u;  /* start */
 
-	*rp1ClockReg(RP1_CLK_GP0_DIV_INT) = divInt;
-	*rp1ClockReg(RP1_CLK_GP0_DIV_FRAC) = divFrac;
-	*rp1ClockReg(RP1_CLK_GP0_SEL) = 1u;
-	ctrl = *rp1ClockReg(RP1_CLK_GP0_CTRL);
-	ctrl &= ~RP1_CLK_CTRL_AUXSRC_MASK;
-	ctrl |= RP1_CLK_CTRL_ENABLE;
-	*rp1ClockReg(RP1_CLK_GP0_CTRL) = ctrl;
-	*rp1ClockReg(RP1_GPCLK_OE_CTRL) = *rp1ClockReg(RP1_GPCLK_OE_CTRL) | 1u;
+	SET_GPIO_ALT(CLK_PIN, 0); /* GPIO20 = GPCLK0 (ALT0) on BCM283x */
 
-	rp1SetGpioFunction(CLK_PIN, RP1_FUNCSEL_GPCLK0);
-	rp1EnablePad(CLK_PIN, 0);
-
-	actualRate = (RP1_XOSC_RATE << RP1_CLK_DIV_FRAC_BITS) / div;
-	fprintf(stderr, "RP1 GPCLK0 enabled on GPIO20: requested %llu Hz, actual %llu Hz\n",
-	        (unsigned long long)RP1_GPCLK0_RATE, (unsigned long long)actualRate);
+	actualRate = 19200000ULL * 256 / ((div >> 12) * 256);
+	fprintf(stderr, "BCM GPCLK0 enabled on GPIO20: requested %llu Hz (div=%llu)\n",
+	        (unsigned long long)RP1_GPCLK0_RATE, (unsigned long long)(div >> 12));
 
 	return 0;
 }
 
 static void clear_gclk(void)
 {
-	if (clk_map != NULL) {
-		*rp1ClockReg(RP1_GPCLK_OE_CTRL) = *rp1ClockReg(RP1_GPCLK_OE_CTRL) & ~1u;
-		*rp1ClockReg(RP1_CLK_GP0_CTRL) = *rp1ClockReg(RP1_CLK_GP0_CTRL) & ~RP1_CLK_CTRL_ENABLE;
+	if (currentSoc == SOC_RP1) {
+		if (clk_map != NULL) {
+			*rp1ClockReg(RP1_GPCLK_OE_CTRL) = *rp1ClockReg(RP1_GPCLK_OE_CTRL) & ~1u;
+			*rp1ClockReg(RP1_CLK_GP0_CTRL) = *rp1ClockReg(RP1_CLK_GP0_CTRL) & ~RP1_CLK_CTRL_ENABLE;
+		}
+	} else {
+		if (gclk_base != NULL) {
+			GP_CLK0_CTL = (GP_CLK0_CTL & ~1u) | BCM_GPCLK0_PASSWORD; /* stop GPCLK0 */
+		}
 	}
 
 	if (gpio_map != NULL) {
-		rp1SetInput(CLK_PIN);
+		(currentSoc == SOC_RP1) ? rp1SetInput(CLK_PIN) : bcmSetInput(CLK_PIN);
 	}
 
 	if (clk_map != NULL) {
-		munmap(clk_map, RP1_CLOCK_MEM_SIZE);
+		munmap(clk_map, currentSoc == SOC_RP1 ? RP1_CLOCK_MEM_SIZE : BCM_CLOCK_MEM_SIZE);
 		clk_map = NULL;
 		rp1Clocks = NULL;
+		gclk_base = NULL;
 	}
 	if (clk_fd >= 0) {
 		close(clk_fd);
@@ -488,6 +598,9 @@ int setup_io()
 {
 	int i, speed_id, divisor ;	
 
+	// Detect platform early in setup
+	currentSoc = bcmDetectSoc();
+
 	// Open the master /dev/mem device
 	if ((mem_fd = open("/dev/mem", O_RDWR | O_SYNC)) < 0) {
 		fprintf(stderr, "Cannot open /dev/mem: %s\n", strerror(errno));
@@ -501,7 +614,7 @@ int setup_io()
 		PROT_READ | PROT_WRITE,
 		MAP_SHARED,
 		mem_fd,
-		0x3F000000  // GPIO base address for Raspberry Pi 3B+
+		currentSoc == SOC_RP1 ? 0x1F000000ULL : BCM_GPIO_BASE_PHYS  // GPIO base address for Pi 5 or BCM283x
 	);
 
 	if (gpio_map == MAP_FAILED) {
@@ -510,7 +623,7 @@ int setup_io()
 		return -1;
 	}
 
-	// Map clock registers
+	// Map clock registers  
 	clk_fd = open("/dev/mem", O_RDWR | O_SYNC);
 	if (clk_fd < 0) {
 		fprintf(stderr, "Cannot open /dev/mem for clocks: %s\n", strerror(errno));
@@ -519,11 +632,11 @@ int setup_io()
 
 	clk_map = mmap(
 		NULL,
-		RP1_CLOCK_MEM_SIZE,
+		currentSoc == SOC_RP1 ? RP1_CLOCK_MEM_SIZE : BCM_CLOCK_MEM_SIZE,
 		PROT_READ | PROT_WRITE,
 		MAP_SHARED,
 		clk_fd,
-		RP1_CLOCK_BASE_PHYS
+		currentSoc == SOC_RP1 ? (off_t)RP1_CLOCK_BASE_PHYS : (off_t)BCM_CLOCK_BASE_PHYS
 	);
 
 	if (clk_map == MAP_FAILED) {
@@ -533,18 +646,38 @@ int setup_io()
 	}
 
 	gpio = (volatile unsigned *)gpio_map;
-	gpio10 = gpio+10;
-	gpio7 = gpio+7;
-	gpio13 = gpio+13;
-	gpio1 = gpio+1;
-	
-	// Setup the GPIO pins directly using our register-based approach
-	for(i = 0; i < 27; i++)
-	{
-		if(i != 20) { // Skip GPIO 20 since it's used for clock - we'll use direct register control
-			rp1SetInput(i);
-			// Set pull-up resistors where applicable
-			rp1EnablePad(i, 1);
+
+	if (currentSoc == SOC_RP1) {
+		/* RP1 GPIO path */
+		rp1Gpio = (volatile uint32_t *)gpio_map;
+		gpio7 = gpio + 7;
+		gpio10 = gpio + 10;
+		gpio13 = gpio + 13;
+		gpio1 = gpio + 1;
+
+		// Setup the GPIO pins directly using RP1 register-based approach
+		for(i = 0; i < 27; i++)
+		{
+			if(i != 20) { // Skip GPIO 20 since it's used for clock - we'll use direct register control
+				rp1SetInput(i);
+				// Set pull-up resistors where applicable  
+				rp1EnablePad(i, 1);
+			}
+		}
+	} else {
+		/* BCM283x GPIO path */
+		gpio7 = gpio + (BCM_GPSET0_OFFSET / 4);
+		gpio10 = gpio + (BCM_GPCLR0_OFFSET / 4);
+		gpio13 = gpio + (BCM_GPLEV0_OFFSET / 4);
+		gpio1 = gpio + 1; /* Not actually used but included for completeness */
+		
+		// Setup the GPIO pins directly using BCM283x register-based approach
+		for(i = 0; i < 27; i++)
+		{
+			if(i != 20) { // Skip GPIO 20 since it's used for clock - we'll use direct register control
+				bcmSetInput(i);
+				/* Pull-up is not supported in the old GPIO set/clear register method */
+			}
 		}
 	}
 
