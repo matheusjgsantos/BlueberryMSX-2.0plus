@@ -69,6 +69,7 @@ typedef enum {
 } SocType;
 
 static SocType currentSoc = SOC_UNKNOWN;
+static bool gclk_initialized = false;  /* Add this */
 
 #define RP1_MEM_SIZE           0x30000
 #define RP1_REG_SIZE           sizeof(uint32_t)
@@ -365,6 +366,9 @@ void msxwriteio(unsigned short addr, unsigned char byte);
 void clear_io();
 
 
+/* Clock initialization state */
+static bool gclk_initialized = false;
+
 static int setup_gclk(void)
 {
 	uint64_t div;
@@ -373,11 +377,17 @@ static int setup_gclk(void)
 	uint32_t ctrl;
 	uint64_t actualRate;
 
+	// Already initialized, return early
+	if (gclk_initialized) {
+		return 0;
+	}
+
 	if (currentSoc == SOC_RP1) {
 		/* RP1 (Pi 5) clock path */
 		if (clk_map != NULL) {
 			rp1SetGpioFunction(CLK_PIN, RP1_FUNCSEL_GPCLK0);
 			rp1EnablePad(CLK_PIN, 0);
+			gclk_initialized = true;
 			return 0;
 		}
 
@@ -418,19 +428,25 @@ static int setup_gclk(void)
 		actualRate = (RP1_XOSC_RATE << RP1_CLK_DIV_FRAC_BITS) / div;
 		fprintf(stderr, "RP1 GPCLK0 enabled on GPIO20: requested %llu Hz, actual %llu Hz\n",
 		        (unsigned long long)RP1_GPCLK0_RATE, (unsigned long long)actualRate);
+		gclk_initialized = true;
 		return 0;
 	}
 
 	/* BCM283x (Pi 3/4) clock path */
-	if (gclk_base == NULL && clk_map != NULL) {
+	if (clk_map == NULL) {
+		fprintf(stderr, "Clock setup error: clk_map not initialized\n");
+		return -1;
+	}
+
+	// Initialize clock pointers if needed
+	if (gclk_base == NULL) {
 		gclk_base = (volatile unsigned *)clk_map;
 		bcm_gpclk0_ctl = (volatile unsigned *)((unsigned)gclk_base + (BCM_GPCLK0_CNTL / 4));
 		bcm_gpclk0_div = (volatile unsigned *)((unsigned)gclk_base + (BCM_GPCLK0_DIV / 4));
 	}
 
 	if (bcm_gpclk0_ctl == NULL || bcm_gpclk0_div == NULL) {
-		/* This shouldn't happen unless the whole setup failed */
-		fprintf(stderr, "Clock initialization failed, GPCLK0 pointers not available\n");
+		fprintf(stderr, "Clock initialization error: GPCLK pointer not set\n");
 		return -1;
 	}
 
@@ -448,6 +464,8 @@ static int setup_gclk(void)
 	actualRate = 19200000ULL * 256 / ((div >> 12) * 256);
 	fprintf(stderr, "BCM GPCLK0 enabled on GPIO20: requested %llu Hz (div=%llu)\n",
 	        (unsigned long long)RP1_GPCLK0_RATE, (unsigned long long)(div >> 12));
+
+	gclk_initialized = true;
 
 	return 0;
 }
