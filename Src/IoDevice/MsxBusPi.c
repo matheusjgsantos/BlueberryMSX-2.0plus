@@ -105,6 +105,11 @@ static inline volatile uint32_t *rp1Reg(size_t offset)
 	return rp1Gpio + (offset / RP1_REG_SIZE);
 }
 
+static inline volatile uint32_t *rp1ClockReg(size_t offset)
+{
+	return rp1Clocks + (offset / 4);
+}
+
 static void rp1SetGpioFunction(int pin, uint32_t function)
 {
 	volatile uint32_t *ctrl = rp1Reg(RP1_IO_BANK0_OFFSET + RP1_GPIO_CTRL + pin * RP1_GPIO_OFFSET + RP1_RW_OFFSET);
@@ -153,25 +158,9 @@ static void rp1SetOutput(int pin)
 #define GPIO (*(gpio13))
 
 #define GZ_CLK_BUSY    (1 << 7)
-  
-// GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
-// (These are redefined for compatibility, but we're using direct register interface)
-#define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
-#define OUT_GPIO(g) *(gpio+((g)/10)) |=  (1<<(((g)%10)*3))
-#define SET_GPIO_ALT(g,a) *(gpio+(((g)/10))) |= (((a)<=3?(a)+4:(a)==4?3:2)<<(((g)%10)*3))
-  
-#define GPIO_SET *(gpio7)  // sets   bits which are 1 ignores bits which are 0
-#define GPIO_CLR *(gpio10) // clears bits which are 1 ignores bits which are 0
-  
-#define GET_GPIO(g) (*(gpio13)&(1<<g)) // 0 if LOW, (1<<g) if HIGH
-#define GPIO (*(gpio13))
-  
-#define GPIO_PULL *(gpio+37) // Pull up/pull down
-#define GPIO_PULLCLK0 *(gpio+38) // Pull up/pull down clock
 
-#define GZ_CLK_BUSY    (1 << 7)
-#define GP_CLK0_CTL *(gclk_base + 0x1C)
-#define GP_CLK0_DIV *(gclk_base + 0x1D)
+#define GP_CLK0_CTL *(rp1Clocks + (RP1_CLK_GP0_CTRL / 4))
+#define GP_CLK0_DIV *(rp1Clocks + (RP1_CLK_GP0_DIV_INT / 4))
 
 #ifdef RPMC_V5
 #define RD0		0
@@ -312,6 +301,83 @@ int msxreadio(unsigned short addr);
 void msxwriteio(unsigned short addr, unsigned char byte);
 void clear_io();
 
+
+static int setup_gclk(void)
+{
+	uint64_t div;
+	uint32_t divInt;
+	uint32_t divFrac;
+	uint32_t ctrl;
+	uint64_t actualRate;
+
+	if (clk_map != NULL) {
+		rp1SetGpioFunction(CLK_PIN, RP1_FUNCSEL_GPCLK0);
+		rp1EnablePad(CLK_PIN, 0);
+		return 0;
+	}
+
+	clk_fd = open("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC);
+	if (clk_fd < 0) {
+		fprintf(stderr, "Failed to open /dev/mem for RP1 GPCLK0: %s\n", strerror(errno));
+		return -1;
+	}
+
+	clk_map = mmap(NULL, RP1_CLOCK_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, clk_fd, (off_t)RP1_CLOCK_BASE_PHYS);
+	if (clk_map == MAP_FAILED) {
+		int savedErrno = errno;
+		fprintf(stderr, "Failed to map RP1 clock manager: %s\n", strerror(errno));
+		close(clk_fd);
+		clk_fd = -1;
+		clk_map = NULL;
+		errno = savedErrno;
+		return -1;
+	}
+
+	rp1Clocks = (volatile uint32_t *)clk_map;
+	div = ((RP1_XOSC_RATE << RP1_CLK_DIV_FRAC_BITS) + (RP1_GPCLK0_RATE / 2)) / RP1_GPCLK0_RATE;
+	divInt = div >> RP1_CLK_DIV_FRAC_BITS;
+	divFrac = (uint32_t)(div << (32 - RP1_CLK_DIV_FRAC_BITS));
+
+	*rp1ClockReg(RP1_CLK_GP0_DIV_INT) = divInt;
+	*rp1ClockReg(RP1_CLK_GP0_DIV_FRAC) = divFrac;
+	*rp1ClockReg(RP1_CLK_GP0_SEL) = 1u;
+	ctrl = *rp1ClockReg(RP1_CLK_GP0_CTRL);
+	ctrl &= ~RP1_CLK_CTRL_AUXSRC_MASK;
+	ctrl |= RP1_CLK_CTRL_ENABLE;
+	*rp1ClockReg(RP1_CLK_GP0_CTRL) = ctrl;
+	*rp1ClockReg(RP1_GPCLK_OE_CTRL) = *rp1ClockReg(RP1_GPCLK_OE_CTRL) | 1u;
+
+	rp1SetGpioFunction(CLK_PIN, RP1_FUNCSEL_GPCLK0);
+	rp1EnablePad(CLK_PIN, 0);
+
+	actualRate = (RP1_XOSC_RATE << RP1_CLK_DIV_FRAC_BITS) / div;
+	fprintf(stderr, "RP1 GPCLK0 enabled on GPIO20: requested %llu Hz, actual %llu Hz\n",
+	        (unsigned long long)RP1_GPCLK0_RATE, (unsigned long long)actualRate);
+
+	return 0;
+}
+
+static void clear_gclk(void)
+{
+	if (clk_map != NULL) {
+		*rp1ClockReg(RP1_GPCLK_OE_CTRL) = *rp1ClockReg(RP1_GPCLK_OE_CTRL) & ~1u;
+		*rp1ClockReg(RP1_CLK_GP0_CTRL) = *rp1ClockReg(RP1_CLK_GP0_CTRL) & ~RP1_CLK_CTRL_ENABLE;
+	}
+
+	if (gpio_map != NULL) {
+		rp1SetInput(CLK_PIN);
+	}
+
+	if (clk_map != NULL) {
+		munmap(clk_map, RP1_CLOCK_MEM_SIZE);
+		clk_map = NULL;
+		rp1Clocks = NULL;
+	}
+	if (clk_fd >= 0) {
+		close(clk_fd);
+		clk_fd = -1;
+	}
+}
 
 void SetAddress(unsigned short addr)
 {
