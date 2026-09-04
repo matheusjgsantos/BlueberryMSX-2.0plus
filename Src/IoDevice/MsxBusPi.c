@@ -221,8 +221,9 @@ static void bcmSetOutput(int pin)
 
 #define GZ_CLK_BUSY    (1 << 7)
 
-#define GP_CLK0_CTL   ((currentSoc == SOC_RP1) ? *(rp1ClockReg(RP1_CLK_GP0_CTRL)) : *(volatile unsigned *)((unsigned)gclk_base + (BCM_GPCLK0_CNTL / 4)))
-#define GP_CLK0_DIV   ((currentSoc == SOC_RP1) ? *(rp1ClockReg(RP1_CLK_GP0_DIV_INT)) : *(volatile unsigned *)((unsigned)gclk_base + (BCM_GPCLK0_DIV / 4)))
+/* Clock register pointers */
+static volatile unsigned *bcm_gpclk0_ctl = NULL;
+static volatile unsigned *bcm_gpclk0_div = NULL;
 
 #ifdef RPMC_V5
 #define RD0		0
@@ -436,6 +437,8 @@ static int setup_gclk(void)
 			return -1;
 		}
 		gclk_base = (volatile unsigned *)clk_map;
+		bcm_gpclk0_ctl = (volatile unsigned *)((unsigned)gclk_base + (BCM_GPCLK0_CNTL / 4));
+		bcm_gpclk0_div = (volatile unsigned *)((unsigned)gclk_base + (BCM_GPCLK0_DIV / 4));
 	}
 
 	/* Select a 19.2 MHz source and set the divider to reach ~3.579545 MHz.
@@ -445,11 +448,11 @@ static int setup_gclk(void)
 	   DIV = (19.2e6 / 3579545) as a fixed-point value. */
 	div = ((19200000ULL << 12) + (RP1_GPCLK0_RATE / 2)) / RP1_GPCLK0_RATE;
 
-	GP_CLK0_DIV = (unsigned)(BCM_GPCLK0_PASSWORD | ((div >> 12) << 12) | (div & 0xfff));
-	ctrl = GP_CLK0_CTL;
+	*bcm_gpclk0_div = (unsigned)(BCM_GPCLK0_PASSWORD | ((div >> 12) << 12) | (div & 0xfff));
+	ctrl = *bcm_gpclk0_ctl;
 	ctrl = (ctrl & ~0xff) | BCM_GPCLK0_PASSWORD | 6; /* source: 19.2 MHz XOSC (src=6) */
-	GP_CLK0_CTL = (ctrl & ~1u) | BCM_GPCLK0_PASSWORD; /* stop first */
-	GP_CLK0_CTL = (ctrl | BCM_GPCLK0_PASSWORD) | 1u;  /* start */
+	*bcm_gpclk0_ctl = (ctrl & ~1u) | BCM_GPCLK0_PASSWORD; /* stop first */
+	*bcm_gpclk0_ctl = (ctrl | BCM_GPCLK0_PASSWORD) | 1u;  /* start */
 
 	SET_GPIO_ALT(CLK_PIN, 0); /* GPIO20 = GPCLK0 (ALT0) on BCM283x */
 
@@ -468,8 +471,8 @@ static void clear_gclk(void)
 			*rp1ClockReg(RP1_CLK_GP0_CTRL) = *rp1ClockReg(RP1_CLK_GP0_CTRL) & ~RP1_CLK_CTRL_ENABLE;
 		}
 	} else {
-		if (gclk_base != NULL) {
-			GP_CLK0_CTL = (GP_CLK0_CTL & ~1u) | BCM_GPCLK0_PASSWORD; /* stop GPCLK0 */
+		if (bcm_gpclk0_ctl != NULL) {
+			*bcm_gpclk0_ctl = (*bcm_gpclk0_ctl & ~1u) | BCM_GPCLK0_PASSWORD; /* stop GPCLK0 */
 		}
 	}
 
@@ -482,6 +485,8 @@ static void clear_gclk(void)
 		clk_map = NULL;
 		rp1Clocks = NULL;
 		gclk_base = NULL;
+		bcm_gpclk0_ctl = NULL;
+		bcm_gpclk0_div = NULL;
 	}
 	if (clk_fd >= 0) {
 		close(clk_fd);
