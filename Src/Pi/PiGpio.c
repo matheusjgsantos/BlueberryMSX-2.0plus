@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "Led.h"
+#include "Log.h"
 
 // 74HC595 shift-register pins in BCM/GPIO numbering, converted from the
 // original wiringPi numbers: CLOCK 3->22, LATCH 4->23, DATA 25->26.
@@ -25,7 +26,7 @@ void gpioInit()
 {
     if (!bcm2835_init())
     {
-        fprintf(stderr, "PiGpio: bcm2835_init() failed - slot LEDs disabled\n");
+        LOG_ERROR("PiGpio: bcm2835_init() failed - slot LEDs disabled");
         return;
     }
     bcm2835_gpio_fsel(CLOCK, BCM2835_GPIO_FSEL_OUTP);

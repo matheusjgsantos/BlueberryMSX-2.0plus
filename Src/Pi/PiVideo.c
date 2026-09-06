@@ -35,6 +35,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "Properties.h"
+#include "Log.h"
 #include "VideoRender.h"
 
 //#include <interface/vchiq_arm/vchiq_if.h>
@@ -278,26 +279,26 @@ static int getDisplay(EGLDisplay *display)
     drmModeRes *resources = drmModeGetResources(device);
     if (resources == NULL)
     {
-        fprintf(stderr, "Unable to get DRM resources\n");
+        LOG_ERROR("Unable to get DRM resources");
         return -1;
     }
 
     drmModeConnector *connector = getConnector(resources);
     if (connector == NULL)
     {
-        fprintf(stderr, "Unable to get connector\n");
+        LOG_ERROR("Unable to get connector");
         drmModeFreeResources(resources);
         return -1;
     }
 
     connectorId = connector->connector_id;
     mode = connector->modes[0];
-    printf("resolution: %ix%i\n", mode.hdisplay, mode.vdisplay);
+    LOG_INFO("resolution: %ix%i", mode.hdisplay, mode.vdisplay);
 
     drmModeEncoder *encoder = findEncoder(connector);
     if (encoder == NULL)
     {
-        fprintf(stderr, "Unable to get encoder\n");
+        LOG_ERROR("Unable to get encoder");
         drmModeFreeConnector(connector);
         drmModeFreeResources(resources);
         return -1;
@@ -345,10 +346,10 @@ static void gbmSwapBuffers(EGLDisplay *display, EGLSurface *surface)
     uint32_t pitches[4] = { pitch, 0, 0, 0 };
     uint32_t offsets[4] = { 0, 0, 0, 0 };
     int ret = drmModeAddFB2(device, mode.hdisplay, mode.vdisplay, DRM_FORMAT_XRGB8888, handles, pitches, offsets, &fb, 0);
-    if (ret) fprintf(stderr, "drmModeAddFB2 failed: %d\n", ret);
+    if (ret) LOG_ERROR("drmModeAddFB2 failed: %d", ret);
     // for tests purpose - drmModeAddFB(device, mode.hdisplay, mode.vdisplay, 24, 32, 3328, 1, &fb);
     ret = drmModeSetCrtc(device, crtc->crtc_id, fb, 0, 0, &connectorId, 1, &mode);
-    if (ret) fprintf(stderr, "drmModeSetCrtc failed: %d\n", ret);
+    if (ret) LOG_ERROR("drmModeSetCrtc failed: %d", ret);
 
     if (previousBo)
     {
@@ -400,11 +401,11 @@ int piInitVideo()
     if (getDisplay(&display) != 0)
     {
         close(device);
-        fprintf(stderr, "Unable to get EGL display using /dev/dri/card0, trying next\n");
+        LOG_ERROR("Unable to get EGL display using /dev/dri/card0, trying next");
     	device = open("/dev/dri/card1", O_RDWR | O_CLOEXEC);
     	if (getDisplay(&display) != 0)
     	{
-        	fprintf(stderr, "Unable to get EGL display using /dev/dri/card0, trying next\n");
+        	LOG_ERROR("Unable to get EGL display using /dev/dri/card0, trying next");
 		close(device);
 		return EXIT_FAILURE;
 	}
@@ -425,7 +426,7 @@ int piInitVideo()
 
    if (eglInitialize(display, &major, &minor) == EGL_FALSE)
     {
-        fprintf(stderr, "Failed to get EGL version! Error: %s\n",
+        LOG_ERROR("Failed to get EGL version! Error: %s",
                 eglGetErrorStr());
         eglTerminate(display);
         gbmClean();
@@ -435,7 +436,7 @@ int piInitVideo()
     // Make sure that we can use OpenGL in this EGL app.
     eglBindAPI(EGL_OPENGL_ES_API);
 
-    printf("Initialized EGL version: %d.%d\n", major, minor);
+    LOG_INFO("Initialized EGL version: %d.%d", major, minor);
 
     EGLint count;
     EGLint numConfigs;
@@ -444,7 +445,7 @@ int piInitVideo()
 
     if (!eglChooseConfig(display, configAttribs, configs, count, &numConfigs))
     {
-        fprintf(stderr, "Failed to get EGL configs! Error: %s\n",
+        LOG_ERROR("Failed to get EGL configs! Error: %s",
                 eglGetErrorStr());
         eglTerminate(display);
         gbmClean();
@@ -456,7 +457,7 @@ int piInitVideo()
     int configIndex = matchConfigToVisual(display, GBM_FORMAT_XRGB8888, configs, numConfigs);
     if (configIndex < 0)
     {
-        fprintf(stderr, "Failed to find matching EGL config! Error: %s\n",
+        LOG_ERROR("Failed to find matching EGL config! Error: %s",
                 eglGetErrorStr());
         eglTerminate(display);
         gbm_surface_destroy(gbmSurface);
@@ -468,7 +469,7 @@ int piInitVideo()
         eglCreateContext(display, configs[configIndex], EGL_NO_CONTEXT, contextAttribs);
     if (context == EGL_NO_CONTEXT)
     {
-        fprintf(stderr, "Failed to create EGL context! Error: %s\n",
+        LOG_ERROR("Failed to create EGL context! Error: %s",
                 eglGetErrorStr());
         eglTerminate(display);
         gbmClean();
@@ -485,23 +486,23 @@ int piInitVideo()
     surface = eglCreateWindowSurface(display, configs[configIndex], gbmSurface, attribList);
     if (surface == EGL_NO_SURFACE)
     {
-        fprintf(stderr, "Failed to create EGL surface! Error: %s\n",
+        LOG_ERROR("Failed to create EGL surface! Error: %s",
                 eglGetErrorStr());
         eglDestroyContext(display, context);
         eglTerminate(display);
         gbmClean();
         return EXIT_FAILURE;
     } else {
-	    fprintf(stderr,"eglCreateWindowSurface returned %s\n",eglGetErrorStr());
+	    LOG_INFO("eglCreateWindowSurface returned %s", eglGetErrorStr());
     }
 
     free(configs);
     result = eglMakeCurrent(display, surface, surface, context);
     if (result == EGL_FALSE) {
-	    fprintf(stderr, "eglMakeCurrent() failed: EGL_FALSE\n"); 
+	    LOG_ERROR("eglMakeCurrent() failed: EGL_FALSE"); 
 	    return 0;
     } else {
-	    fprintf(stderr,"eglMakeCurrent returned &s\n",eglGetErrorStr());
+	    LOG_INFO("eglMakeCurrent returned &s", eglGetErrorStr());
     }
     
     // Set GL Viewport size, always needed!
@@ -512,11 +513,11 @@ int piInitVideo()
     glGetIntegerv(GL_VIEWPORT, viewport);
 
     // viewport[2] and viewport[3] are viewport width and height respectively
-    printf("GL Viewport size: %dx%d\n", viewport[2], viewport[3]);
+    LOG_INFO("GL Viewport size: %dx%d", viewport[2], viewport[3]);
 
     if (viewport[2] != desiredWidth || viewport[3] != desiredHeight)
     {
-        fprintf(stderr, "Error! The glViewport returned incorrect values! Something is wrong!\n");
+        LOG_ERROR("Error! The glViewport returned incorrect values! Something is wrong!");
         eglDestroyContext(display, context);
         eglDestroySurface(display, surface);
         eglTerminate(display);
@@ -532,16 +533,16 @@ int piInitVideo()
 	// get an EGL display connection
 	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 	if (display == EGL_NO_DISPLAY) {
-		fprintf(stderr, "eglGetDisplay() failed: EGL_NO_DISPLAY\n");
+		LOG_ERROR("eglGetDisplay() failed: EGL_NO_DISPLAY");
 		return 0;
 	} else {
-		fprintf(stderr, "eglDisplay() returned %lu\n",display);
+		LOG_ERROR("eglDisplay() returned %lu",display);
 	}
 
 	// initialize the EGL display connection
 	EGLBoolean result = eglInitialize(display, NULL, NULL);
 	if (result == EGL_FALSE) {
-		fprintf(stderr, "eglInitialize() failed: EGL_FALSE %lu\n",eglGetError());
+		LOG_ERROR("eglInitialize() failed: EGL_FALSE %lu",eglGetError());
 		//return 0;
 	}
 
@@ -558,13 +559,13 @@ int piInitVideo()
 	};
 	result = eglChooseConfig(display, attributeList, &config, 1, &numConfig);
 	if (result == EGL_FALSE) {
-		fprintf(stderr, "eglChooseConfig() failed: EGL_FALSE\n");
+		LOG_ERROR("eglChooseConfig() failed: EGL_FALSE");
 		return 0;
 	}
 
 	result = eglBindAPI(EGL_OPENGL_ES_API);
 	if (result == EGL_FALSE) {
-		fprintf(stderr, "eglBindAPI() failed: EGL_FALSE\n");
+		LOG_ERROR("eglBindAPI() failed: EGL_FALSE");
 		return 0;
 	}
 
@@ -575,18 +576,18 @@ int piInitVideo()
 	};
 	context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttributes);
 	if (context == EGL_NO_CONTEXT) {
-		fprintf(stderr, "eglCreateContext() failed: EGL_NO_CONTEXT\n");
+		LOG_ERROR("eglCreateContext() failed: EGL_NO_CONTEXT");
 		return 0;
 	}
 
 	// create an EGL window surface
 	int32_t success = graphics_get_display_size(0, &screenWidth, &screenHeight);
 	if (result < 0) {
-		fprintf(stderr, "graphics_get_display_size() failed: < 0\n");
+		LOG_ERROR("graphics_get_display_size() failed: < 0");
 		return 0;
 	}
 
-	printf( "Width/height: %d/%d\n", screenWidth, screenHeight);
+	LOG_INFO("Width/height: %d/%d", screenWidth, screenHeight);
 	if (screenHeight < 600 && video)
 		video->scanLinesEnable = 0;
 
@@ -613,35 +614,35 @@ int piInitVideo()
 	nativeWindow.height = screenHeight;
 	vc_dispmanx_update_submit_sync(dispmanUpdate);
 
-	fprintf(stderr, "Initializing window surface...\n");
+	LOG_DEBUG("Initializing window surface...");
 
 	surface = eglCreateWindowSurface(display, config, &nativeWindow, NULL);
 	if (surface == EGL_NO_SURFACE) {
-		fprintf(stderr, "eglCreateWindowSurface() failed: EGL_NO_SURFACE\n");
+		LOG_ERROR("eglCreateWindowSurface() failed: EGL_NO_SURFACE");
 		return 0;
 	}
 
-	fprintf(stderr, "Connecting context to surface...\n");
+	LOG_DEBUG("Connecting context to surface...");
 
 	// connect the context to the surface
 	result = eglMakeCurrent(display, surface, surface, context);
 	if (result == EGL_FALSE) {
-		fprintf(stderr, "eglMakeCurrent() failed: EGL_FALSE\n");
+		LOG_ERROR("eglMakeCurrent() failed: EGL_FALSE");
 		return 0;
 	}
 	*/
 
-	fprintf(stderr, "Initializing shaders...\n");
+	LOG_DEBUG("Initializing shaders...");
 
 	// Init shader resources
 	memset(&shader, 0, sizeof(ShaderInfo));
 	shader.program = createProgram(vertexShaderSrc, fragmentShaderSrc);
 	if (!shader.program) {
-		fprintf(stderr, "createProgram() failed\n");
+		LOG_ERROR("createProgram() failed");
 		return 0;
 	}
 
-	fprintf(stderr, "Initializing textures/buffers...\n");
+	LOG_DEBUG("Initializing textures/buffers...");
 
 	shader.a_position	= glGetAttribLocation(shader.program,	"a_position");
 	shader.a_texcoord	= glGetAttribLocation(shader.program,	"a_texcoord");
@@ -684,16 +685,16 @@ int piInitVideo()
 	setOrtho(projection, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f,
 		sx * zoom, sy * zoom);
 
-	fprintf(stderr, "Setting up screen...\n");
+	LOG_DEBUG("Setting up screen...");
 
 	msxScreenPitch = WIDTH * BIT_DEPTH / 8;
 	msxScreen = (char*)calloc(1, BIT_DEPTH / 8 * TEX_WIDTH * TEX_HEIGHT);
 	if (!msxScreen) {
-		fprintf(stderr, "Error allocating screen texture\n");
+		LOG_ERROR("Error allocating screen texture");
 		return 0;
 	}
 
-	fprintf(stderr, "Initializing SDL video...\n");
+	LOG_DEBUG("Initializing SDL video...");
 
 	//SDL_INIT_JOYSTICK will handle the keyboard initialization so we don't need to do SDL_INIT_EVERYTHING here//
 	//SDL_Init(SDL_INIT_JOYSTICK);
@@ -701,7 +702,7 @@ int piInitVideo()
 	
 	SDL_ShowCursor(SDL_DISABLE);
 
-	fprintf(stderr,"PyInitVideo returning 1\n");
+	LOG_DEBUG("PyInitVideo returning 1");
 	return 1;
 }
 
@@ -742,7 +743,7 @@ void piUpdateEmuDisplay()
 {
 	int w = 0;
 	if (!shader.program) {
-		fprintf(stderr, "Shader not initialized\n");
+		LOG_ERROR("Shader not initialized");
 		return;
 	}
 
@@ -797,8 +798,8 @@ void piUpdateEmuDisplay()
 		interlace = frameBuffer->interlace;
 		float sx = 1.0f * msxScreenPitch/WIDTH;
 		float sy = 1.0f * height / HEIGHT;
-//		printf("screen = %x, width = %d, height = %d, double = %d, interlaced = %d\n", msxScreen, msxScreenPitch, height, width, interlace);
-//		printf("sx=%f,sy=%f\n", sx, sy);
+//		LOG_INFO("screen = %x, width = %d, height = %d, double = %d, interlaced = %d", msxScreen, msxScreenPitch, height, width, interlace);
+//		LOG_INFO("sx=%f,sy=%f", sx, sy);
 		fflush(stdin);
 		if (sy == 1.0f)
 			setOrtho(projection, -sx/2, sx/2,  sy/2, -sy/2, -0.5f, +0.5f,1,1);		
@@ -821,7 +822,7 @@ static GLuint createShader(GLenum type, const char *shaderSrc)
 {
 	GLuint shader = glCreateShader(type);
 	if (!shader) {
-		fprintf(stderr, "glCreateShader() failed: %d\n", glGetError());
+		LOG_ERROR("glCreateShader() failed: %d", glGetError());
 		return 0;
 	}
 
@@ -838,7 +839,7 @@ static GLuint createShader(GLenum type, const char *shaderSrc)
 		if (infoLen > 1) {
 			char* infoLog = (char *)malloc(sizeof(char) * infoLen);
 			glGetShaderInfoLog(shader, infoLen, NULL, infoLog);
-			fprintf(stderr, "Error compiling shader:\n%s\n", infoLog);
+			LOG_ERROR("Error compiling shader:\n%s", infoLog);
 			free(infoLog);
 		}
 
@@ -853,20 +854,20 @@ static GLuint createProgram(const char *vertexShaderSrc, const char *fragmentSha
 {
 	GLuint vertexShader = createShader(GL_VERTEX_SHADER, vertexShaderSrc);
 	if (!vertexShader) {
-		fprintf(stderr, "createShader(GL_VERTEX_SHADER) failed\n");
+		LOG_ERROR("createShader(GL_VERTEX_SHADER) failed");
 		return 0;
 	}
 
 	GLuint fragmentShader = createShader(GL_FRAGMENT_SHADER, fragmentShaderSrc);
 	if (!fragmentShader) {
-		fprintf(stderr, "createShader(GL_FRAGMENT_SHADER) failed\n");
+		LOG_ERROR("createShader(GL_FRAGMENT_SHADER) failed");
 		glDeleteShader(vertexShader);
 		return 0;
 	}
 
 	GLuint programObject = glCreateProgram();
 	if (!programObject) {
-		fprintf(stderr, "glCreateProgram() failed: %d\n", glGetError());
+		LOG_ERROR("glCreateProgram() failed: %d", glGetError());
 		return 0;
 	}
 
@@ -885,7 +886,7 @@ static GLuint createProgram(const char *vertexShaderSrc, const char *fragmentSha
 		if (infoLen > 1) {
 			char* infoLog = (char *)malloc(infoLen);
 			glGetProgramInfoLog(programObject, infoLen, NULL, infoLog);
-			fprintf(stderr, "Error linking program: %s\n", infoLog);
+			LOG_ERROR("Error linking program: %s", infoLog);
 			free(infoLog);
 		}
 

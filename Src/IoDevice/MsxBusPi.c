@@ -27,6 +27,7 @@
 #define RPMC_V5
 // Access from ARM Running Linux
 #include "rpi-gpio.h"
+#include "Log.h"
     
 #include <errno.h>
 #include <stdio.h>
@@ -396,14 +397,14 @@ static int setup_gclk(void)
 
 		clk_fd = open("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC);
 		if (clk_fd < 0) {
-			fprintf(stderr, "Failed to open /dev/mem for RP1 GPCLK0: %s\n", strerror(errno));
+			LOG_ERROR("Failed to open /dev/mem for RP1 GPCLK0: %s", strerror(errno));
 			return -1;
 		}
 
 		clk_map = mmap(NULL, RP1_CLOCK_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, clk_fd, (off_t)RP1_CLOCK_BASE_PHYS);
 		if (clk_map == MAP_FAILED) {
 			int savedErrno = errno;
-			fprintf(stderr, "Failed to map RP1 clock manager: %s\n", strerror(errno));
+			LOG_ERROR("Failed to map RP1 clock manager: %s", strerror(errno));
 			close(clk_fd);
 			clk_fd = -1;
 			clk_map = NULL;
@@ -429,7 +430,7 @@ static int setup_gclk(void)
 		rp1EnablePad(CLK_PIN, 0);
 
 		actualRate = (RP1_XOSC_RATE << RP1_CLK_DIV_FRAC_BITS) / div;
-		fprintf(stderr, "RP1 GPCLK0 enabled on GPIO20: requested %llu Hz, actual %llu Hz\n",
+		LOG_INFO("RP1 GPCLK0 enabled on GPIO20: requested %llu Hz, actual %llu Hz",
 		        (unsigned long long)RP1_GPCLK0_RATE, (unsigned long long)actualRate);
 		gclk_initialized = true;
 		return 0;
@@ -437,7 +438,7 @@ static int setup_gclk(void)
 
 	/* BCM283x (Pi 3/4) clock path */
 	if (clk_map == NULL) {
-		fprintf(stderr, "Clock setup error: clk_map not initialized\n");
+		LOG_ERROR("Clock setup error: clk_map not initialized");
 		return -1;
 	}
 
@@ -449,7 +450,7 @@ static int setup_gclk(void)
 	}
 
 	if (bcm_gpclk0_ctl == NULL || bcm_gpclk0_div == NULL) {
-		fprintf(stderr, "Clock initialization error: GPCLK pointer not set\n");
+		LOG_ERROR("Clock initialization error: GPCLK pointer not set");
 		return -1;
 	}
 
@@ -465,7 +466,7 @@ static int setup_gclk(void)
 	SET_GPIO_ALT(CLK_PIN, 4); /* GPIO20 = GPCLK0 (ALT0 = function 4) on BCM283x */
 
 	actualRate = 19200000ULL * 256 / ((div >> 12) * 256);
-	fprintf(stderr, "BCM GPCLK0 enabled on GPIO20: requested %llu Hz (div=%llu)\n",
+	LOG_INFO("BCM GPCLK0 enabled on GPIO20: requested %llu Hz (div=%llu)",
 	        (unsigned long long)RP1_GPCLK0_RATE, (unsigned long long)(div >> 12));
 
 	gclk_initialized = true;
@@ -563,8 +564,8 @@ unsigned char GetData(int flag, int rflag, int delay)
 	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2: 0;
 	SetAddress(addr);
 	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, MSX_RD | cs1 | cs2, 30);
-#ifdef DEBUG    
-	printf("+%04x:%02xr\n", addr, byte);
+#ifdef DEBUG
+	LOG_TRACE("+%04x:%02xr", addr, byte);
 #endif
 	return byte;	 
  }
@@ -573,8 +574,8 @@ unsigned char GetData(int flag, int rflag, int delay)
  {
 	SetAddress(addr);
 	SetData(MSX_MREQ, (slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, 45, byte);
-#ifdef DEBUG  
-	printf("+%04x:%02xw\n", addr, byte);
+#ifdef DEBUG
+	LOG_TRACE("+%04x:%02xw", addr, byte);
 #endif
 	return;
  }
@@ -584,8 +585,8 @@ unsigned char GetData(int flag, int rflag, int delay)
 	unsigned char byte;
 	SetAddress(addr);
 	byte = GetData(MSX_IORQ, MSX_RD, 45);
-#ifdef DEBUG      
-	printf("-IO%02x:%02xr\n", addr, byte);
+#ifdef DEBUG
+	LOG_TRACE("-IO%02x:%02xr", addr, byte);
 #endif
 	return byte;	 
  }
@@ -594,8 +595,8 @@ unsigned char GetData(int flag, int rflag, int delay)
     {
 	SetAddress(addr);
 	SetData(MSX_IORQ, MSX_IORQ, 55, byte);
-#ifdef DEBUG      
-	printf("-IO%02x:%02xw\n", addr, byte);
+#ifdef DEBUG
+	LOG_TRACE("-IO%02x:%02xw", addr, byte);
 #endif
 	return;
  }
@@ -620,7 +621,7 @@ int setup_io()
 
 	// Open the master /dev/mem device
 	if ((mem_fd = open("/dev/mem", O_RDWR | O_SYNC)) < 0) {
-		fprintf(stderr, "Cannot open /dev/mem: %s\n", strerror(errno));
+		LOG_ERROR("Cannot open /dev/mem: %s", strerror(errno));
 		return -1;
 	}
 
@@ -635,7 +636,7 @@ int setup_io()
 	);
 
 	if (gpio_map == MAP_FAILED) {
-		fprintf(stderr, "Cannot map GPIO registers: %s\n", strerror(errno));
+		LOG_ERROR("Cannot map GPIO registers: %s", strerror(errno));
 		close(mem_fd);
 		return -1;
 	}
@@ -643,7 +644,7 @@ int setup_io()
 	// Map clock registers  
 	clk_fd = open("/dev/mem", O_RDWR | O_SYNC);
 	if (clk_fd < 0) {
-		fprintf(stderr, "Cannot open /dev/mem for clocks: %s\n", strerror(errno));
+		LOG_ERROR("Cannot open /dev/mem for clocks: %s", strerror(errno));
 		return -1;
 	}
 
@@ -657,7 +658,7 @@ int setup_io()
 	);
 
 	if (clk_map == MAP_FAILED) {
-		fprintf(stderr, "Cannot map clock registers: %s\n", strerror(errno));
+		LOG_ERROR("Cannot map clock registers: %s", strerror(errno));
 		close(clk_fd);
 		return -1;
 	}
@@ -724,11 +725,11 @@ void msxinit()
 	sched_setscheduler(0, SCHED_FIFO, &priority);  
 	if (setup_io() == -1)
     {
-        printf("GPIO init error\n");
+        LOG_ERROR("GPIO init error");
         exit(0);
     }
     frontled(0x0);
-	printf("MSX BUS initialized\n");
+	LOG_INFO("MSX BUS initialized");
 }
 
 void msxclose()

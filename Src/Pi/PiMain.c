@@ -34,6 +34,7 @@
 #include "PiGpio.h"
 //#endif
 
+#include "Log.h"
 #include "CommandLine.h"
 #include "Properties.h"
 #include "ArchFile.h"
@@ -262,7 +263,8 @@ static void setDefaultPaths(const char* rootDir)
 
 int main(int argc, char **argv)
 {
-	printf("BlueberryMSX 2.0 Plus v%s\n", BLUEMSX_VERSION);
+	logInit();
+	LOG_INFO("BlueberryMSX 2.0 Plus v%s", BLUEMSX_VERSION);
 
 	/* The physical keyboard is shared with the tty: a physical Ctrl+C
 	 * generates SIGINT for the foreground process. Ignore it so the
@@ -276,18 +278,18 @@ int main(int argc, char **argv)
 //#endif
 
 	if (!piInitVideo()) {
-		fprintf(stderr, "piInitVideo() failed");
+		LOG_ERROR("piInitVideo() failed");
 		return 1;
 	}
 
 	if (!piInitUdev()) {
-		fprintf(stderr, "piInitUdev() failed");
+		LOG_ERROR("piInitUdev() failed");
 		piDestroyVideo();
 		return 1;
 	}
 	
 	if (SDL_InitSubSystem(SDL_INIT_TIMER|SDL_INIT_EVENTS|SDL_INIT_GAMECONTROLLER|SDL_INIT_AUDIO) != 0){
-		fprintf(stderr,"PiMain SDL_Init failed: %s\n", SDL_GetError());
+		LOG_ERROR("PiMain SDL_Init failed: %s", SDL_GetError());
 		/*SDL_Quit();
 		exit(1);*/
 	}
@@ -353,7 +355,7 @@ int main(int argc, char **argv)
 
 	dpyUpdateAckEvent = archEventCreate(0);
 
-	fprintf(stderr,"PiMain is calling keyboardInit with %d\n",properties);
+	LOG_DEBUG("PiMain is calling keyboardInit with %d", properties);
 	keyboardInit(properties);
 	piKeyboardEvdevInit();
 
@@ -443,7 +445,7 @@ int main(int argc, char **argv)
 			boardSetMachine(machine);
 			machineDestroy(machine);
 		} else {
-			fprintf(stderr, "Error creating machine\n");
+			LOG_ERROR("Error creating machine");
 			piDestroyVideo();
 			piDestroyUdev();
 			return 1;
@@ -458,7 +460,7 @@ int main(int argc, char **argv)
 
 	i = emuTryStartWithArguments(properties, szLine, NULL);
 	if (i < 0) {
-		fprintf(stderr, "Failed to parse command line\n");
+		LOG_ERROR("Failed to parse command line");
 		videoDestroy(video);
 		propDestroy(properties);
 		archSoundDestroy();
@@ -477,7 +479,7 @@ int main(int argc, char **argv)
 
 	piScanDevices();
 	
-	fprintf(stderr, "Powering on\n");
+	LOG_INFO("Powering on");
 
 	while (!doQuit) {
 		SDL_WaitEvent(&event);
@@ -503,12 +505,12 @@ int main(int argc, char **argv)
 	piDestroyVideo();
 	piDestroyUdev();
 	piKeyboardEvdevDestroy();
-	fprintf(stderr,"PiMain is calling SDL_Quit()");
+	LOG_DEBUG("PiMain is calling SDL_Quit()");
 	SDL_Quit();
 #ifdef RPMC_FRONTLED
     frontled(0);
 #endif
-	fprintf(stderr, "Powered off\n");
+	LOG_INFO("Powered off");
 //	SDL_Init(0);
 //	exit(0);
 	return 0;

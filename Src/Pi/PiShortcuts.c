@@ -30,6 +30,7 @@
 //#include <SDL_keysym.h>
 #include <SDL_keycode.h>
 #include "IniFileParser.h"
+#include "Log.h"
 #include "StrcmpNoCase.h"
 #include "Actions.h"
 
@@ -813,7 +814,7 @@ Shortcuts* shortcutsCreate()
 
     IniFile *iniFile = iniFileOpen(filename);
 	
-	printf("shortcut file:%s, %d\n", filename, iniFile);
+	LOG_DEBUG("shortcut file:%s, %d", filename, iniFile);
 
 	if (iniFile->iniBuffer) {
 		LOAD_SHORTCUT(switchMsxAudio);

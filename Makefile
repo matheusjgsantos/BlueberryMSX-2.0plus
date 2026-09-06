@@ -46,7 +46,7 @@ COMMON_FLAGS = -DUSESDL2 -DUSESDL2Main -DUSE_EGL -DIS_RPI -DLSB_FIRST -DNO_ASM -
 CFLAGS   = -g -w -O3 -Wno-implicit-function-declaration -Wno-incompatible-pointer-types -Wno-int-conversion -ffast-math -fstrict-aliasing -fomit-frame-pointer -finstrument-functions $(COMMON_FLAGS)
 CPPFLAGS = -g $(COMMON_FLAGS)
 LDFLAGS  =
-LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm  -lGLESv2 -lEGL
+LIBS     =  -lSDL2main -lSDL2 -lz -lpthread -ludev -lbcm2835 `pkg-config --cflags --libs libdrm` -lgbm  -lGLESv2 -lEGL -lspdlog -lfmt
 # Uncomment the following line to enable GPIO (requires wiring-pi)
 CFLAGS   += -DRASPI_GPIO
 #CFLAGS   += -DSINGLE_THREADED
@@ -163,6 +163,7 @@ SOURCE_FILES += SdlCdrom.c
 SOURCE_FILES += Patch.c
 
 SOURCE_FILES += ziphelper.c
+SOURCE_FILES += Log.cpp
 SOURCE_FILES += ZipFromMem.c
 
 SOURCE_FILES += adler32.c
@@ -472,9 +473,9 @@ $(OUTPUT_DIR)/%.res: %.rc $(HEADER_FILES)
 #
 # Standalone ROM Tester tool
 #
-rom_tester: rom_tester.c Src/IoDevice/MsxBusPi.c
+rom_tester: rom_tester.c Src/IoDevice/MsxBusPi.c Src/Utils/Log.h
 	$(ECHO) Building standalone rom_tester...
-	$(CC) -DROM_TESTER_BUILD -I$(ROOT_DIR)/Src/IoDevice/ -o $@ rom_tester.c -lbcm2835 -lpthread
+	$(CC) -DROM_TESTER_BUILD -I$(ROOT_DIR)/Src/IoDevice/ -I$(ROOT_DIR)/Src/Utils/ -o $@ rom_tester.c -lbcm2835 -lpthread
 
 clean_rom_tester:
 	$(ECHO) Cleaning rom_tester...

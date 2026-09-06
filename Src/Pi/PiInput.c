@@ -26,6 +26,7 @@
 ******************************************************************************
 */
 #include "ArchInput.h"
+#include "Log.h"
 #include "Language.h"
 #include "Properties.h"
 #include "InputEvent.h"
@@ -206,7 +207,7 @@ void piInputResetMSXDevices(int realMice, int realJoysticks)
 		realJoysticks--;
 		port++;
 
-		fprintf(stderr, "Connecting a joystick to port %d\n", port);
+		LOG_INFO("Connecting a joystick to port %d", port);
 	}
 
 	// If there are still open ports and a mouse,
@@ -215,11 +216,11 @@ void piInputResetMSXDevices(int realMice, int realJoysticks)
 		if (port == 0) {
 			properties->joy1.typeId = JOYSTICK_PORT_MOUSE;
 			joystickPortSetType(port++, properties->joy1.typeId);
-			fprintf(stderr, "Connecting a mouse to port 1\n");
+			LOG_INFO("Connecting a mouse to port 1");
 		} else if (port == 1) {
 			properties->joy2.typeId = JOYSTICK_PORT_MOUSE;
 			joystickPortSetType(port++, properties->joy2.typeId);
-			fprintf(stderr, "Connecting a mouse to port 2\n");
+			LOG_INFO("Connecting a mouse to port 2");
 		}
 		
 		realMice--;
@@ -231,7 +232,7 @@ void keyboardInit(Properties *properties)
 	if (strncmp(properties->emulation.machineName, "COL", 3) == 0) {
 		inputTypeScanStart = 1;
 		inputTypeScanEnd = 2;
-		fprintf(stderr, "Initializing ColecoVision input\n");
+		LOG_INFO("Initializing ColecoVision input");
 	}
 
 	initKbdTable();
@@ -554,7 +555,7 @@ int piKeyboardEvdevInit(void)
 	if (evdevFdCount > 0) return 0;
 	dir = opendir("/dev/input");
 	if (!dir) {
-		fprintf(stderr, "evdev kbd: cannot open /dev/input: %s\n", strerror(errno));
+		LOG_ERROR("evdev kbd: cannot open /dev/input: %s", strerror(errno));
 		return -1;
 	}
 	while ((ent = readdir(dir)) != NULL && evdevFdCount < EVDEV_MAX_FDS) {
@@ -579,20 +580,20 @@ int piKeyboardEvdevInit(void)
 		 * no Ctrl+C -> SIGINT). The grab is released automatically
 		 * when the fd is closed (exit or crash). */
 		if (ioctl(fd, EVIOCGRAB, 1) < 0) {
-			fprintf(stderr, "evdev kbd: EVIOCGRAB %s failed: %s\n", path, strerror(errno));
+			LOG_ERROR("evdev kbd: EVIOCGRAB %s failed: %s", path, strerror(errno));
 		}
 		evdevFds[evdevFdCount++] = fd;
 		found++;
-		fprintf(stderr, "evdev kbd: using %s\n", path);
+		LOG_DEBUG("evdev kbd: using %s", path);
 	}
 	closedir(dir);
 	if (!found) {
-		fprintf(stderr, "evdev kbd: no EV_KEY devices found\n");
+		LOG_ERROR("evdev kbd: no EV_KEY devices found");
 		return -1;
 	}
 	evdevRunning = 1;
 	if (pthread_create(&evdevThreadId, NULL, evdevThreadMain, NULL) != 0) {
-		fprintf(stderr, "evdev kbd: pthread_create failed\n");
+		LOG_ERROR("evdev kbd: pthread_create failed");
 		evdevRunning = 0;
 		return -1;
 	}

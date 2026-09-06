@@ -26,6 +26,7 @@
 ******************************************************************************
 */
 #include "Emulator.h"
+#include "Log.h"
 #include "MsxTypes.h"
 #include "Debugger.h"
 #include "Board.h"
@@ -453,7 +454,7 @@ void emulatorStart(const char* stateName) {
 #endif
     emuStartEvent = archEventCreate(0);
 #ifndef WII
-    fprintf(stderr,"Emulator is calling archCreateTimer\n");
+    LOG_DEBUG("Emulator is calling archCreateTimer");
     emuTimer = archCreateTimer(emulatorGetSyncPeriod(), timerCallback);
 #endif
 #endif
@@ -473,19 +474,19 @@ void emulatorStart(const char* stateName) {
 
 #ifdef SINGLE_THREADED
     emuState = EMU_RUNNING;
-    fprintf(stderr,"Emulator is calling emulatorThread()\n");
+    LOG_DEBUG("Emulator is calling emulatorThread()");
     emulatorThread();
 
     if (emulationStartFailure) {
-    	fprintf(stderr,"Emulator Start failed!\nEmulator is calling archEmulationStopNotification()\n");
+    	LOG_ERROR("Emulator Start failed!");
         archEmulationStopNotification();
         emuState = EMU_STOPPED;
         archEmulationStartFailure();
     }
 #else
-    fprintf(stderr,"Emulator is calling the archThreadCreate with the parameters %d\n", emulatorThread);
+    LOG_DEBUG("Emulator is calling the archThreadCreate with the parameters %d", emulatorThread);
     emuThread = archThreadCreate(emulatorThread, THREAD_PRIO_HIGH);
-    fprintf(stderr,"Emulator called archThreadCreate with %d and received %d\n",emulatorThread, emuThread);
+    LOG_DEBUG("Emulator called archThreadCreate with %d and received %d", emulatorThread, emuThread);
 
     archEventWait(emuStartEvent, 3000);
 
@@ -528,11 +529,11 @@ void emulatorStop() {
     //archEventSet(emuSyncEvent);
 #endif
     archSoundSuspend();
-    fprintf(stderr,"Emulator is calling archThreadJoin with data: %d\n",emuThread);
+    LOG_DEBUG("Emulator is calling archThreadJoin with data: %d", emuThread);
     archThreadJoin(emuThread, 3000);
     archMidiEnable(0);
     machineDestroy(machine);
-    fprintf(stderr,"Emulator is calling archThreadDestroy with data: %d\n",emuThread);
+    LOG_DEBUG("Emulator is calling archThreadDestroy with data: %d", emuThread);
     archThreadDestroy(emuThread);
 #ifndef WII
     //archEventDestroy(emuSyncEvent);
@@ -927,7 +928,7 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
 #if 0
     if (total >= 1000000) {
         UInt32 pct = 10000 * busy / total;
-        printf("CPU Usage = %d.%d%%\n", pct / 100, pct % 100);
+        LOG_DEBUG("CPU Usage = %d.%d%%", pct / 100, pct % 100);
         total = 0;
         busy = 0;
     }

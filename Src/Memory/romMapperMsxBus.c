@@ -33,6 +33,7 @@
 #include "SaveState.h"
 #include "IoPort.h"
 #include "MsxBus.h"
+#include "Log.h"
 #include "SCC.h"
 #include <stdlib.h>
 #include <string.h>
@@ -140,7 +141,7 @@ int romMapperMsxBusCreate(int cartSlot, int slot, int sslot)
 	
     rm->msxBus = msxBusCreate(cartSlot, slot);
 	if (rm->msxBus)
-		printf("MSXBus created. cartSlot=%d slot=%d sslot=%d\n", cartSlot, slot, sslot);
+		LOG_INFO("MSXBus created. cartSlot=%d slot=%d sslot=%d", cartSlot, slot, sslot);
 
     //if (rm->msxBus != NULL && cartSlot == 0) {
     if (rm->msxBus != NULL && (cartSlot == 0 || cartSlot == 1)) {
@@ -150,7 +151,7 @@ int romMapperMsxBusCreate(int cartSlot, int slot, int sslot)
         for (i = 0; i < 8; i++) {   
             slotMapPage(rm->slot, rm->sslot, i, NULL, 0, 0);
         }
-		printf("MSXBus created. cartSlot=%d slot=%d sslot=%d\n", cartSlot, slot, sslot);
+		LOG_INFO("MSXBus created. cartSlot=%d slot=%d sslot=%d", cartSlot, slot, sslot);
 		for(i = 0; mon_ports[i] > 0; i++)
 			ioMonPortRegister(mon_ports[i], NULL, writeIo, rm);
     }

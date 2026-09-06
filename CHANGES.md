@@ -99,7 +99,66 @@ unpopulated slot hung the whole emulator at boot.
   GPIO bus (`msxinit`) and mounts the hardware slots as emulated `MSXBus`
   cartridges (emulated slot 1/0 and 2/0).
 
+## Release v2.0.4 (spdlog logging + clean startup)
+
+The Pi port now logs through **spdlog** and is **silent by default**: a normal
+boot prints nothing to stdout/stderr unless a log level is enabled.
+
+### Configuration
+
+The log level can be set two ways (first match wins):
+
+1. `settings.logLevel=<level>` in `bluemsx.ini` — e.g.:
+
+       [config]
+       settings.logLevel=debug
+
+2. `BLUEMSX_LOG_LEVEL=<level>` environment variable.
+
+Valid levels: `trace`, `debug`, `info`, `warn`, `error`, `critical`, `off`.
+The default is `warn`, so during a healthy boot nothing is printed; errors
+still reach stderr. `info` shows the startup facts (banner, video init, MSX
+bus mounts, "Powering on"), `debug`/`trace` add the fine-grained diagnostics.
+
+### Changes
+
+* **New `Src/Utils/Log.h` / `Src/Utils/Log.cpp`** — C-compatible logging API
+  (`logInit`, `logWrite`, `LOG_TRACE/DEBUG/INFO/WARN/ERROR` macros) backed by
+  spdlog (stderr colour logger with timestamped, level-tagged output).
+  `logInit()` reads `bluemsx.ini` (and the `BLUEMSX_*` environment), default
+  `warn`.
+* **`Src/Pi/PiMain.c`** — calls `logInit()` before anything else; banner
+  becomes `LOG_INFO`, errors `LOG_ERROR`, lifecycle/debug prints converted.
+* **`Src/Pi/PiVideo.c`, `Src/Pi/PiGpio.c`** — init info -> `LOG_INFO`,
+  progress -> `LOG_DEBUG`, failures -> `LOG_ERROR`.
+* **`Src/Pi/PiInput.c`, `Src/Pi/PiUdev.c`, `Src/Pi/PiShortcuts.c`,
+  `Src/Pi/PiNotifications.c`** — joystick/keyboard/udev messages converted.
+* **`Src/Emulator/Emulator.c`, `Src/Sdl/SdlSound.c`, `Src/Sdl/SdlThread.c`** —
+  thread/audio debug chatter -> `LOG_DEBUG`, failures -> `LOG_ERROR`.
+* **`Src/IoDevice/MsxBusPi.c`** — GPCLK/bus init -> `LOG_INFO`,
+  failures -> `LOG_ERROR`, per-access trace stays behind `-DDEBUG`
+  (`LOG_TRACE`). In `ROM_TESTER_BUILD` (rom_tester) the macros degrade to
+  plain printf/fprintf, so the diagnostic tool keeps its console output and
+  needs no spdlog.
+* **`Src/IoDevice/MsxBus.cpp`, `Src/Memory/romMapperMsxBus.c`** — the
+  `MSXBUSs[]`/`msxBusCreate` diagnostics -> `LOG_DEBUG`, `MSXBus created` ->
+  `LOG_INFO`.
+* **`Makefile`** — added `Src/Utils/Log.cpp` to the build, `-lspdlog -lfmt`
+  to `LIBS`, and `-I Src/Utils` to the `rom_tester` target (plus its
+  `Log.h` dependency).
+
+### Verification
+
+* Default boot (`settings.logLevel` absent): stdout and stderr both **0 bytes**.
+* `settings.logLevel=info`: banner, video init, GPCLK/MSX bus mount,
+  "Powering on" appear; zero `debug` lines.
+* `settings.logLevel=debug`: full startup trail incl. `MSXBUSs[]`,
+  `msxBusCreate`, evdev device list, thread creation.
+* `rom_tester` still dumps the physical cartridge byte-for-byte (header
+  `41 42`, page-in works) with unchanged console behaviour.
+
 ---
+
 
 ## Release v2.0.1 (documentation & versioning)
 

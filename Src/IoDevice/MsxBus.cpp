@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "Log.h"
 extern "C" {
 #include "MsxBusPi.h"
 #include "MsxBus.h"
@@ -169,7 +170,7 @@ int CMSXBUS::writeIo(UInt16 port, UInt8 value)
 {
 	checkInt();
 	msxwriteio(port, value);
- 	printf("writeio(%02x): %02x\n", port, value);
+ 	LOG_DEBUG("writeio(%02x): %02x", port, value);
     return true;
 }
 
@@ -181,9 +182,9 @@ static void InitializeMSXBUSs()
 {
     if (MSXBUSs[0] == NULL) {
         MSXBUSs[0] = new CMSXBUS(0);
-	printf("MSXBUSs[0]=%d\n", MSXBUSs[0]);
+	LOG_DEBUG("MSXBUSs[0]=%d", MSXBUSs[0]);
 	MSXBUSs[1] = new CMSXBUS(1);
-	printf("MSXBUSs[1]=%d\n", MSXBUSs[1]);
+	LOG_DEBUG("MSXBUSs[1]=%d", MSXBUSs[1]);
     }
     msxinit();
 }
@@ -208,7 +209,7 @@ static void DeinitializeMSXBUSs()
 extern "C" MbHandle* msxBusCreate(int cartSlot, int slot)
 {
 	InitializeMSXBUSs();
-	printf("msxBusCreate %d\n", cartSlot, slot);
+	LOG_DEBUG("msxBusCreate %d", cartSlot, slot);
 	return (MbHandle*)MSXBUSs[cartSlot];
 	return 0;
 }
