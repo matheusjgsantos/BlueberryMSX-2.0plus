@@ -37,8 +37,15 @@ make rom_tester
 ```
 
 This compiles `rom_tester.c` with `-DROM_TESTER_BUILD`, includes
-`Src/IoDevice/`, and links against `-lbcm2835 -lpthread`. The binary is placed
-in the source root as `./rom_tester`.
+`Src/IoDevice/` and `Src/Utils/` (for the shared `Log.h`), and links against
+`-lbcm2835 -lpthread`. The binary is placed in the source root as
+`./rom_tester`.
+
+`rom_tester` deliberately does **not** use the emulator's spdlog logging:
+under `ROM_TESTER_BUILD` the `LOG_*` macros in `Src/Utils/Log.h` degrade to
+plain `printf`/`fprintf`, so the tool always prints to the console regardless
+of the `settings.logLevel` / `BLUEMSX_LOG_LEVEL` settings that apply to
+`bluemsx-pi`.
 
 ---
 

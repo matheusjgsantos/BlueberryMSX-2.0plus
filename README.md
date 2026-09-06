@@ -38,7 +38,10 @@ Tested configurations (aarch64, kernel `rpi-v8`):
 The display is whichever KMS connector is in use (the code walks the DRM
 connector list, so DSI and HDMI both work — see the "Known issues" note).
 The RPMC slot board and the 6 front-panel LEDs (via 74HC595 on bcm2835) work
-on both 32-bit (armhf) and 64-bit (aarch64).
+on both 32-bit (armhf) and 64-bit (aarch64). Physical cartridges in both
+slots are auto-detected and mounted as emulated MSXBus cartridges
+(`/romtype1 msxbus /romtype2 msxbus`), so a cartridge is read straight off the
+board — verify with `rom_tester` (see `Doc/RPMC_TESTER.md`).
 
 Current Status:
 --------------
@@ -94,7 +97,7 @@ How to build from source:
 -----------
 
 - Install the following development libs:
-`sudo apt install -y libsdl2-dev libdrm-dev libgbm-dev autoconf`
+`sudo apt install -y libsdl2-dev libdrm-dev libgbm-dev autoconf libfmt-dev libspdlog-dev`
 - Configure and build the BCM2835 GPIO lib (a copy is included in this repo):
    `cd bcm2835-1.68`
    `./configure`
@@ -104,7 +107,34 @@ How to build from source:
    emulator links the GPIO driver statically — the resulting binary has no
    runtime GPIO dependency.
 - Running `make` from `~/BlueberryMSX-2.0plus` should do the trick.
+- The runtime/lib dependency on **spdlog** (for logging, see below) means the
+  committed `bluemsx-pi` binary needs `libspdlog` at runtime:
+  `sudo apt install -y libspdlog1.15` (this pulls in `libfmt`).
 - All source files are available at the `~/BlueberryMSX-2.0plus/Src`, but documentation is still incomplete (see `Doc/RPMC.md` for the board)
+
+Logging (v2.0.4+)
+----------
+
+By default a boot prints **nothing** to the console (level `warn` — only real
+errors reach stderr). To see startup diagnostics, enable a level either in
+`bluemsx.ini` (`[config]` section):
+
+```
+[config]
+settings.logLevel=debug
+```
+
+or via the environment (overrides the ini):
+
+```
+$ BLUEMSX_LOG_LEVEL=info sudo ./bluemsx-pi /romtype1 msxbus /romtype2 msxbus
+```
+
+Valid levels: `trace`, `debug`, `info`, `warn`, `error`, `critical`, `off`.
+`info` prints the startup facts (banner, video init, MSX bus mounts, "Powering
+on"); `debug` adds the full trail (threads, evdev devices, audio spec, MSX
+bus). Logs go to stderr, timestamped and level-tagged. The rom_tester utility
+keeps its own plain console output regardless of this setting.
 
 Cross-compiling for Raspberry Pi (32-bit/armhf) from x86_64 using Docker
 --------------------------------------------------------

@@ -207,14 +207,15 @@ assumption carried in the legacy `frontled()` status builder (see §5.1).
 
 Both drivers shift the **same** 74HC595 (GPIO 22/23/26), LSB-first:
 
-- **`frontled(byte)`** — `MsxBusPi.c:429`. Uses the raw `GPIO_SET`/`GPIO_CLR`
-  memory map (no bcm2835), no per-bit delay, guarded by a `pthread_mutex`.
-  **Effectively dead code** in the current build:
-  - The only live call is `frontled(0x0)` inside `msxinit()` — a **no-op**
-    (the `static oldbyte` starts at 0, so `oldbyte != byte` is false and nothing
-    is shifted).
+- **`frontled(byte)`** — `MsxBusPi.c:744` (forward-declared at `:364`). Uses
+  the raw `GPIO_SET`/`GPIO_CLR` memory map (no bcm2835), no per-bit delay,
+  guarded by a `pthread_mutex`. **Effectively dead code** in the current
+  build:
+  - The only live call is `frontled(0x0)` inside `msxinit()` (`MsxBusPi.c:722`,
+    call at `:731`) — a **no-op** (the `static oldbyte` starts at 0, so
+    `oldbyte != byte` is false and nothing is shifted).
   - The other call sites — `Emulator.c:852–870` (the per-frame "status byte"
-    builder) and `PiMain.c:503` (`frontled(0)` on exit) — are wrapped in
+    builder) and `PiMain.c:511` (`frontled(0)` on exit) — are wrapped in
     `#ifdef RPMC_FRONTLED`, which the **Makefile does not define**, so they are
     compiled out.
   - The `Emulator.c` status builder uses the **old** map from §4.3 and also
@@ -229,9 +230,9 @@ Both drivers shift the **same** 74HC595 (GPIO 22/23/26), LSB-first:
 ### 5.2 LED state sources
 
 - **PWR** — set in `gpioInit()` (POWER bit), cleared in `gpioShutdown()`.
-  Called from `PiMain.c:269` (start) and `PiMain.c:491` (exit).
+  Called from `PiMain.c:277` (start) and `PiMain.c:499` (exit).
 - **SLT1 / SLT2** — "slot busy" flags. `CMSXBUS::readMemory()`
-  (`MsxBus.cpp:137–146`, under `RASPI_GPIO`) sets the busy flag for the slot
+  (`MsxBus.cpp:106–146`, under `RASPI_GPIO`) sets the busy flag for the slot
   being read, throttled to roughly once per 100 reads
   (`if (time++ > 100)`), so the LED lights while a slot is actively accessed
   without strobing.
@@ -239,8 +240,9 @@ Both drivers shift the **same** 74HC595 (GPIO 22/23/26), LSB-first:
   each update.
 - **HAN / CAPS** — from the keyboard state via `ledGetKana()` /
   `ledGetCapslock()` in `Src/IoDevice/Led.c`.
-- **Per-frame refresh** — `PiMain.c:148–151` `updateLeds()` →
-  `gpioUpdateLeds()`, invoked on `EVENT_UPDATE_DISPLAY` (`PiMain.c:171`). The
+- **Per-frame refresh** — `PiMain.c:149` `updateLeds()` →
+  `gpioUpdateLeds()`, invoked on `EVENT_UPDATE_DISPLAY` (`PiMain.c:162`, call
+  at `:172`). The
   74HC595 (GPIO 22/23/26) uses a **disjoint** set of pins from the V5 cartridge
   bus (GPIO 0–21, 24, 25, 27), so LED shifts never contend with cartridge
   accesses even in the multithreaded (Z80-on-its-own-thread) configuration.
@@ -311,6 +313,15 @@ To (re)verify the 74HC595 bit map, use the standalone sweep program
   a different revision with a different 74HC595 bit order.
 - **No sound** — Moonsound / MSX-Music are stubbed and silent on aarch64 (see
   `CHANGES.md` §1).
+- **Need to debug the GPIO bus?** — the emulator logs through spdlog and is
+  silent by default. Enable the full startup trail with
+  `settings.logLevel=debug` in `bluemsx.ini` or
+  `BLUEMSX_LOG_LEVEL=debug` (see `README.md` "Logging" / `CHANGES.md`
+  §v2.0.4). The bus init messages ("MSX BUS initialized", GPCLK state, slot
+  mounts) all appear at `info`/`debug`.
+- **Silent at boot even though a cartridge is inserted** — that's expected: a
+  healthy boot prints nothing at the default level. Use `info`/`debug` or the
+  `rom_tester` utility to see the slot activity.
 
 ---
 
