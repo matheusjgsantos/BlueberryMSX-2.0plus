@@ -82,7 +82,7 @@ static void usage(const char *prog) {
 }
 
 /* Include the GPIO/bus driver */
-#include "MsxBusPi.c"
+#include "Src/IoDevice/MsxBusPi.c"
 
 int main(int argc, char **argv) {
     int io_mode = 0;

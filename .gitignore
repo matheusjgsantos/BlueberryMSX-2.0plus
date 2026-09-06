@@ -20,3 +20,11 @@ Zorrico Eng Final.rom
 Paco REDUX ENG.rom
 FD46.dsk
 ROM/*
+
+# build artifacts
+rom_tester
+rom_diag
+# editor/backup artifacts
+*.bak
+*.patch
+*.orig

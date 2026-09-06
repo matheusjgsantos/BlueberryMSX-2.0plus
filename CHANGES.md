@@ -59,6 +59,47 @@ No emulation code changes in this release.
 
 ---
 
+## Release v2.0.3 (physical cartridge reads)
+
+Fixes the RPMC GPIO bus driver so `bluemsx-pi` can actually read physical MSX
+cartridges from the board.
+
+### Root cause
+
+`setup_io()` in `Src/IoDevice/MsxBusPi.c` configured every GPIO as an
+**input**, so the Pi never drove the address/control/data bus towards the CPLD:
+every `msxread()` returned `0xFF` and no cartridge ever mounted. In addition the
+per-transaction `while(!(GPIO & MSX_WAIT))` spin was unbounded, so probing an
+unpopulated slot hung the whole emulator at boot.
+
+### Changes
+
+* `Src/IoDevice/MsxBusPi.c`:
+  * Configure the RPMC bus GPIOs as **outputs** in `setup_io()`
+    (`rp1SetOutput`/`bcmSetOutput`), matching the reference `msx_dumper.c`
+    layout, so the Pi drives the address, control and data lines.
+  * Bound the `MSX_WAIT` wait in `GetData()`/`SetData()` to 500000
+    iterations; on timeout a read returns `0xFF` and the cycle is released
+    cleanly (no hang on empty slots).
+  * Restore the BCM283x GPCLK0 pin function to ALT4 (GPIO20 = GPCLK0).
+  * Guard the `Board.h` include with `#ifndef ROM_TESTER_BUILD` so the same
+    driver compiles into both the emulator and `rom_tester`.
+* `rom_tester.c`: include the driver explicitly as `Src/IoDevice/MsxBusPi.c`
+  (single canonical copy; a divergent project-root copy was removed).
+* Removed stray backup/patch artifacts (`*.bak`, `*.patch`, `*.orig`) and
+  added them (plus `rom_tester`/`rom_diag` binaries) to `.gitignore`.
+
+### Verification
+
+* `sudo ./rom_tester -f dump.rom -s 32768` on a populated slot 0 dumps a valid
+  MSX ROM: header `41 42` ("AB") at 0x4000, full 32 KB, CRC-32 `DB327847`
+  (byte-for-byte identical to the cartridge image in `ROM/2.rom`).
+* Unpopulated slots probe cleanly and report "No ROM data found" (no hang).
+* `sudo ./bluemsx-pi /romtype1 msxbus /romtype2 msxbus` boots, initialises the
+  GPIO bus (`msxinit`) and mounts the hardware slots as emulated `MSXBus`
+  cartridges (emulated slot 1/0 and 2/0).
+
+---
 
 ## Release v2.0.1 (documentation & versioning)
 

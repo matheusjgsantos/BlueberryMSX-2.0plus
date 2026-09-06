@@ -42,7 +42,9 @@
 #include <pthread.h>
 #include <stdbool.h>
 
+#ifndef ROM_TESTER_BUILD
 #include "Board.h"
+#endif
 #include "barrier.h"
    
 #define PAGE_SIZE (4*1024)
@@ -460,7 +462,7 @@ static int setup_gclk(void)
 	*bcm_gpclk0_ctl = (ctrl & ~1u) | BCM_GPCLK0_PASSWORD; /* stop first */
 	*bcm_gpclk0_ctl = (ctrl | BCM_GPCLK0_PASSWORD) | 1u;  /* start */
 
-	SET_GPIO_ALT(CLK_PIN, 0); /* GPIO20 = GPCLK0 (ALT0) on BCM283x */
+	SET_GPIO_ALT(CLK_PIN, 4); /* GPIO20 = GPCLK0 (ALT0 = function 4) on BCM283x */
 
 	actualRate = 19200000ULL * 256 / ((div >> 12) * 256);
 	fprintf(stderr, "BCM GPCLK0 enabled on GPIO20: requested %llu Hz (div=%llu)\n",
@@ -527,7 +529,7 @@ void SetData(int ioflag, int flag, int delay, unsigned char byte)
 	GPIO_CLR = flag;
     SetDelay(5);
 	GPIO_CLR = MSX_WR;
-	while(!(GPIO & MSX_WAIT));
+	{ int wait_cnt = 0; while(!(GPIO & MSX_WAIT) && wait_cnt++ < 500000); }
     SetDelay(delay);
 	GPIO_SET = MSX_WR;
     SetDelay(2);
@@ -539,13 +541,15 @@ void SetData(int ioflag, int flag, int delay, unsigned char byte)
 unsigned char GetData(int flag, int rflag, int delay)
 {
 	unsigned char byte;
+	int wait_cnt = 0;
 	GPIO_SET = DAT_DIR | 0xff;
 	GPIO_CLR = flag;
     SetDelay(1);
 	GPIO_CLR = rflag;
-	while(!(GPIO & MSX_WAIT));
+	while(!(GPIO & MSX_WAIT) && wait_cnt++ < 500000);
 	SetDelay(delay);
 	byte = GPIO;
+	if (wait_cnt >= 500000) { GPIO_SET = LE_D | MSX_CONTROLS; GPIO_CLR = LE_C; return 0xFF; }
   	GPIO_SET = LE_D | MSX_CONTROLS;
 	GPIO_CLR = LE_C;
 	return byte;
@@ -672,7 +676,7 @@ int setup_io()
 		for(i = 0; i < 27; i++)
 		{
 			if(i != 20) { // Skip GPIO 20 since it's used for clock - we'll use direct register control
-				rp1SetInput(i);
+				rp1SetOutput(i);
 				// Set pull-up resistors where applicable  
 				rp1EnablePad(i, 1);
 			}
@@ -688,7 +692,7 @@ int setup_io()
 		for(i = 0; i < 27; i++)
 		{
 			if(i != 20) { // Skip GPIO 20 since it's used for clock - we'll use direct register control
-				bcmSetInput(i);
+				bcmSetOutput(i);
 				/* Pull-up is not supported in the old GPIO set/clear register method */
 			}
 		}
