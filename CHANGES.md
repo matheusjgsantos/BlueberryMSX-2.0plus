@@ -24,6 +24,41 @@ This document records every change, file by file, with the verified root cause a
 machine-code level.
 
 ---
+## Release v2.0.2 (rom_tester utility)
+
+No emulation code changes in this release.
+
+* **New `rom_tester` standalone utility** (`rom_tester.c`) — fast ROM dumper that
+  reads physical MSX cartridges from the RPMC board without launching the full
+  emulator. Features:
+  * Sub-slot auto-probing to detect where ROM data is mapped.
+  * Page-switching for addresses beyond 0xBFFF (pages 4-7 remapped to
+    0x6000-0x7FFF).
+  * Repeat-read integrity check (10-sample verify per byte); mismatched bytes
+    printed in red.
+  * CRC-32 (IEEE) checksum of the dump.
+  * Optional `--io` mode to dump all 256 I/O port values.
+  * CLI flags: `-f` (output file), `-o` (offset, default 0x4000),
+    `-s` (size, default 0x8000 = 32 KB), `-S` (parent slot 0 or 1).
+* **New `Doc/RPMC_TESTER.md`** — complete reference for `rom_tester`:
+  build, usage, slot mapping, privileges, sub-slot probing, and troubleshooting.
+* **Updated `Makefile`** — added `rom_tester` and `clean_rom_tester` build targets;
+  cleaned `clean` now removes the `rom_tester` binary as well.
+
+### Verification
+
+* `make rom_tester` builds cleanly (aarch64 ELF, statically links bcm2835).
+* `./rom_tester -h` prints help and exits (exit 0).
+* With a cartridge inserted in slot 0, `sudo ./rom_tester -f dump.rom` probes
+  sub-slots, reports detected ROM page, writes dump to file, and prints CRC-32
+  at exit.
+* `--io` mode prints all 256 port values in hex.
+* Same `MsxBusPi.c` GPIO/bus driver as the live emulator (compiled under
+  `#define ROM_TESTER_BUILD`), so slot mapping and bus timing are consistent
+  with `bluemsx-pi`.
+
+---
+
 
 ## Release v2.0.1 (documentation & versioning)
 
