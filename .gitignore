@@ -24,6 +24,13 @@ ROM/*
 # build artifacts
 rom_tester
 rom_diag
+banksig
+galsweep
+yamaprobe
+
+# root-level cart dumps
+/*.rom
+
 # editor/backup artifacts
 *.bak
 *.patch
