@@ -299,6 +299,7 @@ SOURCE_FILES += romMapperSg1000RamExpander.c
 SOURCE_FILES += romMapperDooly.c
 SOURCE_FILES += romMapperMuPack.c
 SOURCE_FILES += romMapperMsxBus.c
+SOURCE_FILES += romMapperYamanooto.c
 
 SOURCE_FILES += Crc32Calc.c
 SOURCE_FILES += MediaDb.cpp

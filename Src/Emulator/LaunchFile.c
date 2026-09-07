@@ -262,6 +262,7 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
               0 == strcmp(CARTNAME_ESESCC256,   filename) ? SRAM_ESESCC256 :
               0 == strcmp(CARTNAME_ESESCC512,   filename) ? SRAM_ESESCC512 :
 			  0 == strcmp(CARTNAME_MSXBUS, 		filename) ? ROM_MSXBUS :
+              0 == strcmp(CARTNAME_YAMANOOTO,  filename) ? ROM_YAMANOOTO :
               romType;
 
     if (drive == 0) {

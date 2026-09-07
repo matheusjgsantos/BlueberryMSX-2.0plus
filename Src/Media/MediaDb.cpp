@@ -120,6 +120,7 @@ RomType mediaDbStringToType(const char* romName)
     if (iequals(name, "HamarajaNight"))    return ROM_HAMARAJANIGHT;
     if (iequals(name, "MegaFlashRomScc"))  return ROM_MEGAFLSHSCC;
     if (iequals(name, "MegaFlashRomSccPlus")) return ROM_MEGAFLSHSCCPLUS;
+    if (iequals(name, "Yamanooto"))          return ROM_YAMANOOTO;
     if (iequals(name, "Halnote"))          return ROM_HALNOTE;
     if (iequals(name, "HarryFox"))         return ROM_HARRYFOX;
     if (iequals(name, "Playball"))         return ROM_PLAYBALL;
