@@ -1,6 +1,22 @@
 /*
  ** Standalone ROM Tester for RPMC (Raspberry Pi MSX Core)
  ** Reuses MsxBusPi.c GPIO/bus logic. Run via SSH.
+ **
+ ** Identifies the cartridge mapper by probing known register addresses and
+ ** dumps the full image using the correct bank-switching protocol:
+ **
+ **   Konami4   : regs 0x6000/0x8000/0xA000, 8KB banks, page0 fixed
+ **   Konami5   : regs 0x5000/0x7000/0x9000/0xB000, 8KB banks, SCC at 0x9800
+ **   ASCII8    : regs 0x6000/0x6800/0x7000/0x7800, 8KB banks
+ **   ASCII16   : regs 0x6000/0x7000, 16KB banks
+ **   plain     : no bank switching, linear dump of 0x4000-0xBFFF
+ **
+ ** Modes:
+ **   rom_tester <file>              -> identify mapper and dump full cartridge
+ **   rom_tester ident [-S slot]     -> identify only, no dump
+ **   rom_tester io                   -> dump I/O ports
+ **   rom_tester <file> [-o a] [-s n] [-S slot]  -> legacy linear dump
+ **                                      (extract a..a+n from the bus)
  */
 #define _GNU_SOURCE
 #define ROM_TESTER_BUILD
@@ -42,107 +58,206 @@ static void boardSetInt(int flag) { (void)flag; }
 
 static uint32_t g_crc = 0xFFFFFFFF;
 static FILE  *g_fp = NULL;
-static uint8_t read_buf[0x4000];
 
 static void crc_accumulate(uint8_t b) {
     g_crc = crc32_update(g_crc, b);
     if (g_fp) {
         uint8_t cpy = b;
         fwrite(&cpy, 1, 1, g_fp);
-        fflush(g_fp);
     }
 }
 
-static void usage(const char *prog) {
-    printf("Usage: %s [OPTIONS]\n", prog);
-    printf("\n");
-    printf("Standalone ROM dumper for RPMC (Raspberry Pi MSX Core).\n");
-    printf("Reads physical MSX cartridges from the RPMC board slots.\n");
-    printf("\n");
-    printf("Options:\n");
-    printf("  -f FILE    Write ROM dump to FILE (default: stdout only)\n");
-    printf("  -o OFFSET  Memory offset to start reading (default: 0x4000)\n");
-    printf("  -s SIZE    Number of bytes to dump (default: 0x8000 = 32 KB)\n");
-    printf("  -S SLOT    MSX parent slot (0 or 1, default: 0)\n");
-    printf("             Slot 0 -> board connector 1 (SLTSL1 / MSX slot 1)\n");
-    printf("             Slot 1 -> board connector 2 (SLTSL3 / MSX slot 3)\n");
-    printf("  --io       Dump all 256 I/O port values instead of ROM\n");
-    printf("  -h, --help Show this help message\n");
-    printf("\n");
-    printf("Examples:\n");
-    printf("  %s -f game.rom              Dump slot 0 ROM to game.rom\n", prog);
-    printf("  %s -f upper.rom -S 1        Dump slot 1 ROM to upper.rom\n", prog);
-    printf("  %s -f small.rom -s 0x4000   Dump only 16 KB\n", prog);
-    printf("  %s --io                     Read and display all I/O ports\n", prog);
-    printf("\n");
-    printf("Notes:\n");
-    printf("  - Must run as root (or with /dev/mem and bcm2835 access).\n");
-    printf("  - Offset and size defaults read a standard 32 KB ROM.\n");
-    printf("  - Auto-probing detects which sub-slot contains ROM data.\n");
+/* Buffered emit for high-volume mapper dumps (no per-byte flush) */
+static void emit(const uint8_t* p, size_t n) {
+    for (size_t i = 0; i < n; i++) g_crc = crc32_update(g_crc, p[i]);
+    if (g_fp) fwrite(p, 1, n, g_fp);
 }
 
 /* Include the GPIO/bus driver */
-#include "Src/IoDevice/MsxBusPi.c"
+#include "MsxBusPi.c"
+
+/* ------------------------------------------------------------------ */
+/* Mapper identification                                               */
+/* ------------------------------------------------------------------ */
+
+#define MAP_UNKNOWN 0
+#define MAP_PLAIN   1
+#define MAP_KONAMI4 2
+#define MAP_KONAMI5 3
+#define MAP_ASCII8  4
+#define MAP_ASCII16 5
+
+static const char* mapper_name(int m) {
+    switch (m) {
+    case MAP_PLAIN:   return "linear (no bank switching)";
+    case MAP_KONAMI4: return "Konami4  (0x6000/0x8000/0xA000, 8KB banks, page0 fixed)";
+    case MAP_KONAMI5: return "Konami5 / KonamiSCC (0x5000/0x7000/0x9000/0xB000, 8KB, all pages)";
+    case MAP_ASCII8:  return "ASCII8   (0x6000/0x6800/0x7000/0x7800, 8KB banks)";
+    case MAP_ASCII16: return "ASCII16  (0x6000/0x7000, 16KB banks)";
+    default:          return "unknown";
+    }
+}
+
+static uint8_t r8(int slot, unsigned a) { return (uint8_t)msxread(slot, a); }
+
+static void grab_base(int slot, uint8_t base[4][4]) {
+    for (int p = 0; p < 4; p++)
+        for (int i = 0; i < 4; i++)
+            base[p][i] = r8(slot, 0x4000 + p * 0x2000 + i);
+}
+
+static bool win_diff(int slot, int win, const uint8_t base[4][4]) {
+    unsigned b = 0x4000 + win * 0x2000;
+    for (int i = 0; i < 4; i++)
+        if (r8(slot, b + i) != base[win][i]) return true;
+    return false;
+}
+
+/* Write `addr` with candidate bank values; return bitmap of windows that
+** changed (bit w = window at 0x4000+0x2000*w), or 0 if none changed. */
+static int probe_wr(int slot, unsigned addr) {
+    static const uint8_t vals[5] = {0x02, 0x03, 0x05, 0x07, 0x1F};
+    for (int vi = 0; vi < 5; vi++) {
+        uint8_t base[4][4];
+        grab_base(slot, base);
+        msxwrite(slot, addr, vals[vi]);
+        int bitmap = 0;
+        for (int w = 0; w < 4; w++)
+            if (win_diff(slot, w, base)) bitmap |= (1 << w);
+        if (bitmap) return bitmap;
+    }
+    return 0;
+}
+
+static int detect_mapper(int slot) {
+    int bm;
+
+    /* Konami5: a write to 0x5000 (0x5000-0x57FF is a valid reg) moves W0 */
+    bm = probe_wr(slot, 0x5000);
+    if (bm & 1) return MAP_KONAMI5;
+
+    /* 0x6000 discriminates the ASCII family from Konami4:
+    **   ASCII16 -> W0 + W1 (16KB from 0x4000-0x7FFF)
+    **   ASCII8  -> W0 only
+    **   Konami4 -> W1 only */
+    bm = probe_wr(slot, 0x6000);
+    if (bm & 1) {
+        if (bm & 2) return MAP_ASCII16;
+        return MAP_ASCII8;
+    }
+    if (bm & 2) {
+        /* W1 changed at 0x6000 -> Konami4 page1; confirm page2/page3 */
+        if (probe_wr(slot, 0x8000) & 4) return MAP_KONAMI4;
+        if (probe_wr(slot, 0xA000) & 8) return MAP_KONAMI4;
+        if (probe_wr(slot, 0x6800) & 2) return MAP_ASCII8;
+        return MAP_UNKNOWN;
+    }
+    /* late catches: ASCII8 on other pages, Konami4 page2-only */
+    if (probe_wr(slot, 0x6800) & 2) return MAP_ASCII8;
+    if (probe_wr(slot, 0x8000) & 4) return MAP_KONAMI4;
+    return MAP_UNKNOWN;
+}
+
+/* SCC presence check for Konami5 carts: enable SCC (0x9000 = 0x3F),
+** write a marker to the wave RAM (0x9800-0x980F) and read it back. */
+static bool scc_present(int slot) {
+    uint8_t pat[16], after[16];
+    for (int i = 0; i < 16; i++) pat[i] = (uint8_t)(i * 2);
+    msxwrite(slot, 0x9000, 0x3F);               /* SCC enable */
+    for (int i = 0; i < 16; i++) msxwrite(slot, 0x9800 + i, pat[i]); /* wave RAM */
+    for (int i = 0; i < 16; i++) after[i] = r8(slot, 0x9800 + i);
+    msxwrite(slot, 0x9000, 0x00);               /* SCC disable, W2 back to bank 0 */
+    return memcmp(after, pat, 16) == 0;
+}
+
+/* Number of banks: sweep bank values 0..63 on the selected page, record a
+** signature per value, then pick the smallest power of two N such that the
+** content wraps exactly: sig[B] == sig[B & (N-1)]. Falls back to the
+** distinct-bank count rounded up to a power of two. */
+static int count_banks(int slot, int mapper) {
+    unsigned reg;
+    unsigned base_addr;
+    uint8_t sig[64][16];
+
+    if (mapper == MAP_KONAMI5) { reg = 0x7000; base_addr = 0x6000; }
+    else if (mapper == MAP_KONAMI4) { reg = 0x6000; base_addr = 0x6000; }
+    else if (mapper == MAP_ASCII8)  { reg = 0x6800; base_addr = 0x6000; }
+    else                            { reg = 0x6000; base_addr = 0x4000; } /* ASCII16 */
+
+    for (int B = 0; B < 64; B++) {
+        msxwrite(slot, reg, (uint8_t)B);
+        for (int i = 0; i < 16; i++)
+            sig[B][i] = r8(slot, base_addr + i);
+    }
+
+    int N = -1;
+    for (int n = 1; n <= 64; n <<= 1) {
+        bool ok = true;
+        for (int B = 0; B < 64; B++) {
+            if (memcmp(sig[B], sig[B & (n - 1)], 16) != 0) { ok = false; break; }
+        }
+        if (ok) { N = n; break; }
+    }
+    if (N < 0) {
+        int distinct[64], dist = 0;
+        for (int B = 0; B < 64; B++) {
+            int dup = 0;
+            for (int j = 0; j < dist; j++)
+                if (memcmp(sig[B], sig[distinct[j]], 16) == 0) { dup = 1; break; }
+            if (!dup) distinct[dist++] = B;
+        }
+        for (N = 1; N < dist; N <<= 1);
+        if (N < 1) N = 1;
+    }
+    return N;
+}
+
+/* ------------------------------------------------------------------ */
+/* Mapper-aware dumping                                                */
+/* ------------------------------------------------------------------ */
+
+#define W0 0x4000
+#define W1 0x6000
+
+static void dump_window(uint8_t* out, int slot, unsigned addr, int n) {
+    for (int i = 0; i < n; i++) out[i] = r8(slot, addr + i);
+    emit(out, (size_t)n);
+}
 
 int main(int argc, char **argv) {
-    int io_mode = 0;
-    int offset = 0x4000, size = 0x8000, slot = 0;
-    int i, addr, c, sslot, found, page;
-    uint8_t byte, test;
-    struct timespec t1, t2;
-    const char *outfile = NULL;
-    int pos_offset = 0, pos_size = 0, pos_slot = 0;
+    int     io_mode = 0, ident_mode = 0;
+    int     offset = -1, size = -1, slot = 0;
+    int     i, c, addr, page;
+    uint8_t byte;
+    struct  timespec t1, t2;
 
-    /* CLI parsing — supports both new flags and legacy positional args */
-    for (int a = 1; a < argc; a++) {
-        if (strcmp(argv[a], "-h") == 0 || strcmp(argv[a], "--help") == 0) {
-            usage(argv[0]);
-            return 0;
-        }
-        if (strcmp(argv[a], "-f") == 0 && a + 1 < argc) {
-            a++;
-            outfile = argv[a];
-        } else if (strcmp(argv[a], "-o") == 0 && a + 1 < argc) {
-            a++;
-            offset = strtoul(argv[a], NULL, 0);
-            pos_offset = 1;
-        } else if (strcmp(argv[a], "-s") == 0 && a + 1 < argc) {
-            a++;
-            size = (int)strtoul(argv[a], NULL, 0);
-            pos_size = 1;
-        } else if (strcmp(argv[a], "-S") == 0 && a + 1 < argc) {
-            a++;
-            slot = strtoul(argv[a], NULL, 0);
-            pos_slot = 1;
-        } else if (strcmp(argv[a], "--io") == 0) {
-            io_mode = 1;
-        } else {
-            /* Legacy positional fallback: file, offset, size, slot */
-            if (!outfile) {
-                if (strcmp(argv[a], "io") == 0) {
-                    io_mode = 1;
-                } else {
-                    outfile = argv[a];
-                }
-            } else if (!pos_offset) {
-                offset = strtoul(argv[a], NULL, 0);
-                pos_offset = 1;
-            } else if (!pos_size) {
-                size = (int)strtoul(argv[a], NULL, 0);
-                pos_size = 1;
-            } else if (!pos_slot) {
-                slot = strtoul(argv[a], NULL, 0);
-                pos_slot = 1;
+    /* CLI parsing: <arg1> is file, "io", "ident" or "-h";
+    ** -S <slot>, -o <offset>, -s <size> may appear anywhere after. */
+    if (argc > 1) {
+        for (i = 1; i < argc; i++) {
+            if (strcmp(argv[i], "io") == 0)       io_mode = 1;
+            else if (strcmp(argv[i], "ident") == 0) ident_mode = 1;
+            else if (strcmp(argv[i], "-h") == 0)  { io_mode = 2; break; }
+            else if (strcmp(argv[i], "-S") == 0 && i + 1 < argc) slot = atoi(argv[++i]);
+            else if (strcmp(argv[i], "-o") == 0 && i + 1 < argc) offset = (int)strtoul(argv[++i], NULL, 0);
+            else if (strcmp(argv[i], "-s") == 0 && i + 1 < argc) size   = (int)strtoul(argv[++i], NULL, 0);
+            else if (argv[i][0] != '-' && !g_fp)  {
+                if (strcmp(argv[i], "io") && strcmp(argv[i], "ident"))
+                    g_fp = fopen(argv[i], "wb");
             }
+            else if (argv[i][0] != '-' && offset < 0) offset = (int)strtoul(argv[i], NULL, 0);
+            else if (argv[i][0] != '-')               size   = (int)strtoul(argv[i], NULL, 0);
         }
     }
 
-    if (outfile) {
-        g_fp = fopen(outfile, "wb");
-        if (!g_fp) {
-            fprintf(stderr, "ERROR: cannot open output file '%s': %s\n", outfile, strerror(errno));
-            return 1;
-        }
+    if (io_mode == 2) {
+        printf("usage:\n"
+               "  %s <file>              full mapper-aware dump\n"
+               "  %s ident [-S slot]     identify mapper only\n"
+               "  %s io                  dump I/O ports\n"
+               "  %s <file> [-o off] [-s n] [-S slot]   legacy linear dump\n",
+               argv[0], argv[0], argv[0], argv[0]);
+        return 0;
     }
 
     /* Real-time priority */
@@ -150,7 +265,6 @@ int main(int argc, char **argv) {
     if (sched_setscheduler(0, SCHED_FIFO, &param) == -1)
         fprintf(stderr, "Warning: cannot set RT priority: %s\n", strerror(errno));
 
-    /* Bus init */
     msxinit();
     crc32_build_table();
     g_crc = 0xFFFFFFFF;
@@ -167,89 +281,131 @@ int main(int argc, char **argv) {
     }
 
     /* Resolve output path early */
-    if (outfile && g_fp) {
+    if (g_fp) {
         char abspath[1024];
-        if (realpath(outfile, abspath)) {
+        if (realpath(argv[1], abspath)) {
             fclose(g_fp);
             g_fp = fopen(abspath, "wb");
-            if (!g_fp) { fprintf(stderr, "ERROR: cannot open %s: %s\n", abspath, strerror(errno)); exit(1); }
+            if (!g_fp) { fprintf(stderr, "ERROR: cannot open %s\n", abspath); exit(1); }
         }
     }
 
-    /*
-     * MSX slot selection uses memory bus writes:
-     *   0x6000 + (slot<<2) -> sub-slot selection
-     *   0x6004 + (slot<<2) -> page selection
-     *
-     * For RPMC, msxwrite() is the correct path since the CPLD routes
-     * slot/page controls through the memory bus, not I/O bus.
-     */
+    printf("Initializing slot %d via msxwrite(slot, 0x6000, 3)...\n", slot);
+    msxwrite(slot, 0x6000, 3);
 
-    /* First, probe all 4 sub-slots to find which one has ROM data */
-    printf("Probing sub-slots for parent slot %d...\n", slot);
-    found = 0;
-    sslot = 0;
-    for (i = 0; i < 4; i++) {
-        msxwrite(slot, 0x6000, i);
-        test = msxread(slot, 0x4000);
-        if (test != 0xFF) {
-            msxwrite(slot, 0x6000, i);
-            test = msxread(slot, 0x4000);
-            if (test != 0xFF) {
-                sslot = i;
-                printf("  sub-slot %d has data (byte @0x4000 = 0x%02x)\n", i, test);
-                found = 1;
-                break;
+    byte = msxread(slot, 0x4000);
+    if (byte == 0xFF && msxread(slot, 0x4001) == 0xFF && msxread(slot, 0x4002) == 0xFF) {
+        printf("ERROR: slot %d returns 0xFF at 0x4000 - no cartridge responding\n", slot);
+        goto done;
+    }
+    printf("  Slot %d responds: byte @0x4000 = 0x%02x\n", slot, byte);
+
+    /* ---- explicit offset/size: legacy linear dump ---- */
+    if (offset >= 0 && size > 0) {
+        page = 4;
+        for (addr = offset; addr < offset + size; addr++) {
+            if (addr > 0xbfff) {
+                if (!(addr & 0x1fff)) {
+                    msxwrite(slot, 0x6000, page++);
+                    printf("\npage:%d  address=0x%04x\n", page - 1, addr);
+                }
+                byte = msxread(slot, 0x6000 + (addr & 0x1fff));
+            } else {
+                byte = msxread(slot, addr);
             }
-        }
-    }
 
-    if (!found) {
-        printf("No ROM data found in any sub-slot of parent slot %d\n", slot);
+            /* Repeat-read integrity check */
+            c = 0;
+            for (i = 0; i < 10; i++) {
+                uint8_t byte0 = msxread(slot, (addr > 0xbfff) ? (0x6000 + (addr & 0x1fff)) : addr);
+                if (byte != byte0) { c = 1; break; }
+            }
+
+            if (addr % 16 == 0) printf("\n%04x: ", addr);
+            if (c)
+                printf("\33[31m%02x \33[0m", byte);
+            else
+                printf("%02x ", byte);
+
+            crc_accumulate(byte);
+        }
         printf("\n");
+        printf("ROM dump: %d bytes\n", size);
+        printf("CRC32: 0x%08" PRIX32 "\n", g_crc ^ 0xFFFFFFFF);
         goto done;
     }
 
-    /*
-     * Pages 0-3 are already mapped to 0x4000-0x7FFF.
-     * We map pages 4-7 to 0x6000-0x7FFF for addresses above 0xBFFF.
-     */
-    page = 4;
-    for (addr = offset; addr < offset + size; addr++) {
-        if (addr > 0xbfff) {
-            if (!(addr & 0x1fff)) {
-                msxwrite(slot, 0x6000, sslot);
-                msxwrite(slot, 0x6004, page++);
-                printf("\npage:%d  address=0x%04x\n", page - 1, addr);
-            }
-            byte = msxread(slot, 0x6000 + (addr & 0x1fff));
-        } else {
-            byte = msxread(slot, addr);
-        }
-
-        /* Repeat-read integrity check */
-        c = 0;
-        for (i = 0; i < 10; i++) {
-            uint8_t byte0 = msxread(slot, (addr > 0xbfff) ? (0x6000 + (addr & 0x1fff)) : addr);
-            if (byte != byte0) { c = 1; break; }
-        }
-
-        if (addr % 16 == 0) printf("\n%04x: ", addr);
-        if (c)
-            printf("\33[31m%02x \33[0m", byte);
-        else
-            printf("%02x ", byte);
-
-        crc_accumulate(byte);
+    /* ---- mapper identification ---- */
+    int mapper = detect_mapper(slot);
+    printf("\n===== CARTRIDGE IDENTIFICATION =====\n");
+    printf("mapper    : %s\n", mapper_name(mapper));
+    if (mapper == MAP_UNKNOWN) {
+        printf("no known mapper register responded to writes;\n"
+               "cart uses no bank switching (or its write path is dead).\n");
     }
+
+    if (ident_mode) {
+        printf("\nidentification complete (no dump requested).\n");
+        goto done;
+    }
+
+    if (!g_fp) { printf("no output file given; aborting dump.\n"); goto done; }
+
+    if (mapper == MAP_UNKNOWN) {
+        /* plain / non-responsive cart: linear dump of the visible address space */
+        uint8_t buf[0x8000];
+        dump_window(buf, slot, 0x4000, 0x8000);
+        printf("\nlinear dump of 0x4000-0xBFFF (%d bytes)\n", 0x8000);
+    }
+    else if (mapper == MAP_KONAMI4) {
+        /* page0 (bank0 first half) is fixed; the rest comes from page1 */
+        int banks = count_banks(slot, mapper);
+        uint8_t buf[0x2000];
+        dump_window(buf, slot, W0, 0x2000);               /* bank0 0x0000-0x1FFF */
+        for (int B = 0; B < banks; B++) {
+            msxwrite(slot, 0x6000, (uint8_t)B);           /* page1 bank = B */
+            dump_window(buf, slot, W1, 0x2000);           /* bank B 8KB */
+        }
+        printf("\nKonami4 dump: %d banks x 8KB = %d bytes\n", banks, banks * 0x2000);
+    }
+    else if (mapper == MAP_KONAMI5) {
+        int banks = count_banks(slot, mapper);
+        bool scc = scc_present(slot);
+        printf("scc       : %s\n", scc ? "present" : "absent");
+        uint8_t buf[0x2000];
+        for (int B = 0; B < banks; B++) {
+            msxwrite(slot, 0x7000, (uint8_t)B);           /* page1 bank = B */
+            dump_window(buf, slot, W1, 0x2000);           /* clean 8KB, no SCC overlay */
+        }
+        printf("\nKonami5 dump: %d banks x 8KB = %d bytes%s\n",
+               banks, banks * 0x2000, scc ? " (SCC)" : "");
+    }
+    else if (mapper == MAP_ASCII8) {
+        int banks = count_banks(slot, mapper);
+        uint8_t buf[0x2000];
+        for (int B = 0; B < banks; B++) {
+            msxwrite(slot, 0x6800, (uint8_t)B);           /* page1 bank = B */
+            dump_window(buf, slot, W1, 0x2000);
+        }
+        printf("\nASCII8 dump: %d banks x 8KB = %d bytes\n", banks, banks * 0x2000);
+    }
+    else { /* MAP_ASCII16 */
+        int banks = count_banks(slot, mapper);
+        uint8_t buf[0x4000];
+        for (int B = 0; B < banks; B++) {
+            msxwrite(slot, 0x6000, (uint8_t)B);           /* 16KB block B */
+            dump_window(buf, slot, 0x4000, 0x4000);
+        }
+        printf("\nASCII16 dump: %d banks x 16KB = %d bytes\n", banks, banks * 0x4000);
+    }
+
+    printf("CRC32: 0x%08" PRIX32 "\n", g_crc ^ 0xFFFFFFFF);
 
 done:
     clock_gettime(CLOCK_MONOTONIC, &t2);
-    printf("\n");
     double elapsed = (t2.tv_sec - t1.tv_sec) * 1000.0
                    + (t2.tv_nsec - t1.tv_nsec) / 1e6;
-    printf("ROM dump: %d bytes  elapsed: %.2f ms\n", size, elapsed);
-    printf("CRC32: 0x%08"PRIX32"\n", g_crc ^ 0xFFFFFFFF);
+    printf("elapsed: %.2f ms\n", elapsed);
 
     if (g_fp) fclose(g_fp);
     msxclose();
