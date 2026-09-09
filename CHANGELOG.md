@@ -69,3 +69,6 @@ The implementation has been successfully completed and tested with:
 - Maintained compatibility with existing video libraries
 
 The improvements provide modernized GPIO access and enhanced keyboard handling while maintaining full compatibility with your existing hardware configuration.
+### Hardware Revision Note (V2019 vs V5)
+- Identified discrepancy in RESET line: V2019 uses RC24 (GPIO 24), V5 uses RC19 (GPIO 19).
+- Updated RPMC.md with image links and revision notes.

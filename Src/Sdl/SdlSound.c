@@ -164,6 +164,7 @@ void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 c
         return;
     }*/
 	//dev = SDL_OpenAudioDevice(NULL, 0, &desired, &audioSpec, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+	dev = SDL_OpenAudioDevice(NULL, 0, &desired, &audioSpec, SDL_AUDIO_ALLOW_FORMAT_CHANGE | SDL_AUDIO_ALLOW_ANY_CHANGE);
 	dev = SDL_OpenAudioDevice(SDL_GetAudioDeviceName(0,0), 0, &desired, &audioSpec, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
 	if (dev == 0) {
     		SDL_Log("Failed to open audio: %s", SDL_GetError());

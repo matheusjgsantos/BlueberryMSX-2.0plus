@@ -83,6 +83,7 @@ static void destroy(RomMapperMsxBus* rm)
 static UInt8 readIo(RomMapperMsxBus* rm, UInt16 port)
 {
 	UInt8 value = msxBusReadIo(rm->msxBus, port);
+	LOG_DEBUG("IOFWD R slot=%d port=%02x v=%02x", rm->cartSlot, port, value);
 //	printf("readIO:%02x,%02x\n", port, value);
     return value;
 }
@@ -91,6 +92,7 @@ static void writeIo(RomMapperMsxBus* rm, UInt16 port, UInt8 value)
 {
 //	if (port >= 0x7c && port <= 0xa3)
 //		printf("writeIO:%02x,%02x\n", port, value);
+	LOG_DEBUG("IOFWD W slot=%d port=%02x v=%02x", rm->cartSlot, port, value);
     msxBusWriteIo(rm->msxBus, port, value);
 }
 
@@ -145,8 +147,11 @@ int romMapperMsxBusCreate(int cartSlot, int slot, int sslot)
 
     //if (rm->msxBus != NULL && cartSlot == 0) {
     if (rm->msxBus != NULL && (cartSlot == 0 || cartSlot == 1)) {
-//		for(i = 1; i < 255; i++)
-//			ioPortRegisterUnused(i, readIo, writeIo, rm);
+		/* Only forward Yamanooto cart I/O ports: PSG at $10-$11, ECHO PSG at $A0-$A1 */
+		for(i = 0x10; i <= 0x11; i++)
+			ioPortRegisterUnused(i, readIo, writeIo, rm);
+		for(i = 0xA0; i <= 0xA1; i++)
+			ioPortRegisterUnused(i, readIo, writeIo, rm);
         slotRegister(slot, sslot, 0, 8, read, read, write, destroy, rm);
         for (i = 0; i < 8; i++) {   
             slotMapPage(rm->slot, rm->sslot, i, NULL, 0, 0);
