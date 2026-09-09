@@ -1,3 +1,13 @@
+
+## Version 2.1.2 - Yamanooto Interface Diagnosis
+
+### Diagnostic Work
+- Identified and documented a hardware fault on the \/WR signal path for the Yamanooto\/RPMC K5 interface.
+- Discovered and fixed a bug in MsxBusPi.c where SetData incorrectly asserted LE_C, blocking write pulses.
+- Verified write failure using wrtest11 probe, confirming that writes do not reach the FPGA despite protocol fixes.
+
+---
+
 # BlueberryMSX-2.0plus Improvements Changelog
 
 ## Version 2.1.1 - Build Fixes
