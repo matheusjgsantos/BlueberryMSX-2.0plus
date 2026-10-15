@@ -7,8 +7,11 @@ and the test procedure — so nothing has to be rediscovered.
 
 - Board image (top, with the two MSX cartridge slots and the front-panel LED
   block on the 74HC595):
-  <https://644db4de3505c40a0444-327723bce298e3ff5813fb42baeefbaa.ssl.cf1.rackcdn.com/5704245c9d9176e9700a58e3cb52c6e6.png>
-- Schematic (GPIO view): `Doc/GPIO_schema.png`
+  <https://user-images.githubusercontent.com/1237930/50574932-a1ac7400-0e35-11e9-8d19-83cf6f92e133.png>
+- Rear image:
+  <https://user-images.githubusercontent.com/1237930/50574933-a2450a80-0e35-11e9-8291-2b19615f340d.png>
+- Schematic (GPIO view):
+  <https://user-images.githubusercontent.com/1237930/50574982-b3424b80-0e36-11e9-895b-9e131a48fb3f.png>
 - KiCad project: `/home/supervisor/Projects/rpmcv9/` (`rpmcv4.sch`,
   `rpmcv4.net`, `rpmcv4.kicad_pcb`, `rpmcv5.pdf`)
 - Core slot code: `Src/IoDevice/MsxBusPi.c`
@@ -335,7 +338,17 @@ To (re)verify the 74HC595 bit map, use the standalone sweep program
 | LED state (CAPS/HAN/slot-busy) | `Src/IoDevice/Led.c`, `Led.h` |
 | Legacy status byte (dead) | `Src/Emulator/Emulator.c:852–870` |
 | LED init/refresh/shutdown calls | `Src/Pi/PiMain.c:148–171, 269, 491, 503` |
-| Schematic | `Doc/GPIO_schema.png` |
+| Schematic | <https://user-images.githubusercontent.com/1237930/50574982-b3424b80-0e36-11e9-895b-9e131a48fb3f.png> |
 | Board image | see top of this file |
 | KiCad project | `/home/supervisor/Projects/rpmcv9/` |
 | Upstream slot code | <https://github.com/meesokim/msxslot> |
+
+---
+
+## 10. Hardware Revision Note (V2019 vs V5)
+
+A review of the 2019-01-01 schematic mapping reveals a discrepancy in the RESET line:
+- **2019 Schematic**: RESET is driven via RC24 (GPIO 24 / Pin 18).
+- **Current Software (V5)**: RESET is driven via RC19 (GPIO 19 / Pin 35).
+
+All other primary bus signals (S-Bus, Latch Enable, and Wait) remain consistent between the versions. Users of the 2019 hardware may need to update `MsxBusPi.c` to use `RESET_PIN 24` for proper reset functionality.

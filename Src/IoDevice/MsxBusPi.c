@@ -213,6 +213,20 @@ static void bcmSetOutput(int pin)
 	bcmSetFunction(pin, 1);
 }
 
+/* BCM283x GPIO_PUD / GPIO_PUDCLK0 pull-up for cart->Pi input pins (WAIT/INT). */
+#define BCM_GPIO_PUD_OFFSET     0x94
+#define BCM_GPIO_PUDCLK0_OFFSET 0x98
+static void bcmEnablePullUp(int pin)
+{
+	volatile unsigned *pud    = gpio + (BCM_GPIO_PUD_OFFSET / 4);
+	volatile unsigned *pudclk = gpio + (BCM_GPIO_PUDCLK0_OFFSET / 4);
+	*pud = 2; /* 2 = pull-up enabled */
+	for (volatile int d = 0; d < 1000; d++) { } /* >100ns settle delay */
+	*pudclk = 1u << pin;
+	*pud = 0;
+	*pudclk = 0;
+}
+
 /* GPIO setup macros, dispatch on the detected SoC */
 #define INP_GPIO(g) ((currentSoc == SOC_RP1) ? rp1SetInput(g) : bcmSetInput(g))
 #define OUT_GPIO(g) ((currentSoc == SOC_RP1) ? rp1SetOutput(g) : bcmSetOutput(g))
@@ -269,6 +283,7 @@ static volatile unsigned *bcm_gpclk0_div = NULL;
 #define CS2_PIN 	RA11
 #define RD_PIN		RA12
 #define WR_PIN		RA13
+#define WR_BYPASS_PIN	14
 #define IORQ_PIN	RA14
 #define MREQ_PIN	RA15
 #define LE_A_PIN	RC16
@@ -355,6 +370,12 @@ static volatile unsigned *bcm_gpclk0_div = NULL;
 #define MSX_SET_OUTPUT(g) {INP_GPIO(g); OUT_GPIO(g);}
 #define MSX_SET_INPUT(g)  INP_GPIO(g)
 #define MSX_SET_CLOCK(g)  INP_GPIO(g); ALT0_GPIO(g)
+
+#define MSX_WR_BYPASS (1 << WR_BYPASS_PIN)
+
+// Function to set GPIO direction directly
+#define SET_GPIO(g) *(gpio + 7) = 1 << (g);
+#define CLR_GPIO(g) *(gpio + 10) = 1 << (g);
 
 pthread_mutex_t mutex;
 
@@ -524,7 +545,9 @@ void SetDelay(int j)
 void SetData(int ioflag, int flag, int delay, unsigned char byte)
 {
 	GPIO_SET = byte;
-	GPIO_CLR = flag | MSX_WR;
+	GPIO_CLR = LE_C | flag;
+    SetDelay(4);
+	GPIO_CLR = MSX_WR;
 	GPIO_SET = ioflag | MSX_WR;
 	GPIO_SET = ioflag | MSX_WR;
 	GPIO_CLR = flag;
@@ -550,7 +573,8 @@ unsigned char GetData(int flag, int rflag, int delay)
 	while(!(GPIO & MSX_WAIT) && wait_cnt++ < 500000);
 	SetDelay(delay);
 	byte = GPIO;
-	if (wait_cnt >= 500000) { GPIO_SET = LE_D | MSX_CONTROLS; GPIO_CLR = LE_C; return 0xFF; }
+	if (wait_cnt > 500) { static int yn_wh = 0; if (yn_wh++ < 64) LOG_DEBUG("WAIT held %d iters", wait_cnt); }
+	if (wait_cnt >= 500000) { static int yn_wt = 0; if (yn_wt < 32 || (yn_wt % 200000) == 0) LOG_WARN("MSX WAIT timeout on read"); GPIO_SET = LE_D | MSX_CONTROLS; GPIO_CLR = LE_C; return 0xFF; }
   	GPIO_SET = LE_D | MSX_CONTROLS;
 	GPIO_CLR = LE_C;
 	return byte;
@@ -563,7 +587,8 @@ unsigned char GetData(int flag, int rflag, int delay)
 	cs1 = (addr & 0xc000) == 0x4000 ? MSX_CS1: 0;
 	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2: 0;
 	SetAddress(addr);
-	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, MSX_RD | cs1 | cs2, 30);
+	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, MSX_RD | cs1 | cs2, 100);
+	{ static int yn_r = 0; static FILE* yn_f = NULL; if (!yn_f) yn_f = fopen("/tmp/trace_yn.txt", "a"); if (yn_f && (yn_r < 100000 || (yn_r % 10000) == 0)) { fprintf(yn_f, "YNDIAG R slot=%d a=%04x v=%02x\n", slot, addr, byte); fflush(yn_f); } if (yn_f && slot==1 && yn_r >= 100000 && (byte==0xff || byte==0x00)) { fprintf(yn_f, "YNDIAG SUSPECT R a=%04x v=%02x\n", addr, byte); fflush(yn_f); } yn_r++; }
 #ifdef DEBUG
 	LOG_TRACE("+%04x:%02xr", addr, byte);
 #endif
@@ -572,8 +597,13 @@ unsigned char GetData(int flag, int rflag, int delay)
 
  void msxwrite(int slot, unsigned short addr, unsigned char byte)
  {
+	int cs;
+	cs = (addr & 0xc000) == 0x4000 ? MSX_CS1 : ((addr & 0xc000) == 0x8000 ? MSX_CS2 : 0);
 	SetAddress(addr);
-	SetData(MSX_MREQ, (slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, 45, byte);
+	SetData(MSX_MREQ, (slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ | cs, 45, byte);
+	/* FPGA flash reconfiguration settle time after Yamanooto bank register write */
+	if ((addr & 0x1800) == 0x1000) { SetDelay(500); }
+	{ static int yn_w = 0; static FILE* yn_f = NULL; if (!yn_f) yn_f = fopen("/tmp/trace_yn.txt", "a"); if (yn_f && (yn_w < 100000 || (yn_w % 10000) == 0)) { fprintf(yn_f, "YNDIAG W slot=%d a=%04x v=%02x\n", slot, addr, byte); fflush(yn_f); } if (yn_f && slot==1 && yn_w >= 100000 && (addr & 0x1800)==0x1000) { fprintf(yn_f, "YNDIAG BANK W a=%04x v=%02x\n", addr, byte); fflush(yn_f); } yn_w++; }
 #ifdef DEBUG
 	LOG_TRACE("+%04x:%02xw", addr, byte);
 #endif
@@ -699,8 +729,29 @@ int setup_io()
 		}
 	}
 
+	/* WAIT and INT are driven by the cartridge into the Pi; they must be
+	   inputs (with pull-ups) so the bus code can actually see them. The loop
+	   above set every pin as an output so the Pi drives the CPLD, which is
+	   correct for address/control/data but wrong for these two cart->Pi lines. */
+	if (currentSoc == SOC_RP1) {
+		rp1SetInput(WAIT_PIN);
+		rp1SetInput(INT_PIN);
+	} else {
+		bcmSetInput(WAIT_PIN);
+		bcmEnablePullUp(WAIT_PIN);
+		bcmSetInput(INT_PIN);
+		bcmEnablePullUp(INT_PIN);
+	}
+
 	// Setup our specific clocks that are needed for MSX operation
 	setup_gclk();
+
+	// Setup bypass WR GPIO (GPIO 14)
+	if (currentSoc == SOC_RP1) {
+		rp1SetOutput(WR_BYPASS_PIN);
+	} else {
+		bcmSetOutput(WR_BYPASS_PIN);
+	}
 
 	GPIO_SET = LE_C | MSX_CONTROLS | MSX_WAIT | MSX_INT;
 	GPIO_SET = LE_A | LE_D;

@@ -139,8 +139,9 @@ static int isRomFileType(char* filename, char* inZip) {
            isFileExtension(filename, ".mx2") ||
            isFileExtension(filename, ".sms") ||
            isFileExtension(filename, ".col") ||
-           isFileExtension(filename, ".sg") ||
-           isFileExtension(filename, ".sc");
+           isFileExtension(filename, ".sg")  ||
+           isFileExtension(filename, ".sc")  ||
+           isFileExtension(filename, ".ext");
 }
 
 static int isDskFileType(char* filename, char* inZip) {

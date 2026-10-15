@@ -1,3 +1,13 @@
+
+## Version 2.1.2 - Yamanooto Interface Diagnosis
+
+### Diagnostic Work
+- Identified and documented a hardware fault on the \/WR signal path for the Yamanooto\/RPMC K5 interface.
+- Discovered and fixed a bug in MsxBusPi.c where SetData incorrectly asserted LE_C, blocking write pulses.
+- Verified write failure using wrtest11 probe, confirming that writes do not reach the FPGA despite protocol fixes.
+
+---
+
 # BlueberryMSX-2.0plus Improvements Changelog
 
 ## Version 2.1.1 - Build Fixes
@@ -59,3 +69,6 @@ The implementation has been successfully completed and tested with:
 - Maintained compatibility with existing video libraries
 
 The improvements provide modernized GPIO access and enhanced keyboard handling while maintaining full compatibility with your existing hardware configuration.
+### Hardware Revision Note (V2019 vs V5)
+- Identified discrepancy in RESET line: V2019 uses RC24 (GPIO 24), V5 uses RC19 (GPIO 19).
+- Updated RPMC.md with image links and revision notes.

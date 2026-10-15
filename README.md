@@ -37,7 +37,7 @@ Tested configurations (aarch64, kernel `rpi-v8`):
 
 The display is whichever KMS connector is in use (the code walks the DRM
 connector list, so DSI and HDMI both work — see the "Known issues" note).
-The RPMC slot board and the 6 front-panel LEDs (via 74HC595 on bcm2835) work
+The RPMC slot board (including Yamanooto/RPMC K5 interface - read only) and the 6 front-panel LEDs (via 74HC595 on bcm2835) work
 on both 32-bit (armhf) and 64-bit (aarch64). Physical cartridges in both
 slots are auto-detected and mounted as emulated MSXBus cartridges
 (`/romtype1 msxbus /romtype2 msxbus`), so a cartridge is read straight off the
@@ -179,6 +179,7 @@ Known issues:
   - Emulator uses the first connected DRM connector (DSI and HDMI both work); multi-monitor selection (e.g. Pi 4 HDMI1) is not handled
  - Sometimes the emulator gets upset and decides to disable sound. Check bluemsx.ini for `sound.masterEnable=yes` entry and fix it if changed to `no`
  - Moonsound / MSX-Music / YM2413 sound is silent: those C++ emulators don't compile on the aarch64 toolchain and are stubbed out for now — the cartridges load, but without sound
+ - Yamanooto interface bank switching and register writes are currently non-functional due to a suspected hardware fault on the /WR signal path (diagnosed via wrtest11)
  - Improvements, improvements and more improvements
 
 Resolved issues:
