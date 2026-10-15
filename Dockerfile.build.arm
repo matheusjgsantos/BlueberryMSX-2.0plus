@@ -15,6 +15,7 @@ COPY . .
 
 # bcm2835 GPIO lib (not in Debian) — build the in-tree copy. It installs a
 # static libbcm2835.a, so bluemsx-pi has no runtime GPIO dependency.
+RUN ln -s /usr/include/libdrm /usr/include/drm
 RUN cd bcm2835-1.68 \
     && ./configure \
     && make \

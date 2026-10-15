@@ -25,29 +25,37 @@
 */
 
 #define RPMC_V5
-#include <bcm2835.h>
 // Access from ARM Running Linux
 #include "rpi-gpio.h"
-   
+#include "Log.h"
+    
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>  
 #include <fcntl.h>
+#include <stdint.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <bcm2835.h>
 #include <time.h>
 #include <sched.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <stdbool.h>
 
+#ifndef ROM_TESTER_BUILD
+#include "Board.h"
+#endif
 #include "barrier.h"
- 
+   
 #define PAGE_SIZE (4*1024)
 #define BLOCK_SIZE (4*1024)
- 
-int  mem_fd;
-void *gpio_map;
- 
+   
+static int mem_fd = -1;
+static void *gpio_map;
+static int clk_fd = -1;
+static void *clk_map;
+   
 // I/O access
 volatile unsigned *gpio;
 volatile unsigned *gpio10;
@@ -55,25 +63,172 @@ volatile unsigned *gpio7;
 volatile unsigned *gpio13;
 volatile unsigned *gpio1;
 volatile unsigned *gclk_base;
- 
- 
-// GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
-#define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
-#define OUT_GPIO(g) *(gpio+((g)/10)) |=  (1<<(((g)%10)*3))
-#define SET_GPIO_ALT(g,a) *(gpio+(((g)/10))) |= (((a)<=3?(a)+4:(a)==4?3:2)<<(((g)%10)*3))
- 
+static volatile uint32_t *rp1Gpio;
+static volatile uint32_t *rp1Clocks;
+
+typedef enum {
+	SOC_UNKNOWN = 0,
+	SOC_BCM283X,   /* Pi 1/2/3/Zero and Pi 4/400 (BCM2835/6/7/2711) */
+	SOC_RP1        /* Pi 5 (BCM2712 + RP1 southbridge) */
+} SocType;
+
+static SocType currentSoc = SOC_UNKNOWN;
+static bool gclk_initialized = false;  /* Add this */
+
+#define RP1_MEM_SIZE           0x30000
+#define RP1_REG_SIZE           sizeof(uint32_t)
+#define RP1_IO_BANK0_OFFSET    0x00000
+#define RP1_SYS_RIO0_OFFSET    0x10000
+#define RP1_PADS_BANK0_OFFSET  0x20000
+#define RP1_RW_OFFSET          0x0000
+#define RP1_SET_OFFSET         0x2000
+#define RP1_CLR_OFFSET         0x3000
+#define RP1_GPIO_CTRL          0x0004
+#define RP1_GPIO_OFFSET        8
+#define RP1_CTRL_FUNCSEL_MASK  0x001f
+#define RP1_CTRL_OUTOVER_MASK  0x3000
+#define RP1_CTRL_OEOVER_MASK   0xc000
+#define RP1_FUNCSEL_GPIO       5
+#define RP1_FUNCSEL_GPCLK0     3
+#define RP1_PADS_GPIO          0x04
+#define RP1_PADS_OFFSET        4
+#define RP1_PADS_IN_ENABLE     0x40
+#define RP1_PADS_OUT_DISABLE   0x80
+#define RP1_PADS_BIAS_MASK     0x0c
+#define RP1_PADS_BIAS_PULL_UP  0x08
+#define RP1_RIO_OUT            0x00
+#define RP1_RIO_OE             0x04
+#define RP1_RIO_IN             0x08
+
+#define RP1_CLOCK_BASE_PHYS    0x1f00018000ULL
+#define RP1_CLOCK_MEM_SIZE     0x1000
+#define RP1_GPCLK0_RATE        3579545ULL
+#define RP1_XOSC_RATE          50000000ULL
+#define RP1_GPCLK_OE_CTRL      0x00000
+#define RP1_CLK_GP0_OFFSET     0x00174
+#define RP1_CLK_GP0_CTRL       (RP1_CLK_GP0_OFFSET + 0x00)
+#define RP1_CLK_GP0_DIV_INT    (RP1_CLK_GP0_OFFSET + 0x04)
+#define RP1_CLK_GP0_DIV_FRAC   (RP1_CLK_GP0_OFFSET + 0x08)
+#define RP1_CLK_GP0_SEL        (RP1_CLK_GP0_OFFSET + 0x0c)
+#define RP1_CLK_CTRL_ENABLE    (1u << 11)
+#define RP1_CLK_CTRL_AUXSRC_MASK (0x1fu << 5)
+#define RP1_CLK_DIV_FRAC_BITS  16
+
+/* BCM283x (Pi 3/4) physical register bases */
+#define BCM_GPIO_BASE_PHYS     0x3F200000ULL
+#define BCM_CLOCK_BASE_PHYS    0x3F101000ULL
+#define BCM_CLOCK_MEM_SIZE     0x1000
+#define BCM_GPFSEL0_OFFSET     0x00
+#define BCM_GPSET0_OFFSET      0x1C
+#define BCM_GPCLR0_OFFSET      0x28
+#define BCM_GPLEV0_OFFSET      0x34
+#define BCM_GPCLK0_CNTL        0x70
+#define BCM_GPCLK0_DIV         0x74
+#define BCM_GPCLK0_PASSWORD    0x5A000000
+
+static SocType bcmDetectSoc(void)
+{
+	const char *compat = "/proc/device-tree/compatible";
+	char buf[256];
+	int fd = open(compat, O_RDONLY);
+	if (fd < 0) {
+		return SOC_BCM283X; /* assume the older /dev/mem style part */
+	}
+	int n = read(fd, buf, sizeof(buf) - 1);
+	close(fd);
+	if (n <= 0) {
+		return SOC_BCM283X;
+	}
+	buf[n] = '\0';
+	if (strstr(buf, "brcm,bcm2712")) {
+		return SOC_RP1;
+	}
+	return SOC_BCM283X;
+}
+
+static inline volatile uint32_t *rp1Reg(size_t offset)
+{
+	return rp1Gpio + (offset / RP1_REG_SIZE);
+}
+
+static inline volatile uint32_t *rp1ClockReg(size_t offset)
+{
+	return rp1Clocks + (offset / 4);
+}
+
+static void rp1SetGpioFunction(int pin, uint32_t function)
+{
+	volatile uint32_t *ctrl = rp1Reg(RP1_IO_BANK0_OFFSET + RP1_GPIO_CTRL + pin * RP1_GPIO_OFFSET + RP1_RW_OFFSET);
+	uint32_t value = *ctrl;
+	value &= ~(RP1_CTRL_FUNCSEL_MASK | RP1_CTRL_OUTOVER_MASK | RP1_CTRL_OEOVER_MASK);
+	value |= function;
+	*ctrl = value;
+}
+
+static void rp1EnablePad(int pin, int pullUp)
+{
+	volatile uint32_t *pad = rp1Reg(RP1_PADS_BANK0_OFFSET + RP1_PADS_GPIO + pin * RP1_PADS_OFFSET + RP1_RW_OFFSET);
+	uint32_t value = *pad;
+	value |= RP1_PADS_IN_ENABLE;
+	value &= ~RP1_PADS_OUT_DISABLE;
+	value &= ~RP1_PADS_BIAS_MASK;
+	if (pullUp) {
+		value |= RP1_PADS_BIAS_PULL_UP;
+	}
+	*pad = value;
+}
+
+static void rp1SetInput(int pin)
+{
+	rp1SetGpioFunction(pin, RP1_FUNCSEL_GPIO);
+	rp1EnablePad(pin, 1);
+	*rp1Reg(RP1_SYS_RIO0_OFFSET + RP1_RIO_OE + RP1_CLR_OFFSET) = 1u << pin;
+}
+
+static void rp1SetOutput(int pin)
+{
+	rp1SetGpioFunction(pin, RP1_FUNCSEL_GPIO);
+	rp1EnablePad(pin, 1);
+	*rp1Reg(RP1_SYS_RIO0_OFFSET + RP1_RIO_OE + RP1_SET_OFFSET) = 1u << pin;
+}
+
+/* BCM283x GPIO helpers */
+static void bcmSetFunction(int pin, int function)
+{
+	volatile unsigned *fsel = gpio + (pin / 10);
+	unsigned reg = *fsel;
+	reg &= ~(7u << ((pin % 10) * 3));
+	reg |= (unsigned)function << ((pin % 10) * 3);
+	/* Group clock bank 0 uses GPFSEL0/1; bank 1 uses GPFSEL2/3... handled by gpio+ */
+	*fsel = reg;
+}
+
+static void bcmSetInput(int pin)
+{
+	bcmSetFunction(pin, 0);
+}
+
+static void bcmSetOutput(int pin)
+{
+	bcmSetFunction(pin, 1);
+}
+
+/* GPIO setup macros, dispatch on the detected SoC */
+#define INP_GPIO(g) ((currentSoc == SOC_RP1) ? rp1SetInput(g) : bcmSetInput(g))
+#define OUT_GPIO(g) ((currentSoc == SOC_RP1) ? rp1SetOutput(g) : bcmSetOutput(g))
+#define SET_GPIO_ALT(g,a) ((currentSoc == SOC_RP1) ? rp1SetGpioFunction((g),(a)) : bcmSetFunction((g),(a)))
+
 #define GPIO_SET *(gpio7)  // sets   bits which are 1 ignores bits which are 0
 #define GPIO_CLR *(gpio10) // clears bits which are 1 ignores bits which are 0
- 
+
 #define GET_GPIO(g) (*(gpio13)&(1<<g)) // 0 if LOW, (1<<g) if HIGH
 #define GPIO (*(gpio13))
- 
-#define GPIO_PULL *(gpio+37) // Pull up/pull down
-#define GPIO_PULLCLK0 *(gpio+38) // Pull up/pull down clock
 
 #define GZ_CLK_BUSY    (1 << 7)
-#define GP_CLK0_CTL *(gclk_base + 0x1C)
-#define GP_CLK0_DIV *(gclk_base + 0x1D)
+
+/* Clock register pointers */
+static volatile unsigned *bcm_gpclk0_ctl = NULL;
+static volatile unsigned *bcm_gpclk0_div = NULL;
 
 #ifdef RPMC_V5
 #define RD0		0
@@ -204,14 +359,151 @@ volatile unsigned *gclk_base;
 pthread_mutex_t mutex;
 
 int setup_io();
+static int setup_gclk(void);
+static void clear_gclk(void);
+static void frontledWrite(unsigned char byte, int force);
 void frontled(unsigned char byte);
 int msxread(int slot, unsigned short addr);
 void msxwrite(int slot, unsigned short addr, unsigned char byte);
 int msxreadio(unsigned short addr);
 void msxwriteio(unsigned short addr, unsigned char byte);
 void clear_io();
-void setup_gclk();
 
+
+/* Clock initialization state */
+//static bool gclk_initialized = false;
+
+static int setup_gclk(void)
+{
+	uint64_t div;
+	uint32_t divInt;
+	uint32_t divFrac;
+	uint32_t ctrl;
+	uint64_t actualRate;
+
+	// Already initialized, return early
+	if (gclk_initialized) {
+		return 0;
+	}
+
+	if (currentSoc == SOC_RP1) {
+		/* RP1 (Pi 5) clock path */
+		if (clk_map != NULL) {
+			rp1SetGpioFunction(CLK_PIN, RP1_FUNCSEL_GPCLK0);
+			rp1EnablePad(CLK_PIN, 0);
+			gclk_initialized = true;
+			return 0;
+		}
+
+		clk_fd = open("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC);
+		if (clk_fd < 0) {
+			LOG_ERROR("Failed to open /dev/mem for RP1 GPCLK0: %s", strerror(errno));
+			return -1;
+		}
+
+		clk_map = mmap(NULL, RP1_CLOCK_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, clk_fd, (off_t)RP1_CLOCK_BASE_PHYS);
+		if (clk_map == MAP_FAILED) {
+			int savedErrno = errno;
+			LOG_ERROR("Failed to map RP1 clock manager: %s", strerror(errno));
+			close(clk_fd);
+			clk_fd = -1;
+			clk_map = NULL;
+			errno = savedErrno;
+			return -1;
+		}
+
+		rp1Clocks = (volatile uint32_t *)clk_map;
+		div = ((RP1_XOSC_RATE << RP1_CLK_DIV_FRAC_BITS) + (RP1_GPCLK0_RATE / 2)) / RP1_GPCLK0_RATE;
+		divInt = div >> RP1_CLK_DIV_FRAC_BITS;
+		divFrac = (uint32_t)(div << (32 - RP1_CLK_DIV_FRAC_BITS));
+
+		*rp1ClockReg(RP1_CLK_GP0_DIV_INT) = divInt;
+		*rp1ClockReg(RP1_CLK_GP0_DIV_FRAC) = divFrac;
+		*rp1ClockReg(RP1_CLK_GP0_SEL) = 1u;
+		ctrl = *rp1ClockReg(RP1_CLK_GP0_CTRL);
+		ctrl &= ~RP1_CLK_CTRL_AUXSRC_MASK;
+		ctrl |= RP1_CLK_CTRL_ENABLE;
+		*rp1ClockReg(RP1_CLK_GP0_CTRL) = ctrl;
+		*rp1ClockReg(RP1_GPCLK_OE_CTRL) = *rp1ClockReg(RP1_GPCLK_OE_CTRL) | 1u;
+
+		rp1SetGpioFunction(CLK_PIN, RP1_FUNCSEL_GPCLK0);
+		rp1EnablePad(CLK_PIN, 0);
+
+		actualRate = (RP1_XOSC_RATE << RP1_CLK_DIV_FRAC_BITS) / div;
+		LOG_INFO("RP1 GPCLK0 enabled on GPIO20: requested %llu Hz, actual %llu Hz",
+		        (unsigned long long)RP1_GPCLK0_RATE, (unsigned long long)actualRate);
+		gclk_initialized = true;
+		return 0;
+	}
+
+	/* BCM283x (Pi 3/4) clock path */
+	if (clk_map == NULL) {
+		LOG_ERROR("Clock setup error: clk_map not initialized");
+		return -1;
+	}
+
+	// Initialize clock pointers if needed
+	if (gclk_base == NULL) {
+		gclk_base = (volatile unsigned *)clk_map;
+		bcm_gpclk0_ctl = (volatile unsigned *)(gclk_base + (BCM_GPCLK0_CNTL / 4));
+		bcm_gpclk0_div = (volatile unsigned *)(gclk_base + (BCM_GPCLK0_DIV / 4));
+	}
+
+	if (bcm_gpclk0_ctl == NULL || bcm_gpclk0_div == NULL) {
+		LOG_ERROR("Clock initialization error: GPCLK pointer not set");
+		return -1;
+	}
+
+	/* Set up BCM clock */
+	div = ((19200000ULL << 12) + (RP1_GPCLK0_RATE / 2)) / RP1_GPCLK0_RATE;
+
+	*bcm_gpclk0_div = (unsigned)(BCM_GPCLK0_PASSWORD | ((div >> 12) << 12) | (div & 0xfff));
+	ctrl = *bcm_gpclk0_ctl;
+	ctrl = (ctrl & ~0xff) | BCM_GPCLK0_PASSWORD | 6; /* source: 19.2 MHz XOSC */
+	*bcm_gpclk0_ctl = (ctrl & ~1u) | BCM_GPCLK0_PASSWORD; /* stop first */
+	*bcm_gpclk0_ctl = (ctrl | BCM_GPCLK0_PASSWORD) | 1u;  /* start */
+
+	SET_GPIO_ALT(CLK_PIN, 4); /* GPIO20 = GPCLK0 (ALT0 = function 4) on BCM283x */
+
+	actualRate = 19200000ULL * 256 / ((div >> 12) * 256);
+	LOG_INFO("BCM GPCLK0 enabled on GPIO20: requested %llu Hz (div=%llu)",
+	        (unsigned long long)RP1_GPCLK0_RATE, (unsigned long long)(div >> 12));
+
+	gclk_initialized = true;
+
+	return 0;
+}
+
+static void clear_gclk(void)
+{
+	if (currentSoc == SOC_RP1) {
+		if (clk_map != NULL) {
+			*rp1ClockReg(RP1_GPCLK_OE_CTRL) = *rp1ClockReg(RP1_GPCLK_OE_CTRL) & ~1u;
+			*rp1ClockReg(RP1_CLK_GP0_CTRL) = *rp1ClockReg(RP1_CLK_GP0_CTRL) & ~RP1_CLK_CTRL_ENABLE;
+		}
+	} else {
+		if (bcm_gpclk0_ctl != NULL) {
+			*bcm_gpclk0_ctl = (*bcm_gpclk0_ctl & ~1u) | BCM_GPCLK0_PASSWORD; /* stop GPCLK0 */
+		}
+	}
+
+	if (gpio_map != NULL) {
+		(currentSoc == SOC_RP1) ? rp1SetInput(CLK_PIN) : bcmSetInput(CLK_PIN);
+	}
+
+	if (clk_map != NULL) {
+		munmap(clk_map, currentSoc == SOC_RP1 ? RP1_CLOCK_MEM_SIZE : BCM_CLOCK_MEM_SIZE);
+		clk_map = NULL;
+		rp1Clocks = NULL;
+		gclk_base = NULL;
+		bcm_gpclk0_ctl = NULL;
+		bcm_gpclk0_div = NULL;
+	}
+	if (clk_fd >= 0) {
+		close(clk_fd);
+		clk_fd = -1;
+	}
+}
 
 void SetAddress(unsigned short addr)
 {
@@ -238,7 +530,7 @@ void SetData(int ioflag, int flag, int delay, unsigned char byte)
 	GPIO_CLR = flag;
     SetDelay(5);
 	GPIO_CLR = MSX_WR;
-	while(!(GPIO & MSX_WAIT));
+	{ int wait_cnt = 0; while(!(GPIO & MSX_WAIT) && wait_cnt++ < 500000); }
     SetDelay(delay);
 	GPIO_SET = MSX_WR;
     SetDelay(2);
@@ -250,13 +542,15 @@ void SetData(int ioflag, int flag, int delay, unsigned char byte)
 unsigned char GetData(int flag, int rflag, int delay)
 {
 	unsigned char byte;
+	int wait_cnt = 0;
 	GPIO_SET = DAT_DIR | 0xff;
 	GPIO_CLR = flag;
     SetDelay(1);
 	GPIO_CLR = rflag;
-	while(!(GPIO & MSX_WAIT));
+	while(!(GPIO & MSX_WAIT) && wait_cnt++ < 500000);
 	SetDelay(delay);
 	byte = GPIO;
+	if (wait_cnt >= 500000) { GPIO_SET = LE_D | MSX_CONTROLS; GPIO_CLR = LE_C; return 0xFF; }
   	GPIO_SET = LE_D | MSX_CONTROLS;
 	GPIO_CLR = LE_C;
 	return byte;
@@ -270,43 +564,43 @@ unsigned char GetData(int flag, int rflag, int delay)
 	cs2 = (addr & 0xc000) == 0x8000 ? MSX_CS2: 0;
 	SetAddress(addr);
 	byte = GetData((slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, MSX_RD | cs1 | cs2, 30);
-#ifdef DEBUG    
-	printf("+%04x:%02xr\n", addr, byte);
+#ifdef DEBUG
+	LOG_TRACE("+%04x:%02xr", addr, byte);
 #endif
 	return byte;	 
  }
- 
+
  void msxwrite(int slot, unsigned short addr, unsigned char byte)
  {
 	SetAddress(addr);
 	SetData(MSX_MREQ, (slot == 0 ? MSX_SLTSL1 : MSX_SLTSL3) | MSX_MREQ, 45, byte);
-#ifdef DEBUG  
-	printf("+%04x:%02xw\n", addr, byte);
+#ifdef DEBUG
+	LOG_TRACE("+%04x:%02xw", addr, byte);
 #endif
 	return;
  }
- 
+
  int msxreadio(unsigned short addr)
  {
 	unsigned char byte;
 	SetAddress(addr);
 	byte = GetData(MSX_IORQ, MSX_RD, 45);
-#ifdef DEBUG      
-	printf("-IO%02x:%02xr\n", addr, byte);
+#ifdef DEBUG
+	LOG_TRACE("-IO%02x:%02xr", addr, byte);
 #endif
 	return byte;	 
  }
- 
+
  void msxwriteio(unsigned short addr, unsigned char byte)
-   {
+    {
 	SetAddress(addr);
 	SetData(MSX_IORQ, MSX_IORQ, 55, byte);
-#ifdef DEBUG      
-	printf("-IO%02x:%02xw\n", addr, byte);
+#ifdef DEBUG
+	LOG_TRACE("-IO%02x:%02xw", addr, byte);
 #endif
 	return;
  }
- 
+
 void checkInt()
 {
 	if (!(GPIO & MSX_INT))
@@ -314,107 +608,128 @@ void checkInt()
 		boardSetInt(0x10000);
 	}
 } 
- 
-#if 0 
-int rtapi_open_as_root(const char *filename, int mode) {
-	fprintf (stderr, "euid: %d uid %d\n", geteuid(), getuid());
-	seteuid(0);
-	fprintf (stderr, "euid: %d uid %d\n", geteuid(), getuid());
-	setfsuid(geteuid());
-	int r = open(filename, mode);
-	setfsuid(getuid());
-	return r;
-}
-#endif
+
 //
 // Set up a memory regions to access GPIO
 //
 int setup_io()
 {
 	int i, speed_id, divisor ;	
-	if (!bcm2835_init()) return -1;
-	gpio = bcm2835_regbase(BCM2835_REGBASE_GPIO);
-	for(int i=0; i < 27; i++)
-	{
-		if (i != 20) {	// if use new pads_strength (pads.c)
-			bcm2835_gpio_fsel(i, 1);    
-			bcm2835_gpio_set_pud(i, BCM2835_GPIO_PUD_UP);
+
+	// Detect platform early in setup
+	currentSoc = bcmDetectSoc();
+
+	// Open the master /dev/mem device
+	if ((mem_fd = open("/dev/mem", O_RDWR | O_SYNC)) < 0) {
+		LOG_ERROR("Cannot open /dev/mem: %s", strerror(errno));
+		return -1;
+	}
+
+	// Map GPIO registers
+	gpio_map = mmap(
+		NULL, 
+		PAGE_SIZE,
+		PROT_READ | PROT_WRITE,
+		MAP_SHARED,
+		mem_fd,
+		currentSoc == SOC_RP1 ? 0x1F000000ULL : BCM_GPIO_BASE_PHYS  // GPIO base address for Pi 5 or BCM283x
+	);
+
+	if (gpio_map == MAP_FAILED) {
+		LOG_ERROR("Cannot map GPIO registers: %s", strerror(errno));
+		close(mem_fd);
+		return -1;
+	}
+
+	// Map clock registers  
+	clk_fd = open("/dev/mem", O_RDWR | O_SYNC);
+	if (clk_fd < 0) {
+		LOG_ERROR("Cannot open /dev/mem for clocks: %s", strerror(errno));
+		return -1;
+	}
+
+	clk_map = mmap(
+		NULL,
+		currentSoc == SOC_RP1 ? RP1_CLOCK_MEM_SIZE : BCM_CLOCK_MEM_SIZE,
+		PROT_READ | PROT_WRITE,
+		MAP_SHARED,
+		clk_fd,
+		currentSoc == SOC_RP1 ? (off_t)RP1_CLOCK_BASE_PHYS : (off_t)BCM_CLOCK_BASE_PHYS
+	);
+
+	if (clk_map == MAP_FAILED) {
+		LOG_ERROR("Cannot map clock registers: %s", strerror(errno));
+		close(clk_fd);
+		return -1;
+	}
+
+	gpio = (volatile unsigned *)gpio_map;
+
+	if (currentSoc == SOC_RP1) {
+		/* RP1 GPIO path */
+		rp1Gpio = (volatile uint32_t *)gpio_map;
+		gpio7 = gpio + 7;
+		gpio10 = gpio + 10;
+		gpio13 = gpio + 13;
+		gpio1 = gpio + 1;
+
+		// Setup the GPIO pins directly using RP1 register-based approach
+		for(i = 0; i < 27; i++)
+		{
+			if(i != 20) { // Skip GPIO 20 since it's used for clock - we'll use direct register control
+				rp1SetOutput(i);
+				// Set pull-up resistors where applicable  
+				rp1EnablePad(i, 1);
+			}
+		}
+	} else {
+		/* BCM283x GPIO path */
+		gpio7 = gpio + (BCM_GPSET0_OFFSET / 4);
+		gpio10 = gpio + (BCM_GPCLR0_OFFSET / 4);
+		gpio13 = gpio + (BCM_GPLEV0_OFFSET / 4);
+		gpio1 = gpio + 1; /* Not actually used but included for completeness */
+		
+		// Setup the GPIO pins directly using BCM283x register-based approach
+		for(i = 0; i < 27; i++)
+		{
+			if(i != 20) { // Skip GPIO 20 since it's used for clock - we'll use direct register control
+				bcmSetOutput(i);
+				/* Pull-up is not supported in the old GPIO set/clear register method */
+			}
 		}
 	}
 
-	gpio10 = gpio+10;
-	gpio7 = gpio+7;
-	gpio13 = gpio+13;
-	gpio1 = gpio+1;
-	//SET_GPIO_ALT(20, 5);
-	gclk_base = bcm2835_regbase(BCM2835_REGBASE_CLK);
-	if (gclk_base != MAP_FAILED)
-	{
-		int divi, divr, divf, freq;
-		bcm2835_gpio_fsel(20, BCM2835_GPIO_FSEL_ALT5); // GPIO_20
-		speed_id = 1;
-		freq = 3579545;	// msx clock
-		divi = 19200000 / freq ;
-		divr = 19200000 % freq ;
-		divf = (int)((double)divr * 4096.0 / 19200000.0) ;
-		if (divi > 4095)
-			divi = 4095 ;		
-		divisor = 1 < 12;// | (int)(6648/1024);
-		GP_CLK0_CTL = 0x5A000000 | speed_id;    // GPCLK0 off
-		while (GP_CLK0_CTL & 0x80);    // Wait for BUSY low
-		GP_CLK0_DIV = 0x5A000000 | (divi << 12) | divf; // set DIVI
-		GP_CLK0_CTL = 0x5A000010 | speed_id;    // GPCLK0 on
-		printf("clock enabled: 0x%08x\n", GP_CLK0_CTL );
-	}
-	else
-		printf("clock disabled\n");
-	
-	bcm2835_gpio_pud(BCM2835_GPIO_PUD_UP);
-	for(int i = 0; i < 8; i++)
-		bcm2835_gpio_pudclk(i, 1);
-	bcm2835_gpio_pudclk(27,1);
-	
+	// Setup our specific clocks that are needed for MSX operation
+	setup_gclk();
+
 	GPIO_SET = LE_C | MSX_CONTROLS | MSX_WAIT | MSX_INT;
 	GPIO_SET = LE_A | LE_D;
 	GPIO_CLR = LE_C | 0xffff;
 	GPIO_CLR = LE_C;
 	GPIO_CLR = MSX_RESET;
-	for(int i=0;i<2000000;i++);
+	for(i=0;i<2000000;i++);
 	GPIO_SET = MSX_RESET;
-	for(int i=0;i<1000000;i++);
+	for(i=0;i<1000000;i++);
+
 	return 0;
 } // setup_io
 
-#if 0
-#define EINVAL 0
-int stick_this_thread_to_core(int core_id) {
-   int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
-   if (core_id < 0 || core_id >= num_cores)
-      return EINVAL;
-
-   cpu_set_t cpuset;
-   CPU_ZERO(&cpuset);
-   CPU_SET(core_id, &cpuset);
-   return sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
-}
-#endif
 void clear_io()
 {
-//	spi_clear();
+	// Currently empty, as GPIOs are maintained in their state
 }
 
 void msxinit()
 {
 	const struct sched_param priority = {1};
 	sched_setscheduler(0, SCHED_FIFO, &priority);  
-//	stick_this_thread_to_core(0);
 	if (setup_io() == -1)
     {
-        printf("GPIO init error\n");
+        LOG_ERROR("GPIO init error");
         exit(0);
     }
     frontled(0x0);
-	printf("MSX BUS initialized\n");
+	LOG_INFO("MSX BUS initialized");
 }
 
 void msxclose()
@@ -451,9 +766,7 @@ void frontled(unsigned char byte)
     }
 }
 
-
 #ifdef _MAIN
-
 
 int main(int argc, char **argv)
 {

@@ -26,6 +26,7 @@
 */
 
 #include "ArchNotifications.h"
+#include "Log.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -170,7 +171,7 @@ void* ScreenShotPng(void* src, int srcPitch, int width, int height, int* bitmapS
 		rawSize *= 2;
     BYTE* rawData = (BYTE*)malloc(rawSize);
     BYTE* dstPtr = rawData;
-    printf("width=%d, height=%d\n", width, height);
+    LOG_DEBUG("width=%d, height=%d", width, height);
 
 	for (h = 0; h < height; h++) {
 		*dstPtr++ = 0; // Default PNG filter

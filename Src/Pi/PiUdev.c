@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Disk.h"
+#include "Log.h"
 #include <pthread.h>
 #include <unistd.h>
 #include <linux/fd.h>
@@ -78,7 +79,7 @@ int piInitUdev()
 		return 0;
 	}
 
-	fprintf(stderr, "udev initialized\n");
+	LOG_INFO("udev initialized");
 	
 	return 1;
 }
@@ -88,7 +89,7 @@ int piDestroyUdev()
 	stopMonitor = 1;
 	pthread_join(monthread, NULL);
 	
-	fprintf(stderr, "udev shut down\n");
+	LOG_INFO("udev shut down");
 	
 	udev_unref(udev);
 }
@@ -209,7 +210,7 @@ static int ufi_invoke(int fd, const char *cmd, size_t cmd_size, char *data, size
 #if 0		
 	if (verbose) {
 	    int i;
-	    fprintf(stderr, "SCSI error(command=%02x, status=%02x)\n", *cmd, sg_io_hdr.masked_status);
+	    LOG_ERROR("SCSI error(command=%02x, status=%02x)", *cmd, sg_io_hdr.masked_status);
 	    for (i = 0; i < sizeof(sense_buffer); i++) {
 		printf("%02x ", sense_buffer[i]);
 		if (i % 16 == 15) printf("\n");
@@ -264,7 +265,7 @@ unsigned char udev_format_unit(char devname[], int blocks, int block_size, int t
 
 static void* udevMon(void *arg)
 {
-	fprintf(stderr, "udev monitor starting\n");
+	LOG_DEBUG("udev monitor starting");
 	
 	int monfd = udev_monitor_get_fd(mon);
 	struct udev_device *dev;
@@ -313,14 +314,14 @@ static void* udevMon(void *arg)
 			fd = open(devname, 3 | O_NDELAY);
 			res = ufi_invoke_no(fd, TEST_UNIT_READY_CMD);
 			if (res == 0 && prev_res[i] != 0) {
-				printf("disk_inserted %d %d %d\n", i, res, prev_res[i]);
+				LOG_INFO("disk_inserted %d %d %d", i, res, prev_res[i]);
 				close(fd);
 				prev_res[i] = res;
 				diskChange(i ,devname, 0);
 				continue;
 			} else if (res == -1 && prev_res[i] != -1) {
 				diskChange(i, 0, 0);
-				printf("disk_removed %d %d %d\n", i, res, prev_res[i]);
+				LOG_INFO("disk_removed %d %d %d", i, res, prev_res[i]);
 			}
 			close(fd);
 			prev_res[i] = res;

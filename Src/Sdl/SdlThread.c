@@ -26,17 +26,18 @@
 ******************************************************************************
 */
 #include "ArchThread.h"
+#include "Log.h"
 #include <SDL.h>
 #include <stdlib.h>
 
 static int threadEntry(void* data) 
 {
-    fprintf(stderr,"SdlThread is executing threadEntry\n");
+    LOG_DEBUG("SdlThread is executing threadEntry");
     void (*entryPoint)() = data;
 
-    fprintf(stderr,"SdlThread is about to call entryPoint() with data: %d\n",data);
+    LOG_DEBUG("SdlThread is about to call entryPoint() with data: %d", data);
     if (data == 0x0) {
-    	fprintf(stderr,"SdlThread received invalid data: %d\n",data);
+    	LOG_ERROR("SdlThread received invalid data: %d", data);
 	exit(1);
     }
     entryPoint();
@@ -46,10 +47,10 @@ static int threadEntry(void* data)
 
 void* archThreadCreate(void (*entryPoint)(), int priority) { 
     //DEPRECATED in sdl2 -- SDL_Thread* sdlThread = SDL_CreateThread(threadEntry, entryPoint);
-    fprintf(stderr,"SdlThread archThreadCreate was invoked and is calling SDL_CreateThread with entrypoint %d and threadEntry %d\n", entryPoint, threadEntry);
+    LOG_DEBUG("SdlThread archThreadCreate was invoked and is calling SDL_CreateThread with entrypoint %d and threadEntry %d", entryPoint, threadEntry);
     //SDL_Thread* sdlThread = SDL_CreateThread(threadEntry, entryPoint, (void *)NULL);
     SDL_Thread* sdlThread = SDL_CreateThread(threadEntry, (void *)NULL, entryPoint);
-    fprintf (stderr, "SdlThread is creating the thread %d\n", sdlThread);
+    LOG_DEBUG("SdlThread is creating the thread %d", sdlThread);
     //fprintf (stderr, "SdlThread running SDL_GetError(): %d\n", SDL_GetError());
     return sdlThread;
 }

@@ -26,6 +26,7 @@
 ******************************************************************************
 */
 #include "ArchSound.h"
+#include "Log.h"
 #include <SDL.h>
 #include <stdlib.h>
 
@@ -46,10 +47,10 @@ void printStatus(SDL_AudioDeviceID dev)
 {
     switch (SDL_GetAudioDeviceStatus(dev))
     {
-        case SDL_AUDIO_STOPPED: printf("stopped\n"); break;
-        case SDL_AUDIO_PLAYING: printf("playing\n"); break;
-        case SDL_AUDIO_PAUSED: printf("paused\n"); break;
-        default: printf("???"); break;
+        case SDL_AUDIO_STOPPED: LOG_DEBUG("stopped"); break;
+        case SDL_AUDIO_PLAYING: LOG_DEBUG("playing"); break;
+        case SDL_AUDIO_PAUSED: LOG_DEBUG("paused"); break;
+        default: LOG_DEBUG("???"); break;
     }
 }
 
@@ -153,13 +154,13 @@ void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 c
 	desired.userdata = NULL;
     
 	if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
-		fprintf(stderr,"Failed to run SDL_InitSubSystem\n");
+		LOG_ERROR("Failed to run SDL_InitSubSystem");
         return;
     }
 
 	/*if (SDL_OpenAudio(&desired, &audioSpec) != 0) {
 		SDL_QuitSubSystem(SDL_INIT_AUDIO);
-		fprintf(stderr,"SDL_OpenAudio failed with %s\n",SDL_GetError());
+		LOG_ERROR("SDL_OpenAudio failed with %s", SDL_GetError());
         return;
     }*/
 	//dev = SDL_OpenAudioDevice(NULL, 0, &desired, &audioSpec, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
@@ -174,16 +175,16 @@ void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 c
 	}
 
 	
-	printf ("freq:%d(%d)\n", desired.freq, audioSpec.freq);
-	printf ("samples:%d(%d)\n", desired.samples, audioSpec.samples);
-	printf ("channels:%d(%d)\n", desired.channels, audioSpec.channels);
-	printf ("format:%d(%d)\n", desired.format, audioSpec.format);
-	printf ("size:%d(%d)\n", desired.size, audioSpec.size);
+	LOG_DEBUG("freq:%d(%d)", desired.freq, audioSpec.freq);
+	LOG_DEBUG("samples:%d(%d)", desired.samples, audioSpec.samples);
+	LOG_DEBUG("channels:%d(%d)", desired.channels, audioSpec.channels);
+	LOG_DEBUG("format:%d(%d)", desired.format, audioSpec.format);
+	LOG_DEBUG("size:%d(%d)", desired.size, audioSpec.size);
 	
     sdlSound.bufferSize = 5;
     while (sdlSound.bufferSize < 4 * audioSpec.size) sdlSound.bufferSize *= 2;
 	sdlSound.bufferSize = audioSpec.size * 4;
-	printf ("size:%d\n", sdlSound.bufferSize);
+	LOG_DEBUG("size:%d", sdlSound.bufferSize);
     sdlSound.bufferMask = sdlSound.bufferSize - 1;
     sdlSound.buffer = (UInt8*)calloc(1, sdlSound.bufferSize);
     sdlSound.started = 1;
@@ -194,7 +195,7 @@ void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 c
     mixerSetWriteCallback(mixer, soundWrite, NULL, audioSpec.size / sdlSound.bytesPerSample);
     
 	SDL_PauseAudio(0);
-	fprintf(stderr,"Audio device %lu status: ",dev);
+	LOG_DEBUG("Audio device %lu status:", dev);
 	printStatus(dev);
 	
 }

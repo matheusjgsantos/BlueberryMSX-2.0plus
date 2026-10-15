@@ -90,45 +90,46 @@ Single makefile, GNU make. Key facts:
 - Toolchain (native on the Pi): gcc 14.2.0 (Debian 13), make 4.4.1, SDL2 dev
   2.30, libudev, libdrm, libgbm, libEGL/libGLESv2, plus the in-tree bcm2835.
 
-## 4. Entry point & startup (Src/Pi/PiMain.c, 509 lines)
+## 4. Entry point & startup (Src/Pi/PiMain.c, ~518 lines)
 
-`main()` at `Src/Pi/PiMain.c:259`. Startup order (all line numbers in PiMain.c):
+`main()` at `Src/Pi/PiMain.c:264`. Startup order (all line numbers in PiMain.c):
 
 | # | Call | Line | Purpose |
 |---|------|------|---------|
-| 1 | `signal(SIGINT, SIG_IGN)` | 265 | Ctrl+C no longer kills; evdev grab also blocks it (sec. 8) |
-| 2 | `gpioInit()` | 269 | bcm2835 init, LED shift-register PWR byte |
-| 3 | `piInitVideo()` | 272 | DRM/KMS + GBM + EGL setup (sec. 7) |
-| 4 | `piInitUdev()` | 277 | udev hotplug monitor (disk/cassette hot-insert) |
-| 5 | `SDL_InitSubSystem(TIMER\|EVENTS\|GAMECONTROLLER\|AUDIO)` | 283 | **No SDL_INIT_VIDEO** - SDL must not touch DRM/KMS |
-| 6 | `SDL_ShowCursor(DISABLE)`, `SDL_JoystickEventState(ENABLE)` | 296-297 | |
-| 7 | parse argv into `szLine` | 306-315 | |
-| 8 | open up to 2 SDL joysticks | 317-319 | |
-| 9 | `setDefaultPaths(archGetCurrentDirectory())` | 321 | creates runtime dirs (sec. 12) |
-| 10 | `emuCheckResetArgument(szLine)` | 323 | `-reset` flag |
-| 11 | `propCreate(resetProperties, 0, P_KBD_EUROPEAN, 0, "")` | 329 | loads `bluemsx.ini` from CWD |
-| 12 | `videoCreate`, `videoSetPalMode(VIDEO_PAL_FAST)` | 338-339 | PAL 50 Hz fast |
-| 13 | video params from properties (saturation, scanlines, ...) | 340-346 | |
-| 14 | `keyboardInit(properties)` | 351 | MSX keyboard table (EU layout) |
-| 15 | `piKeyboardEvdevInit()` | 352 | evdev keyboard bridge thread (sec. 8) |
-| 16 | `mixerCreate`, per-channel volume/pan/mute | 357-367 | |
-| 17 | `emulatorInit(properties, mixer)` | 369 | |
-| 18 | `actionInit(video, properties, mixer)` | 370 | |
-| 19 | `tapeSetReadOnly` | 371 | cassette read-only by default |
-| 20 | `langInit` / `langSetLanguage` | 373-374 | |
-| 21 | `joystickPortSetType(0/1, ...)` | 376-377 | |
-| 22 | printer/uart/midi/yk port setup | 379-390 | |
-| 23 | `emulatorRestartSound()` | 392 | opens audio device (44100 Hz, SDL callback) |
-| 24 | `videoUpdateAll()` | 394 | |
-| 25 | `shortcuts = shortcutsCreate()` | 396 | loads `bluemsx.ini` [Shortcuts] (sec. 8) |
-| 26 | insert cartridges/diskettes/cassettes from props | 400-432 | |
-| 27 | `machineCreate` test + destroy | 435-445 | |
-| 28 | `boardSet*` (vdp overscan etc.) | 447-451 | |
-| 29 | `emuTryStartWithArguments(...)` / `emulatorStart(NULL)` | 453, 469 | boots the machine |
-| 30 | `piScanDevices()` | 472 | udev: hot-insert media found at boot |
-| 31 | `printf("Powering on")` | 474 | |
+| 1 | `logInit()` / `LOG_INFO("BlueberryMSX 2.0 Plus v%s")` | 266-267 | spdlog init, then banner — silent by default (sec. 12) |
+| 2 | `signal(SIGINT, SIG_IGN)` | 273 | Ctrl+C no longer kills; evdev grab also blocks it (sec. 8) |
+| 3 | `gpioInit()` | 277 | bcm2835 init, LED shift-register PWR byte |
+| 4 | `piInitVideo()` | 280 | DRM/KMS + GBM + EGL setup (sec. 7) |
+| 5 | `piInitUdev()` | 285 | udev hotplug monitor (disk/cassette hot-insert) |
+| 6 | `SDL_InitSubSystem(TIMER\|EVENTS\|GAMECONTROLLER\|AUDIO)` | 291 | **No SDL_INIT_VIDEO** - SDL must not touch DRM/KMS |
+| 7 | `SDL_ShowCursor(DISABLE)`, `SDL_JoystickEventState(ENABLE)` | 304-305 | |
+| 8 | parse argv into `szLine` | 309-324 | `char szLine[8192]` at 309 |
+| 9 | open up to 2 SDL joysticks | 326 | `SDL_JoystickOpen(i)` |
+| 10 | `setDefaultPaths(archGetCurrentDirectory())` | 329 | creates runtime dirs (sec. 12) |
+| 11 | `emuCheckResetArgument(szLine)` | 331 | `-reset` flag |
+| 12 | `propCreate(resetProperties, 0, P_KBD_EUROPEAN, 0, "")` | 337 | loads `bluemsx.ini` from CWD |
+| 13 | `videoCreate`, `videoSetPalMode(VIDEO_PAL_FAST)` | 344-347 | PAL 50 Hz fast |
+| 14 | video params from properties (saturation, scanlines, ...) | 348-353 | |
+| 15 | `keyboardInit(properties)` | 359 | MSX keyboard table (EU layout) |
+| 16 | `piKeyboardEvdevInit()` | 360 | evdev keyboard bridge thread (sec. 8) |
+| 17 | `mixerCreate`, per-channel volume/pan/mute | 365-375 | |
+| 18 | `emulatorInit(properties, mixer)` | 377 | |
+| 19 | `actionInit(video, properties, mixer)` | 378 | |
+| 20 | `tapeSetReadOnly` | 379 | cassette read-only by default |
+| 21 | `langInit` / `langSetLanguage` | 381-382 | |
+| 22 | `joystickPortSetType(0/1, ...)` | 384-385 | |
+| 23 | printer/uart/midi/yk port setup | 387-398 | |
+| 24 | `emulatorRestartSound()` | 400 | opens audio device (44100 Hz, SDL callback) |
+| 25 | `videoUpdateAll()` | 402 | |
+| 26 | `shortcuts = shortcutsCreate()` | 404 | loads `bluemsx.ini` [Shortcuts] (sec. 8) |
+| 27 | insert cartridges/diskettes/cassettes from props | 410-440 | `insertCartridge()` at 410 |
+| 28 | `machineCreate` test + destroy | 443-451 | `boardSetMachine()` at 445 |
+| 29 | `boardSet*` (fdcTiming, y8950, ym2413, moonsound, autodetect) | 455-459 | |
+| 30 | `emuTryStartWithArguments(...)` / `emulatorStart(NULL)` | 461, 471 | boots the machine |
+| 31 | `piScanDevices()` | 480 | udev: hot-insert media found at boot |
+| 32 | `LOG_INFO("Powering on")` | 482 | only printed when log level >= info |
 
-**Main loop** (PiMain.c:476-485):
+**Main loop** (PiMain.c:484-493):
 
     doQuit = 0;
     while (!doQuit) {
@@ -138,9 +139,10 @@ Single makefile, GNU make. Key facts:
         } while (SDL_PollEvent(&event));
     }
 
-**Teardown** (PiMain.c:487-508): `videoDestroy` -> `propDestroy` ->
+**Teardown** (PiMain.c:494-513): `videoDestroy` -> `propDestroy` ->
 `archSoundDestroy` -> `mixerDestroy` -> `gpioShutdown` -> `piDestroyVideo` ->
-`piDestroyUdev` -> `piKeyboardEvdevDestroy` -> `SDL_Quit` -> "Powered off".
+`piDestroyUdev` -> `piKeyboardEvdevDestroy` -> `SDL_Quit` ->
+`LOG_INFO("Powered off")`.
 
 ### 4.1 Event dispatch - handleEvent() (PiMain.c:156-215)
 
@@ -414,6 +416,18 @@ the matching `action*` (Src/Emulator/Actions.c).
   `Databases`, `Shortcut Profiles`, `Machines`, `Media`.
 - Machine definition: `Machines/MSX2+/config.ini` (slots, RAM, VDP type,
   cassette). Default machine for this build.
+- **Logging** (`Src/Utils/Log.{h,cpp}`, spdlog): the emulator is **silent by
+  default** (level `warn` — only real errors reach stderr). Level resolution,
+  first match wins:
+  1. env `BLUEMSX_LOG_LEVEL` (`trace|debug|info|warn|error|critical|off`),
+  2. a `settings.logLevel=<level>` line in `bluemsx.ini` (`[config]`
+     section, read as a plain text scan — not via `IniFileParser`),
+  3. default `warn`.
+  `logInit()` (called first thing in `main()`) applies the config; every
+  startup print is a `LOG_*` macro (so startup is output-free when the level
+  is `warn`). `LOG_INFO` → `info`, `LOG_DEBUG`/`LOG_TRACE` → `debug`/`trace`.
+  Under `ROM_TESTER_BUILD` the macros degrade to plain `printf`/`fprintf`, so
+  `rom_tester` keeps its console output with no spdlog dependency.
 
 ## 13. Key-file quick index
 
@@ -436,4 +450,5 @@ the matching `action*` (Src/Emulator/Actions.c).
 | VDP | `Src/VideoChips/CRTC6845.c`, `VDP.c`, `FrameBuffer.c`, `VideoManager.c` |
 | Frame post-processing | `Src/VideoRender/VideoRender.c` |
 | Slot bus (RPMC) | `Src/IoDevice/MsxBus.cpp`, `Doc/RPMC.md` |
+| Logging (spdlog) | `Src/Utils/Log.h`, `Src/Utils/Log.cpp` |
 | Build | `Makefile` |

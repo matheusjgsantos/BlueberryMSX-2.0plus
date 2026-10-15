@@ -501,6 +501,7 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
         case ROM_MEGAFLSHSCC: strcat(rom1, CARTNAME_MEGAFLSHSCC); break;
         case ROM_MEGAFLSHSCCPLUS:   strcat(rom1, CARTNAME_MEGAFLSHSCCPLUS); break;
 		case ROM_MSXBUS:	  strcat(rom1, CARTNAME_MSXBUS); break;
+		case ROM_YAMANOOTO:   strcat(rom1, CARTNAME_YAMANOOTO); break;
         }
     }
 
@@ -525,6 +526,7 @@ static int emuStartWithArguments(Properties* properties, char* commandLine, char
         case ROM_MEGAFLSHSCC: strcat(rom2, CARTNAME_MEGAFLSHSCC); break;
         case ROM_MEGAFLSHSCCPLUS:   strcat(rom2, CARTNAME_MEGAFLSHSCCPLUS); break;
 		case ROM_MSXBUS:	  strcat(rom2, CARTNAME_MSXBUS); break;
+		case ROM_YAMANOOTO:   strcat(rom2, CARTNAME_YAMANOOTO); break;
         }
     }
 

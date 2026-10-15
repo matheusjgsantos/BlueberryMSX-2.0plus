@@ -30,6 +30,7 @@
 //#include <SDL_keysym.h>
 #include <SDL_keycode.h>
 #include "IniFileParser.h"
+#include "Log.h"
 #include "StrcmpNoCase.h"
 #include "Actions.h"
 
@@ -598,10 +599,10 @@ static const ShortcutHotkey highFrameskipHotKey = {
     HOTKEY_TYPE_KEYBOARD, 0, SDLK_F8,
 };
 static const ShortcutHotkey resetHard = {
-    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F7,	
+    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F6,
 };
 static const ShortcutHotkey screenShot = {
-    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F6,	
+    HOTKEY_TYPE_KEYBOARD, 0, SDLK_F7,
 };
 static const ShortcutHotkey toggleScanline = {
     HOTKEY_TYPE_KEYBOARD, KMOD_LALT, SDLK_F10,	
@@ -626,7 +627,7 @@ struct Shortcuts {
     ShortcutHotkey cartRemove[2];
     ShortcutHotkey cartAutoReset;
 
-    ShortcutHotkey diskChange[0];
+    ShortcutHotkey diskChange[2];
     ShortcutHotkey diskRemove[2];
     ShortcutHotkey diskAutoReset;
 
@@ -663,7 +664,18 @@ struct Shortcuts {
 
 #define LOAD_SHORTCUT(hotkey) loadShortcut(iniFile, #hotkey, &shortcuts->hotkey)
 
-#define HOTKEY_EQ(hotkey1, hotkey2) (*(UInt32*)&hotkey1 == *(UInt32*)&hotkey2)
+#define HOTKEY_MOD_MASK (KMOD_LCTRL | KMOD_RCTRL | KMOD_LSHIFT | KMOD_RSHIFT | KMOD_LALT | KMOD_RALT | KMOD_LGUI | KMOD_RGUI)
+
+static int hotkeyMatches(ShortcutHotkey key, ShortcutHotkey hotkey)
+{
+    if (hotkey.type == HOTKEY_TYPE_NONE) {
+        return 0;
+    }
+    if (key.type != hotkey.type || key.key != hotkey.key) {
+        return 0;
+    }
+    return (key.mods & HOTKEY_MOD_MASK) == (hotkey.mods & HOTKEY_MOD_MASK);
+}
 
 ShortcutHotkey toSDLhotkey(ShortcutHotkey hotkey)
 {
@@ -751,8 +763,7 @@ static ShortcutHotkey int2hotkey(int* hotkey) {
 static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
 {
     char buffer[512];
-    char* token, *value;
-    int key;
+    unsigned int rawHotkey;
     
     hotkey->type = HOTKEY_TYPE_NONE;
     hotkey->mods = 0;
@@ -777,9 +788,12 @@ static void loadShortcut(IniFile *iniFile, char* name, ShortcutHotkey* hotkey)
         // hotkey->mods |= stringToMod(token);
     // }
 // #else
-//	sscanf(strtok(buffer, "="), "%"SCNx32, hotkey);	
-    sscanf(buffer, "%X", hotkey);
-	toSDLhotkey(*hotkey);
+    if (sscanf(buffer, "%X", &rawHotkey) != 1 || rawHotkey == 0) {
+        return;
+    }
+    hotkey->type = rawHotkey & 0xff;
+    hotkey->mods = (rawHotkey >> 8) & 0xff;
+    hotkey->key = (rawHotkey >> 16) & 0xff;
 //#endifma	
 	//printf("shortcut:%s - %s,%08x -> %08x\n", name, shortcutsToString(*hotkey), *hotkey, toSDLhotkey(*hotkey));
 	*hotkey = toSDLhotkey(*hotkey);
@@ -800,7 +814,7 @@ Shortcuts* shortcutsCreate()
 
     IniFile *iniFile = iniFileOpen(filename);
 	
-	printf("shortcut file:%s, %d\n", filename, iniFile);
+	LOG_DEBUG("shortcut file:%s, %d", filename, iniFile);
 
 	if (iniFile->iniBuffer) {
 		LOAD_SHORTCUT(switchMsxAudio);
@@ -872,7 +886,7 @@ void shortcutCheckDown(Shortcuts* s, int type, int mods, long keySym)
     	printf("keySym=%08x -",keySym);
 	printf("key=%016x\n", key);*/
 
-    if (HOTKEY_EQ(key, s->emuSpeedFull)) {
+    if (hotkeyMatches(key, s->emuSpeedFull)) {
         if (s->state.maxSpeedIsSet == 0) {
             actionMaxSpeedSet();
             s->state.maxSpeedIsSet = 1;
@@ -892,64 +906,64 @@ void shortcutCheckUp(Shortcuts* s, int type, int mods, long keySym)
         s->state.maxSpeedIsSet = 0;
     }
 
-    if (HOTKEY_EQ(key, quitHotKey)) actionQuit();
+    if (hotkeyMatches(key, quitHotKey)) actionQuit();
 
-    if (HOTKEY_EQ(key, disableFrameskipHotKey)) {
+    if (hotkeyMatches(key, disableFrameskipHotKey)) {
         properties->video.frameSkip = 0;
     }
-    if (HOTKEY_EQ(key, lowFrameskipHotKey)) {
+    if (hotkeyMatches(key, lowFrameskipHotKey)) {
 //        properties->video.frameSkip = 1;
     }
-    if (HOTKEY_EQ(key, mediumFrameskipHotKey)) {
+    if (hotkeyMatches(key, mediumFrameskipHotKey)) {
 //       properties->video.frameSkip = 2;
     }
-    if (HOTKEY_EQ(key, highFrameskipHotKey)) {
+    if (hotkeyMatches(key, highFrameskipHotKey)) {
 //        properties->video.frameSkip = 3;
     }
-    if (HOTKEY_EQ(key, s->quit))                         actionQuit();
-    if (HOTKEY_EQ(key, s->fdcTiming))                    actionToggleFdcTiming();
-    if (HOTKEY_EQ(key, s->spritesEnable))                actionToggleSpriteEnable();
-    if (HOTKEY_EQ(key, s->switchMsxAudio))               actionToggleMsxAudioSwitch();
-    if (HOTKEY_EQ(key, s->switchFront))                  actionToggleFrontSwitch();
-    if (HOTKEY_EQ(key, s->switchPause))                  actionTogglePauseSwitch();
-    if (HOTKEY_EQ(key, s->captureAudio))                 actionToggleWaveCapture();
-    if (HOTKEY_EQ(key, s->captureScreenshot))            actionScreenCapture();
-    if (HOTKEY_EQ(key, s->cpuStateQuickLoad))            actionQuickLoadState();
-    if (HOTKEY_EQ(key, s->cpuStateQuickSave))            actionQuickSaveState();
+    if (hotkeyMatches(key, s->quit))                         actionQuit();
+    if (hotkeyMatches(key, s->fdcTiming))                    actionToggleFdcTiming();
+    if (hotkeyMatches(key, s->spritesEnable))                actionToggleSpriteEnable();
+    if (hotkeyMatches(key, s->switchMsxAudio))               actionToggleMsxAudioSwitch();
+    if (hotkeyMatches(key, s->switchFront))                  actionToggleFrontSwitch();
+    if (hotkeyMatches(key, s->switchPause))                  actionTogglePauseSwitch();
+    if (hotkeyMatches(key, s->captureAudio))                 actionToggleWaveCapture();
+    if (hotkeyMatches(key, s->captureScreenshot))            actionScreenCapture();
+    if (hotkeyMatches(key, s->cpuStateQuickLoad))            actionQuickLoadState();
+    if (hotkeyMatches(key, s->cpuStateQuickSave))            actionQuickSaveState();
 
-    if (HOTKEY_EQ(key, s->cartRemove[0]))                actionCartRemove1();
-    if (HOTKEY_EQ(key, s->cartRemove[1]))                actionCartRemove2();
-    if (HOTKEY_EQ(key, s->cartAutoReset))                actionToggleCartAutoReset();
+    if (hotkeyMatches(key, s->cartRemove[0]))                actionCartRemove1();
+    if (hotkeyMatches(key, s->cartRemove[1]))                actionCartRemove2();
+    if (hotkeyMatches(key, s->cartAutoReset))                actionToggleCartAutoReset();
 
-    if (HOTKEY_EQ(key, s->diskChange[0]))              	 actionDiskQuickChange();
-    if (HOTKEY_EQ(key, s->diskRemove[0]))                actionDiskRemoveA();
-    if (HOTKEY_EQ(key, s->diskRemove[1]))                actionDiskRemoveB();
-    if (HOTKEY_EQ(key, s->diskAutoReset))                actionToggleDiskAutoReset();
+    if (hotkeyMatches(key, s->diskChange[0]))              	 actionDiskQuickChange();
+    if (hotkeyMatches(key, s->diskRemove[0]))                actionDiskRemoveA();
+    if (hotkeyMatches(key, s->diskRemove[1]))                actionDiskRemoveB();
+    if (hotkeyMatches(key, s->diskAutoReset))                actionToggleDiskAutoReset();
 
-    if (HOTKEY_EQ(key, s->casRewind))                    actionCasRewind();
-    if (HOTKEY_EQ(key, s->casRemove))                    actionCasRemove();
-    if (HOTKEY_EQ(key, s->casToggleReadonly))            actionCasToggleReadonly();
-    if (HOTKEY_EQ(key, s->casAutoRewind))                actionToggleCasAutoRewind();
-    if (HOTKEY_EQ(key, s->casSave))                      actionCasSave();
+    if (hotkeyMatches(key, s->casRewind))                    actionCasRewind();
+    if (hotkeyMatches(key, s->casRemove))                    actionCasRemove();
+    if (hotkeyMatches(key, s->casToggleReadonly))            actionCasToggleReadonly();
+    if (hotkeyMatches(key, s->casAutoRewind))                actionToggleCasAutoRewind();
+    if (hotkeyMatches(key, s->casSave))                      actionCasSave();
 
-    if (HOTKEY_EQ(key, s->emulationRunPause))            actionEmuTogglePause();
-    if (HOTKEY_EQ(key, s->emulationStop))                actionEmuStop();
-    if (HOTKEY_EQ(key, s->emuSpeedNormal))               actionEmuSpeedNormal();
-    if (HOTKEY_EQ(key, s->emuSpeedInc))                  actionEmuSpeedIncrease();
-    if (HOTKEY_EQ(key, s->emuSpeedDec))                  actionEmuSpeedDecrease();
-    if (HOTKEY_EQ(key, s->emuSpeedToggle))               actionMaxSpeedToggle();
-    if (HOTKEY_EQ(key, s->resetSoft))                    actionEmuResetSoft();
-//  if (HOTKEY_EQ(key, s->resetHard))                    actionEmuResetHard();
-    if (HOTKEY_EQ(key, s->resetClean))                   actionEmuResetClean();
-    if (HOTKEY_EQ(key, s->volumeIncrease))               actionVolumeIncrease();
-    if (HOTKEY_EQ(key, s->volumeDecrease))               actionVolumeDecrease();
-    if (HOTKEY_EQ(key, s->volumeMute))                   actionMuteToggleMaster();
-    if (HOTKEY_EQ(key, s->volumeStereo))                 actionVolumeToggleStereo();
-    if (HOTKEY_EQ(key, s->windowSizeNormal))             actionWindowSizeNormal();
-    if (HOTKEY_EQ(key, s->windowSizeFullscreen))         actionWindowSizeFullscreen();
-    if (HOTKEY_EQ(key, s->windowSizeFullscreenToggle))   actionFullscreenToggle();
-	if (HOTKEY_EQ(key, s->scanlinesToggle))	 			 actionToggleScanlinesEnable();
-	if (HOTKEY_EQ(key, s->aspectRatioToggle))	 		 actionToggleVideoSetForce4x3ratio();
+    if (hotkeyMatches(key, s->emulationRunPause))            actionEmuTogglePause();
+    if (hotkeyMatches(key, s->emulationStop))                actionEmuStop();
+    if (hotkeyMatches(key, s->emuSpeedNormal))               actionEmuSpeedNormal();
+    if (hotkeyMatches(key, s->emuSpeedInc))                  actionEmuSpeedIncrease();
+    if (hotkeyMatches(key, s->emuSpeedDec))                  actionEmuSpeedDecrease();
+    if (hotkeyMatches(key, s->emuSpeedToggle))               actionMaxSpeedToggle();
+    if (hotkeyMatches(key, s->resetSoft))                    actionEmuResetSoft();
+//  if (hotkeyMatches(key, s->resetHard))                    actionEmuResetHard();
+    if (hotkeyMatches(key, s->resetClean))                   actionEmuResetClean();
+    if (hotkeyMatches(key, s->volumeIncrease))               actionVolumeIncrease();
+    if (hotkeyMatches(key, s->volumeDecrease))               actionVolumeDecrease();
+    if (hotkeyMatches(key, s->volumeMute))                   actionMuteToggleMaster();
+    if (hotkeyMatches(key, s->volumeStereo))                 actionVolumeToggleStereo();
+    if (hotkeyMatches(key, s->windowSizeNormal))             actionWindowSizeNormal();
+    if (hotkeyMatches(key, s->windowSizeFullscreen))         actionWindowSizeFullscreen();
+    if (hotkeyMatches(key, s->windowSizeFullscreenToggle))   actionFullscreenToggle();
+	if (hotkeyMatches(key, s->scanlinesToggle))	 			 actionToggleScanlinesEnable();
+	if (hotkeyMatches(key, s->aspectRatioToggle))	 		 actionToggleVideoSetForce4x3ratio();
 }
 
 

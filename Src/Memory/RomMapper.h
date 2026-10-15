@@ -125,6 +125,8 @@ const char* romTypeToString(RomType romType) {
     case ROM_MSXPRN:      return "MSX Printer";
     case ROM_TURBORPCM:   return "Turbo-R PCM Chip";
 
+    case ROM_YAMANOOTO:   return "Yamanooto";
+
     case ROM_UNKNOWN:     return "Unknown";
     }
 
@@ -222,6 +224,7 @@ const char* romTypeToShortString(RomType romType) {
     case ROM_MSXAUDIODEV: return "MSXAUDIO";
     case ROM_MSXPRN:      return "MSXPRN";
     case ROM_TURBORPCM:   return "TURBOR PCM";
+    case ROM_YAMANOOTO:   return "YAMANOOTO";
 
     case ROM_UNKNOWN:     return "UNKNOWN";
     }

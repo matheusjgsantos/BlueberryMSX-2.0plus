@@ -24,6 +24,141 @@ This document records every change, file by file, with the verified root cause a
 machine-code level.
 
 ---
+## Release v2.0.2 (rom_tester utility)
+
+No emulation code changes in this release.
+
+* **New `rom_tester` standalone utility** (`rom_tester.c`) — fast ROM dumper that
+  reads physical MSX cartridges from the RPMC board without launching the full
+  emulator. Features:
+  * Sub-slot auto-probing to detect where ROM data is mapped.
+  * Page-switching for addresses beyond 0xBFFF (pages 4-7 remapped to
+    0x6000-0x7FFF).
+  * Repeat-read integrity check (10-sample verify per byte); mismatched bytes
+    printed in red.
+  * CRC-32 (IEEE) checksum of the dump.
+  * Optional `--io` mode to dump all 256 I/O port values.
+  * CLI flags: `-f` (output file), `-o` (offset, default 0x4000),
+    `-s` (size, default 0x8000 = 32 KB), `-S` (parent slot 0 or 1).
+* **New `Doc/RPMC_TESTER.md`** — complete reference for `rom_tester`:
+  build, usage, slot mapping, privileges, sub-slot probing, and troubleshooting.
+* **Updated `Makefile`** — added `rom_tester` and `clean_rom_tester` build targets;
+  cleaned `clean` now removes the `rom_tester` binary as well.
+
+### Verification
+
+* `make rom_tester` builds cleanly (aarch64 ELF, statically links bcm2835).
+* `./rom_tester -h` prints help and exits (exit 0).
+* With a cartridge inserted in slot 0, `sudo ./rom_tester -f dump.rom` probes
+  sub-slots, reports detected ROM page, writes dump to file, and prints CRC-32
+  at exit.
+* `--io` mode prints all 256 port values in hex.
+* Same `MsxBusPi.c` GPIO/bus driver as the live emulator (compiled under
+  `#define ROM_TESTER_BUILD`), so slot mapping and bus timing are consistent
+  with `bluemsx-pi`.
+
+---
+
+## Release v2.0.3 (physical cartridge reads)
+
+Fixes the RPMC GPIO bus driver so `bluemsx-pi` can actually read physical MSX
+cartridges from the board.
+
+### Root cause
+
+`setup_io()` in `Src/IoDevice/MsxBusPi.c` configured every GPIO as an
+**input**, so the Pi never drove the address/control/data bus towards the CPLD:
+every `msxread()` returned `0xFF` and no cartridge ever mounted. In addition the
+per-transaction `while(!(GPIO & MSX_WAIT))` spin was unbounded, so probing an
+unpopulated slot hung the whole emulator at boot.
+
+### Changes
+
+* `Src/IoDevice/MsxBusPi.c`:
+  * Configure the RPMC bus GPIOs as **outputs** in `setup_io()`
+    (`rp1SetOutput`/`bcmSetOutput`), matching the reference `msx_dumper.c`
+    layout, so the Pi drives the address, control and data lines.
+  * Bound the `MSX_WAIT` wait in `GetData()`/`SetData()` to 500000
+    iterations; on timeout a read returns `0xFF` and the cycle is released
+    cleanly (no hang on empty slots).
+  * Restore the BCM283x GPCLK0 pin function to ALT4 (GPIO20 = GPCLK0).
+  * Guard the `Board.h` include with `#ifndef ROM_TESTER_BUILD` so the same
+    driver compiles into both the emulator and `rom_tester`.
+* `rom_tester.c`: include the driver explicitly as `Src/IoDevice/MsxBusPi.c`
+  (single canonical copy; a divergent project-root copy was removed).
+* Removed stray backup/patch artifacts (`*.bak`, `*.patch`, `*.orig`) and
+  added them (plus `rom_tester`/`rom_diag` binaries) to `.gitignore`.
+
+### Verification
+
+* `sudo ./rom_tester -f dump.rom -s 32768` on a populated slot 0 dumps a valid
+  MSX ROM: header `41 42` ("AB") at 0x4000, full 32 KB, CRC-32 `DB327847`
+  (byte-for-byte identical to the cartridge image in `ROM/2.rom`).
+* Unpopulated slots probe cleanly and report "No ROM data found" (no hang).
+* `sudo ./bluemsx-pi /romtype1 msxbus /romtype2 msxbus` boots, initialises the
+  GPIO bus (`msxinit`) and mounts the hardware slots as emulated `MSXBus`
+  cartridges (emulated slot 1/0 and 2/0).
+
+## Release v2.0.4 (spdlog logging + clean startup)
+
+The Pi port now logs through **spdlog** and is **silent by default**: a normal
+boot prints nothing to stdout/stderr unless a log level is enabled.
+
+### Configuration
+
+The log level can be set two ways (first match wins):
+
+1. `settings.logLevel=<level>` in `bluemsx.ini` — e.g.:
+
+       [config]
+       settings.logLevel=debug
+
+2. `BLUEMSX_LOG_LEVEL=<level>` environment variable.
+
+Valid levels: `trace`, `debug`, `info`, `warn`, `error`, `critical`, `off`.
+The default is `warn`, so during a healthy boot nothing is printed; errors
+still reach stderr. `info` shows the startup facts (banner, video init, MSX
+bus mounts, "Powering on"), `debug`/`trace` add the fine-grained diagnostics.
+
+### Changes
+
+* **New `Src/Utils/Log.h` / `Src/Utils/Log.cpp`** — C-compatible logging API
+  (`logInit`, `logWrite`, `LOG_TRACE/DEBUG/INFO/WARN/ERROR` macros) backed by
+  spdlog (stderr colour logger with timestamped, level-tagged output).
+  `logInit()` reads `bluemsx.ini` (and the `BLUEMSX_*` environment), default
+  `warn`.
+* **`Src/Pi/PiMain.c`** — calls `logInit()` before anything else; banner
+  becomes `LOG_INFO`, errors `LOG_ERROR`, lifecycle/debug prints converted.
+* **`Src/Pi/PiVideo.c`, `Src/Pi/PiGpio.c`** — init info -> `LOG_INFO`,
+  progress -> `LOG_DEBUG`, failures -> `LOG_ERROR`.
+* **`Src/Pi/PiInput.c`, `Src/Pi/PiUdev.c`, `Src/Pi/PiShortcuts.c`,
+  `Src/Pi/PiNotifications.c`** — joystick/keyboard/udev messages converted.
+* **`Src/Emulator/Emulator.c`, `Src/Sdl/SdlSound.c`, `Src/Sdl/SdlThread.c`** —
+  thread/audio debug chatter -> `LOG_DEBUG`, failures -> `LOG_ERROR`.
+* **`Src/IoDevice/MsxBusPi.c`** — GPCLK/bus init -> `LOG_INFO`,
+  failures -> `LOG_ERROR`, per-access trace stays behind `-DDEBUG`
+  (`LOG_TRACE`). In `ROM_TESTER_BUILD` (rom_tester) the macros degrade to
+  plain printf/fprintf, so the diagnostic tool keeps its console output and
+  needs no spdlog.
+* **`Src/IoDevice/MsxBus.cpp`, `Src/Memory/romMapperMsxBus.c`** — the
+  `MSXBUSs[]`/`msxBusCreate` diagnostics -> `LOG_DEBUG`, `MSXBus created` ->
+  `LOG_INFO`.
+* **`Makefile`** — added `Src/Utils/Log.cpp` to the build, `-lspdlog -lfmt`
+  to `LIBS`, and `-I Src/Utils` to the `rom_tester` target (plus its
+  `Log.h` dependency).
+
+### Verification
+
+* Default boot (`settings.logLevel` absent): stdout and stderr both **0 bytes**.
+* `settings.logLevel=info`: banner, video init, GPCLK/MSX bus mount,
+  "Powering on" appear; zero `debug` lines.
+* `settings.logLevel=debug`: full startup trail incl. `MSXBUSs[]`,
+  `msxBusCreate`, evdev device list, thread creation.
+* `rom_tester` still dumps the physical cartridge byte-for-byte (header
+  `41 42`, page-in works) with unchanged console behaviour.
+
+---
+
 
 ## Release v2.0.1 (documentation & versioning)
 

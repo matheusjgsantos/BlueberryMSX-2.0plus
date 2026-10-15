@@ -53,6 +53,7 @@
 #include "romMapperStandard.h"
 #include "romMapperMsxDos2.h"
 #include "romMapperKonami5.h"
+#include "romMapperYamanooto.h"
 #include "romMapperKonami4.h"
 #include "romMapperKoei.h"
 #include "romMapperHolyQuran.h"
@@ -1440,6 +1441,10 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             
         case ROM_KONAMI5:
             success &= romMapperKonami5Create(romName, buf, size, slot, subslot, startPage);
+            break;
+
+        case ROM_YAMANOOTO:
+            success &= romMapperYamanootoCreate(romName, buf, size, slot, subslot, startPage);
             break;
 
         case ROM_MANBOW2:
